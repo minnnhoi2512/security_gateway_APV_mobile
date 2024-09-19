@@ -1,34 +1,63 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Tabs } from "expo-router";
+import React from "react";
 
-import { TabBarIcon } from '@/components/navigation/TabBarIcon';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
-
+import { TabBarIcon } from "@/components/navigation/TabBarIcon";
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 export default function TabLayout() {
   const colorScheme = useColorScheme();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         headerShown: false,
-      }}>
+        tabBarStyle: {
+          height: 66,
+          paddingTop: 10,
+          paddingBottom: 10
+        }
+      }}
+    >
       <Tabs.Screen
-        name="index"
+        name="checkin"
         options={{
-          title: 'Home',
+          title: "Check in",
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
+            <MaterialCommunityIcons
+              name={focused ? "account-check" : "account-check-outline"}
+              size={24}
+              color={color}
+            />
           ),
         }}
       />
+
       <Tabs.Screen
-        name="explore"
+        name="index"
         options={{
-          title: 'Explore',
+          title: "Home",
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'code-slash' : 'code-slash-outline'} color={color} />
+            <MaterialCommunityIcons
+              name="home-circle"
+              size={30}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="checkout"
+        options={{
+          title: "Check out",
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons
+              name={focused ? "exit-run" : "exit-to-app"}
+              size={24}
+              color={color}
+            />
           ),
         }}
       />
