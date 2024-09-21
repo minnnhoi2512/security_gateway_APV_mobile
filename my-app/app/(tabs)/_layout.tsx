@@ -5,6 +5,7 @@ import { TabBarIcon } from "@/components/navigation/TabBarIcon";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 export default function TabLayout() {
   const colorScheme = useColorScheme();
 
@@ -16,24 +17,10 @@ export default function TabLayout() {
         tabBarStyle: {
           height: 66,
           paddingTop: 10,
-          paddingBottom: 10
-        }
+          paddingBottom: 10,
+        },
       }}
     >
-      <Tabs.Screen
-        name="checkin"
-        options={{
-          title: "Check in",
-          tabBarIcon: ({ color, focused }) => (
-            <MaterialCommunityIcons
-              name={focused ? "account-check" : "account-check-outline"}
-              size={24}
-              color={color}
-            />
-          ),
-        }}
-      />
-
       <Tabs.Screen
         name="index"
         options={{
@@ -42,6 +29,19 @@ export default function TabLayout() {
             <MaterialCommunityIcons
               name="home-circle"
               size={30}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="Checkin"
+        options={{
+          title: "Check in",
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons
+              name={focused ? "account-check" : "account-check-outline"}
+              size={24}
               color={color}
             />
           ),
@@ -58,6 +58,17 @@ export default function TabLayout() {
               size={24}
               color={color}
             />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color, focused }) => (
+ 
+            <FontAwesome name="user-circle-o" size={24} color={color} />
           ),
         }}
       />

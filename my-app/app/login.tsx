@@ -68,7 +68,7 @@ const Login: React.FC = () => {
 
         
         <StyledView className="flex items-center justify-center">
-          <StyledTouchableOpacity onPress={() => router.push('/(tabs)')} className="bg-[#5163B5] rounded-2xl p-4 items-center w-[200px] mt-4">
+          <StyledTouchableOpacity onPress={() => router.push('/PickGate')} className="bg-[#5163B5] rounded-2xl p-4 items-center w-[200px] mt-4">
             <StyledText className="text-white font-bold text-lg">
               Đăng nhập
             </StyledText>

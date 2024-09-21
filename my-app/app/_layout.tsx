@@ -36,6 +36,8 @@ export default function RootLayout() {
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="check-in/scanQr" options={{ headerShown: true }} />
+        <Stack.Screen name="check-in/UserDetail" options={{ headerShown: true }} />
+        <Stack.Screen name="PickGate" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
     </ThemeProvider>

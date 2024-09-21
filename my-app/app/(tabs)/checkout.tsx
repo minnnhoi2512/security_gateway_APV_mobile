@@ -4,7 +4,7 @@ import React from 'react'
 const checkout = () => {
   return (
     <View>
-      <Text>checkout</Text>
+      <Text>RA </Text>
     </View>
   )
 }
