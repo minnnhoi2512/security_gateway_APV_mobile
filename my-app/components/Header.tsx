@@ -1,11 +1,13 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Image } from "react-native";
 import Fontisto from "@expo/vector-icons/Fontisto";
+import { useRouter } from "expo-router";
 interface HeaderProps {
   name: string;
 }
 
 const Header: React.FC<HeaderProps> = ({ name }) => {
+  const router = useRouter();
   return (
     <View className="p-4  h-[130px]">
       <View className="flex-row justify-between items-center mt-9">
@@ -24,7 +26,7 @@ const Header: React.FC<HeaderProps> = ({ name }) => {
           </View>
         </View>
 
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/Notification')}>
           <Fontisto name="bell-alt" size={24} color={"#F7DC6F"} />
         </TouchableOpacity>
       </View>

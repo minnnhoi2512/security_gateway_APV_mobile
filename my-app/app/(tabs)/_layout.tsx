@@ -49,7 +49,7 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="checkout"
+        name="Checkout"
         options={{
           title: "Check out",
           tabBarIcon: ({ color, focused }) => (
