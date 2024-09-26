@@ -1,9 +1,17 @@
-import React from "react";
-import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  Alert,
+} from "react-native";
 import { styled } from "nativewind";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Entypo from "@expo/vector-icons/Entypo";
 import { useRouter } from "expo-router";
+import { useLoginUserMutation } from "@/redux/services/authApi.service";
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
@@ -12,9 +20,24 @@ const StyledTouchableOpacity = styled(TouchableOpacity);
 const StyledImage = styled(Image);
 
 const Login: React.FC = () => {
-
-
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginUser, { isLoading }] = useLoginUserMutation();
   const router = useRouter();
+
+  const handleLogin = async () => {
+    try {
+      const result = await loginUser({ email, password }).unwrap();
+      console.log("Login successful, response:", result);
+      
+      if (result) {
+        router.push("/PickGate");
+      }
+    } catch (error) {
+      // console.error("Login failed, error:", error);
+      Alert.alert("Login Failed", "Invalid credentials. Please try again.");
+    }
+  };
 
   return (
     <View className="flex-1 bg-[#5163B5]">
@@ -39,6 +62,8 @@ const Login: React.FC = () => {
             className="flex-1 bg-transparent p-3"
             placeholder="Tên đăng nhập"
             placeholderTextColor="#999"
+            value={email}
+            onChangeText={setEmail}
           />
         </StyledView>
 
@@ -51,6 +76,8 @@ const Login: React.FC = () => {
             placeholder="Tên đăng nhập"
             placeholderTextColor="#999"
             secureTextEntry
+            value={password}
+            onChangeText={setPassword}
           />
         </StyledView>
 
@@ -66,11 +93,14 @@ const Login: React.FC = () => {
           </StyledText>
         </StyledTouchableOpacity>
 
-        
         <StyledView className="flex items-center justify-center">
-          <StyledTouchableOpacity onPress={() => router.push('/PickGate')} className="bg-[#5163B5] rounded-2xl p-4 items-center w-[200px] mt-4">
+          <StyledTouchableOpacity
+            onPress={handleLogin}
+            disabled={isLoading}
+            className="bg-[#5163B5] rounded-2xl p-4 items-center w-[200px] mt-4"
+          >
             <StyledText className="text-white font-bold text-lg">
-              Đăng nhập
+              {isLoading ? "Đang xử lý..." : "Đăng nhập"}
             </StyledText>
           </StyledTouchableOpacity>
         </StyledView>
