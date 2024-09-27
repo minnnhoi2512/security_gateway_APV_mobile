@@ -12,6 +12,7 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Entypo from "@expo/vector-icons/Entypo";
 import { useRouter } from "expo-router";
 import { useLoginUserMutation } from "@/redux/services/authApi.service";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
@@ -20,21 +21,23 @@ const StyledTouchableOpacity = styled(TouchableOpacity);
 const StyledImage = styled(Image);
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginUser, { isLoading }] = useLoginUserMutation();
   const router = useRouter();
 
   const handleLogin = async () => {
     try {
-      const result = await loginUser({ email, password }).unwrap();
+      const result = await loginUser({ username, password }).unwrap();
       console.log("Login successful, response:", result);
-      
-      if (result) {
+
+      if (result && result.jwtToken) {
+        await AsyncStorage.setItem("userToken", result.jwtToken);
+        console.log("Token saved to AsyncStorage");
+
         router.push("/PickGate");
       }
     } catch (error) {
-      // console.error("Login failed, error:", error);
       Alert.alert("Login Failed", "Invalid credentials. Please try again.");
     }
   };
@@ -62,8 +65,8 @@ const Login: React.FC = () => {
             className="flex-1 bg-transparent p-3"
             placeholder="Tên đăng nhập"
             placeholderTextColor="#999"
-            value={email}
-            onChangeText={setEmail}
+            value={username}
+            onChangeText={setUsername}
           />
         </StyledView>
 

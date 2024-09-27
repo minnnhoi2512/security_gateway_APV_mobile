@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Camera, CameraView } from "expo-camera";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import {
   AppState,
   Linking,
@@ -17,8 +17,9 @@ import { Overlay } from "./OverLay";
 export default function Home() {
   const qrLock = useRef(false);
   const appState = useRef(AppState.currentState);
+  const router = useRouter(); 
   // const [scannedData, setScannedData] = useState("");
-  const [extractedData, setExtractedData] = useState("");
+  const [scannedData, setScannedData] = useState("");
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -36,6 +37,21 @@ export default function Home() {
     };
   }, []);
 
+  const handleBarCodeScanned = ({ data }: {data: string}) => {
+    if (data && !qrLock.current) {
+      qrLock.current = true;
+      console.log("Scanned QR Code Data:", data);
+      setScannedData(data);
+      
+      setTimeout(() => {
+        router.push({
+          pathname: '/check-in/UserDetail',
+          params: { data: data },
+        });
+      }, 500);
+    }
+  };
+
   return (
     <SafeAreaView style={StyleSheet.absoluteFillObject}>
       <Stack.Screen
@@ -48,24 +64,12 @@ export default function Home() {
       <CameraView
         style={StyleSheet.absoluteFillObject}
         facing="back"
-        onBarcodeScanned={({ data }) => {
-          if (data && !qrLock.current) {
-            qrLock.current = true;
-            console.log("Scanned QR Code Data:", data);
-            const extractedData = data.split('|')[0];
-            setExtractedData(extractedData);
-            console.log("Extracted Data:", extractedData);
-            // setScannedData(data);
-            setTimeout(async () => {
-              await Linking.openURL(data);
-            }, 500);
-          }
-        }}
+        onBarcodeScanned={handleBarCodeScanned}
       />
       <Overlay />
-      {extractedData ? (
+      {scannedData ? (
         <View style={styles.dataContainer}>
-          <Text style={styles.dataText}>Scanned Data: {extractedData}</Text>
+          <Text style={styles.dataText}>Scanned Data: {scannedData}</Text>
         </View>
       ) : null}
     </SafeAreaView>
