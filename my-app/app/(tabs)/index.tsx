@@ -10,11 +10,14 @@ import {
 } from "react-native";
 import Header from "@/components/Header";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Feather } from "@expo/vector-icons";
 import { useGetAllVisitsByCurrentDateQuery } from "@/redux/services/visit.service";
 // import calendar_icon from '@/assets/images/calendar.png'
 
+
+
 export default function HomeScreen() {
+
+  
   const { selectedGate } = useLocalSearchParams();
   const router = useRouter();
   const {
@@ -25,6 +28,7 @@ export default function HomeScreen() {
     pageSize: 10,
     pageNumber: 1,
   });
+
 
   if (isLoading) {
     return (
@@ -71,7 +75,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
 
-            {visits.map((visit: any) => {
+            {/* {visits.map((visit: any) => {
               const formattedStartDate = visit.expectedStartDate.split("T")[0];
               const formattedEndDate = visit.expectedEndDate.split("T")[0];
               const formattedStartTime = visit.expectedStartTime
@@ -122,7 +126,7 @@ export default function HomeScreen() {
                   </View>
                 </TouchableOpacity>
               );
-            })}
+            })} */}
           </View>
         </View>
       </ScrollView>

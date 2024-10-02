@@ -7,6 +7,7 @@ import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
 const VisitDetail = () => {
+  const { visitId, visitDetailId } = useLocalSearchParams();
   const { id } = useLocalSearchParams();
 
   const {
@@ -15,8 +16,8 @@ const VisitDetail = () => {
     isError,
   } = useGetVisitDetailByIdQuery(id as string);
 
-  console.log("id: ", id);
-  console.log("datra: ", visitDetail);
+  console.log("visitId: ", visitId);
+  console.log("visitDetailId: ", visitDetailId);
 
   if (isLoading) {
     return (

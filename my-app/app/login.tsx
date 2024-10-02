@@ -33,6 +33,7 @@ const Login: React.FC = () => {
 
       if (result && result.jwtToken) {
         await AsyncStorage.setItem("userToken", result.jwtToken);
+        await AsyncStorage.setItem("userId", result.userId.toString());
         console.log("Token saved to AsyncStorage");
 
         router.push("/PickGate");

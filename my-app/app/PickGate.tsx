@@ -1,30 +1,31 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Dimensions } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Dimensions, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
+import { useGetAllGateQuery } from "@/redux/services/gate.service";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/redux/store/store";
+import { setSelectedGate } from "@/redux/slices/gate.slice";
+
 
 interface Gate {
-  id: string;
-  color: string;
-  name: string;
-  time: string;
-  task: string;
-  date: string;
+  gateId: number;
+  gateName: string;
+  gateCoordinate: string;
 }
 
 const PickGate: React.FC = () => {
   const router = useRouter();
-  const [selectedGate, setSelectedGate] = useState<string | null>(null);
+  const dispatch = useDispatch();
+  const selectedGate = useSelector((state: RootState) => state.gate.selectedGateId);
   const screenHeight = Dimensions.get('window').height;
 
-  const gates: Gate[] = [
-    { id: 'A', color: 'bg-teal-600', name: 'Cổng A', time: '7h00 - 17h30', task: 'Kiểm tra khách vào - ra trong công ty', date: '22/09/2024' },
-    { id: 'B', color: 'bg-yellow-600', name: 'Cổng B', time: '7h00 - 17h30', task: 'Kiểm tra khách vào - ra trong công ty', date: '22/09/2024' },
-    { id: 'C', color: 'bg-blue-600', name: 'Cổng C', time: '7h00 - 17h30', task: 'Kiểm tra khách vào - ra trong công ty', date: '22/09/2024' }
-  ];
+  const { data: gates, error, isLoading } = useGetAllGateQuery();
 
-  const handleSelectGate = (id: string) => {
-    setSelectedGate(id);
+
+
+  const handleSelectGate = (id: number) => {
+    dispatch(setSelectedGate(id));
   };
 
   const handleNext = () => {
@@ -36,6 +37,22 @@ const PickGate: React.FC = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <Text className="text-red-500">Failed to load gates</Text>
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
       <View style={{ minHeight: screenHeight }} className="flex-1 px-4 py-6">
@@ -44,30 +61,22 @@ const PickGate: React.FC = () => {
             <Text className="text-2xl font-bold text-gray-800">Chọn cổng của bạn</Text>
           </View>
 
-          {gates.map(gate => (
+          {gates?.map((gate: Gate) => (
             <TouchableOpacity 
-              key={gate.id} 
-              onPress={() => handleSelectGate(gate.id)}
-              className={`mb-3 ${selectedGate === gate.id ? 'scale-102 transform transition-all duration-200' : ''}`}
+              key={gate.gateId} 
+              onPress={() => handleSelectGate(gate.gateId)}
+              className={`mb-3 ${selectedGate === gate.gateId ? 'scale-102 transform transition-all duration-200' : ''}`}
             >
-              <View className={`${gate.color} rounded-xl p-3 shadow-md ${selectedGate === gate.id ? 'border-2 border-white' : ''}`}>
+              <View className={`bg-blue-600 rounded-xl p-3 shadow-md ${selectedGate === gate.gateId ? 'border-2 border-white' : ''}`}>
                 <View className="flex-row justify-between items-center mb-1">
-                  <Text className="text-white text-xl font-bold">{gate.name}</Text>
-                  {selectedGate === gate.id && <Feather name="check-circle" size={20} color="white" />}
+                  <Text className="text-white text-xl font-bold">{gate.gateName}</Text>
+                  {selectedGate === gate.gateId && <Feather name="check-circle" size={20} color="white" />}
                 </View>
                 <View className="flex-row items-center mb-1">
                   <Feather name="clock" size={14} color="white" />
-                  <Text className="text-white text-sm ml-1">{gate.time}</Text>
-                </View>
-                <View className="mb-2">
-                  <Text className="text-white text-xs opacity-80">Nhiệm vụ</Text>
-                  <Text className="text-white text-sm">{gate.task}</Text>
+                  <Text className="text-white text-sm ml-1">{gate.gateCoordinate}</Text>
                 </View>
                 <View className="flex-row justify-between items-center">
-                  <View>
-                    <Text className="text-white text-xs opacity-80">Ngày</Text>
-                    <Text className="text-white text-sm">{gate.date}</Text>
-                  </View>
                   <Feather name="chevron-right" size={20} color="white" />
                 </View>
               </View>

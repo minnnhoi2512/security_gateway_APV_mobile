@@ -23,10 +23,10 @@ export const visitApi = createApi({
       query: () => 'Visit/GetAllVisitsByCurrentDate?pageSize=10&pageNumber=1',
     }),
     getVisitDetailById: builder.query({
-      query: (visitId: string) => `Visit/GetVisitDetailByVisitId/${visitId}`,
+      query: (visitId: string) => `Visit/VisitDetail/${visitId}`,
     }),
     getVisitByCredentialCard: builder.query({
-      query: (credentialCard: string) => `Visit/GetVisitByCredentialCard/${credentialCard}` ,
+      query: (credentialCard: string) => `Visit/CredentialCard/${credentialCard}` ,
     })
   }),
 });
