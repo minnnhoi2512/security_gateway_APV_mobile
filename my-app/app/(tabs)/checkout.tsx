@@ -27,10 +27,10 @@ const Checkout = () => {
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
-  const [checkOut, {isLoading}] = useCheckOutMutation();
+  const [checkOut, { isLoading }] = useCheckOutMutation();
 
   const [checkOutData, setCheckOutData] = useState({
-    checkoutTime: 0,
+    checkoutTime: "",
     securityOutId: 0,
     gateOutId: Number(selectedGateId) || 0,
   });
@@ -71,23 +71,46 @@ const Checkout = () => {
     if (userId) {
       setCheckOutData((prevState) => ({
         ...prevState,
-        securityInId: Number(userId) || 0,
+        securityOutId: Number(userId) || 0,
       }));
     }
   }, [userId, selectedGateId]);
 
-  const handleBarCodeScanned = ({ data }: { data: string }) => {
+  const handleBarCodeScanned = async ({ data }: { data: string }) => {
     if (data && !qrLock.current) {
       qrLock.current = true;
-      console.log("Scanned QR Code Data:", data);
       setIsCameraActive(false);
-      Alert.alert(
-        "QR Code Scanned",
-        "QR Code has been successfully scanned and added to the check-in data."
-      );
+
+      const currentTime = new Date().toISOString();
+
+      setCheckOutData((prevState) => ({
+        ...prevState,
+        checkoutTime: currentTime,
+      }));
+
+
+      try {
+        const response = await checkOut({
+          qrCardVerifi: data, 
+          checkoutData: {
+            ...checkOutData,
+            checkoutTime: currentTime, 
+          },
+        }).unwrap();
+        Alert.alert("Thành công", "Checkout thành công!");
+
+        qrLock.current = false;
+        // setIsCameraActive(true);
+
+      } catch (error) {
+        console.error("Checkout error:", error);
+        Alert.alert("Lỗi", "Checkout thất bại.");
+        qrLock.current = false; 
+        // setIsCameraActive(true); 
+      }
     }
   };
-  // console.log("DATA: ", checkInData);
+  console.log("DATA: ", checkOutData);
 
   if (!isPermissionGranted) {
     return (
@@ -102,31 +125,30 @@ const Checkout = () => {
     <SafeAreaView className="flex-1 bg-white">
       <Header name="Đặng Dương" />
       <View className="flex-1 justify-center items-center px-4">
-      <View>
-            {isCameraActive ? (
-              <View style={styles.cameraContainer}>
-                <CameraView
-                  style={styles.cameraView}
-                  onBarcodeScanned={handleBarCodeScanned}
-                />
-                <View style={styles.scanningFrame} />
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setIsCameraActive(false)}
-                >
-                  <Text style={styles.closeButtonText}>Close Camera</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
+        <View>
+          {isCameraActive ? (
+            <View style={styles.cameraContainer}>
+              <CameraView
+                style={styles.cameraView}
+                onBarcodeScanned={handleBarCodeScanned}
+              />
+              <View style={styles.scanningFrame} />
               <TouchableOpacity
-                style={styles.scanButton}
-                onPress={() => setIsCameraActive(true)}
+                style={styles.closeButton}
+                onPress={() => setIsCameraActive(false)}
               >
-                <Text style={styles.buttonText}>Scan QR Code</Text>
+                <Text style={styles.closeButtonText}>Close Camera</Text>
               </TouchableOpacity>
-            )}
-          </View>
-        
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.scanButton}
+              onPress={() => setIsCameraActive(true)}
+            >
+              <Text style={styles.buttonText}>Scan QR Code</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -134,9 +156,7 @@ const Checkout = () => {
 
 export default Checkout;
 
-
 const styles = StyleSheet.create({
-
   cameraContainer: {
     width: "100%",
     aspectRatio: 3 / 4,
