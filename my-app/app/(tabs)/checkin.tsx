@@ -25,7 +25,7 @@ const Checkin = () => {
    const [userId, setUserId] = useState<string | null>(null);
   const selectedGateId = useSelector((state: RootState) => state.gate.selectedGateId);
 
-  console.log("GATE ID: ", selectedGateId);
+
   
   useEffect(() => {
     if (permission?.granted) {
@@ -51,7 +51,7 @@ const Checkin = () => {
     fetchUserId();
   }, []);
 
-  console.log("User Id: ", userId);
+  
   
 
   const takePhoto = async () => {
@@ -102,17 +102,17 @@ const Checkin = () => {
             </Pressable>
           </Link>
         </View>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           onPress={() => router.push('/check-in/UserDetail')}
           className="bg-[#5163B5] rounded-2xl p-4 items-center w-[200px] mt-4"
         >
           <Text className="text-white font-bold text-lg">
             Next
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
-      <Text>Working with fb and ImagePicker</Text>
-      <Button title="Take a picture" onPress={takePhoto}></Button>
+      {/* <Text>Working with fb and ImagePicker</Text>
+      <Button title="Take a picture" onPress={takePhoto}></Button> */}
     </SafeAreaView>
   );
 };

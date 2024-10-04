@@ -13,8 +13,8 @@ export interface Visitor {
     visitDetailName: string;
     expectedStartDate: string;
     expectedEndDate: string;
-    expectedStartTime: string;
-    expectedEndTime: string;
+    expectedStartHour: string;
+    expectedEndHour: string;
     status: boolean;
     visitor: Visitor;
   }
@@ -27,5 +27,15 @@ export interface Visitor {
     visitType: string;
     daysOfProcess: string;
     visitDetail: VisitDetailType[];
+  }
+
+
+  export interface Visit2 {
+    visitId: number;
+    visitName: string;
+    visitQuantity: number;
+    description: string | null;
+    createByname: string;
+    scheduleTypeName: string;
   }
   

@@ -42,6 +42,10 @@ export default function RootLayout() {
             name="check-in/scanQr"
             options={{ headerShown: true }}
           />
+           <Stack.Screen
+            name="check-in/AssignQr"
+            options={{ headerShown: true }}
+          />
           <Stack.Screen
             name="check-in/UserDetail"
             options={{ headerShown: true }}

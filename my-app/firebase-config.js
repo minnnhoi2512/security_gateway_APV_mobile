@@ -6,9 +6,9 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 
-const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY;
-const FIREBASE_STORAGE_BUCKET = process.env.FIREBASE_STORAGE_BUCKET;
-const FIREBASE_APP_ID = process.env.FIREBASE_APP_ID;
+const FIREBASE_API_KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY;
+const FIREBASE_STORAGE_BUCKET = process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET;
+const FIREBASE_APP_ID = process.env.EXPO_PUBLIC_FIREBASE_APP_ID;
 
 // console.log(FIREBASE_API_KEY);
 

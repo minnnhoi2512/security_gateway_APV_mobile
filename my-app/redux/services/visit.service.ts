@@ -3,15 +3,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 
-const BASE_URL = process.env.BASE_URL;
+const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
 
 export const visitApi = createApi({
   reducerPath: 'visitApi',
   baseQuery: fetchBaseQuery({
     baseUrl: BASE_URL,
-    prepareHeaders: (headers) => {
-      const token = AsyncStorage.getItem('userToken');
+    prepareHeaders: async  (headers) => {
+      const token = await  AsyncStorage.getItem('userToken');
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }
@@ -20,7 +20,10 @@ export const visitApi = createApi({
   }),
   endpoints: (builder) => ({
     getAllVisitsByCurrentDate: builder.query({
-      query: () => 'Visit/GetAllVisitsByCurrentDate?pageSize=10&pageNumber=1',
+      query: () => {
+        const currentDate = new Date().toISOString().split('T')[0]
+        return `Visit/Day?pageSize=10&pageNumber=1&date=${currentDate}`
+      },
     }),
     getVisitDetailById: builder.query({
       query: (visitId: string) => `Visit/VisitDetail/${visitId}`,

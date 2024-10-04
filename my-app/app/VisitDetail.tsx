@@ -1,14 +1,13 @@
 import { View, Text, ScrollView, ImageBackground } from "react-native";
 import React from "react";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 import { VisitDetailType } from "@/redux/Types/visit.type";
 import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
 const VisitDetail = () => {
-  const { visitId, visitDetailId } = useLocalSearchParams();
-  const { id } = useLocalSearchParams();
+  const { id, visitName, quantity } = useLocalSearchParams();
 
   const {
     data: visitDetail,
@@ -16,8 +15,8 @@ const VisitDetail = () => {
     isError,
   } = useGetVisitDetailByIdQuery(id as string);
 
-  console.log("visitId: ", visitId);
-  console.log("visitDetailId: ", visitDetailId);
+  // console.log("ID: ", id);
+
 
   if (isLoading) {
     return (
@@ -52,7 +51,9 @@ const VisitDetail = () => {
           colors={["transparent", "rgba(0,0,0,0.8)"]}
           className="w-full h-32 justify-end p-4"
         >
-          <Text className="text-4xl font-bold text-white">Visit Detail</Text>
+          <Text className="text-3xl font-bold text-white">
+            Chi tiết buổi hẹn
+          </Text>
         </LinearGradient>
       </ImageBackground>
 
@@ -69,8 +70,9 @@ const VisitDetail = () => {
               style={{ marginRight: 12 }}
             />
             <Text className="text-lg text-white">
-              Ngày đăng ký:{" "}
-              {new Date(visitDetail?.dateRegister).toLocaleDateString()}
+              {visitName || "N/A"}
+              {/* Trạng thái:{" "}
+              {visitDetail.status ? "Đang hoạt động" : "Đã kết thúc"} */}
             </Text>
           </View>
           <View className="flex-row items-center">
@@ -81,97 +83,85 @@ const VisitDetail = () => {
               style={{ marginRight: 12 }}
             />
             <Text className="text-lg text-white">
-              Số lượng khách: {visitDetail?.visitQuantity}
+              Số lượng khách: {quantity || "N/A"}
             </Text>
           </View>
         </LinearGradient>
 
-        <Text className="text-2xl font-semibold mb-4 text-[#2e4053]">
+        <Text className="text-2xl font-semibold mb-2 text-[#2e4053]">
           Chi tiết cuộc thăm
         </Text>
 
-        {visitDetail?.visitDetail.map(
-          (visit: VisitDetailType, index: number) => {
-            const formattedStartDate = visit.expectedStartDate.split("T")[0];
-            const formattedEndDate = visit.expectedEndDate.split("T")[0];
-            const formattedStartTime = visit.expectedStartTime
-              .split(":")
-              .slice(0, 2)
-              .join(":");
-            const formattedEndTime = visit.expectedEndTime
-              .split(":")
-              .slice(0, 2)
-              .join(":");
-
-            return (
-              <LinearGradient
-                key={index}
-                colors={["#ffffff", "#f0f0f0"]}
-                className="p-6 rounded-xl shadow-md mb-4"
-              >
-                <Text className="text-2xl font-semibold mb-3 text-indigo-800">
-                  {visit.visitDetailName}
-                </Text>
-                <View className="space-y-3">
-                  <View className="flex-row items-center">
-                    <MaterialIcons
-                      name="access-time"
-                      size={24}
-                      color="#4c669f"
-                      style={{ marginRight: 12 }}
-                    />
-                    <Text className="text-lg text-gray-800">
-                      Bắt đầu: {formattedStartDate} {formattedStartTime}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center">
-                    <MaterialIcons
-                      name="access-time"
-                      size={24}
-                      color="#4c669f"
-                      style={{ marginRight: 12 }}
-                    />
-                    <Text className="text-lg text-gray-800">
-                      Kết thúc: {formattedEndDate} {formattedEndTime}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center">
-                    <FontAwesome5
-                      name="building"
-                      size={24}
-                      color="#4c669f"
-                      style={{ marginRight: 12 }}
-                    />
-                    <Text className="text-lg text-gray-800">
-                      Công ty: {visit.visitor.companyName}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center">
-                    <FontAwesome5
-                      name="user"
-                      size={24}
-                      color="#4c669f"
-                      style={{ marginRight: 12 }}
-                    />
-                    <Text className="text-lg text-gray-800">
-                      Người tham gia: {visit.visitor.visitorName}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center">
-                    <FontAwesome5
-                      name="phone"
-                      size={24}
-                      color="#4c669f"
-                      style={{ marginRight: 12 }}
-                    />
-                    <Text className="text-lg text-gray-800">
-                      Số điện thoại: {visit.visitor.phoneNumber}
-                    </Text>
-                  </View>
+        {visitDetail && visitDetail.length > 0 ? (
+          visitDetail.map((visit: VisitDetailType, index: number) => (
+            <LinearGradient
+              key={index}
+              colors={["#ffffff", "#f0f0f0"]}
+              className="p-6 rounded-xl shadow-md mb-4"
+            >
+              <View className="space-y-3">
+                <View className="flex-row items-center">
+                  <MaterialIcons
+                    name="access-time"
+                    size={24}
+                    color="#4c669f"
+                    style={{ marginRight: 12 }}
+                  />
+                  <Text className="text-lg text-gray-800">
+                    Bắt đầu: {visit.expectedStartHour || "N/A"}
+                  </Text>
                 </View>
-              </LinearGradient>
-            );
-          }
+                <View className="flex-row items-center">
+                  <MaterialIcons
+                    name="access-time"
+                    size={24}
+                    color="#4c669f"
+                    style={{ marginRight: 12 }}
+                  />
+                  <Text className="text-lg text-gray-800">
+                    Kết thúc: {visit.expectedEndHour || "N/A"}
+                  </Text>
+                </View>
+                <View className="flex-row items-center">
+                  <FontAwesome5
+                    name="building"
+                    size={24}
+                    color="#4c669f"
+                    style={{ marginRight: 12 }}
+                  />
+                  <Text className="text-lg text-gray-800">
+                    Công ty: {visit.visitor?.companyName || "N/A"}
+                  </Text>
+                </View>
+                <View className="flex-row items-center">
+                  <FontAwesome5
+                    name="user"
+                    size={24}
+                    color="#4c669f"
+                    style={{ marginRight: 12 }}
+                  />
+                  <Text className="text-lg text-gray-800">
+                    Người tham gia: {visit.visitor?.visitorName || "N/A"}
+                  </Text>
+                </View>
+                <View className="flex-row items-center">
+                  <FontAwesome5
+                    name="phone"
+                    size={24}
+                    color="#4c669f"
+                    style={{ marginRight: 12 }}
+                  />
+                  <Text className="text-lg text-gray-800">
+                    Số điện thoại: {visit.visitor?.phoneNumber || "N/A"}
+                  </Text>
+                </View>
+              </View>
+            </LinearGradient>
+          ))
+        ) : (
+          <Text className="text-lg text-gray-800">
+            No visit details available.
+          </Text>
         )}
       </View>
     </ScrollView>

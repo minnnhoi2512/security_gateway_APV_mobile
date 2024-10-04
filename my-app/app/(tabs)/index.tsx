@@ -11,13 +11,11 @@ import {
 import Header from "@/components/Header";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGetAllVisitsByCurrentDateQuery } from "@/redux/services/visit.service";
+import { Ionicons } from "@expo/vector-icons";
+import { Visit2 } from "@/redux/Types/visit.type";
 // import calendar_icon from '@/assets/images/calendar.png'
 
-
-
 export default function HomeScreen() {
-
-  
   const { selectedGate } = useLocalSearchParams();
   const router = useRouter();
   const {
@@ -29,7 +27,6 @@ export default function HomeScreen() {
     pageNumber: 1,
   });
 
-
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center bg-white">
@@ -37,6 +34,9 @@ export default function HomeScreen() {
       </SafeAreaView>
     );
   }
+
+ 
+  
 
   if (isError) {
     return (
@@ -46,88 +46,85 @@ export default function HomeScreen() {
     );
   }
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-gray-50">
       <Header name="Đặng Dương" />
-      <View className=" justify-center items-center px-4 mb-[40px]">
-        <Image
-          source={{
-            uri: "https://www.securitymagazine.com/ext/resources/images/security-guard-freepik.jpg?1624490387",
-          }}
-          style={{ width: 355, height: 190, borderRadius: 25 }}
-        />
-      </View>
-      <ScrollView className="flex-1 bg-[#FAFAFA]">
-        <View className="items-center mt-4">
-          {selectedGate && (
-            <Text className="text-xl text-green-500 font-bold">
-              Cổng {selectedGate}
-            </Text>
-          )}
+      <ScrollView className="flex-1">
+        <View className="justify-center items-center px-4 mb-8">
+          <Image
+            source={{
+              uri: "https://www.securitymagazine.com/ext/resources/images/security-guard-freepik.jpg?1624490387",
+            }}
+            className="w-full h-48 rounded-2xl shadow-lg"
+          />
         </View>
-        <View className="p-4">
-          <View>
-            <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-lg font-semibold text-[#d35400]">
-                Hôm nay
+
+        {selectedGate && (
+          <View className="items-center mb-6">
+            <View className="bg-green-500 px-6 py-2 rounded-full shadow-md">
+              <Text className="text-xl text-white font-bold">
+                Cổng {selectedGate}
               </Text>
-              <TouchableOpacity>
-                <Text className="text-blue-500">Xem tất cả</Text>
-              </TouchableOpacity>
             </View>
+          </View>
+        )}
 
-            {/* {visits.map((visit: any) => {
-              const formattedStartDate = visit.expectedStartDate.split("T")[0];
-              const formattedEndDate = visit.expectedEndDate.split("T")[0];
-              const formattedStartTime = visit.expectedStartTime
-                .split(":")
-                .slice(0, 2)
-                .join(":");
-              const formattedEndTime = visit.expectedEndTime
-                .split(":")
-                .slice(0, 2)
-                .join(":");
+        <View className="px-4">
+          <View className="flex-row justify-between items-center mb-6">
+            <Text className="text-2xl font-bold text-gray-800">Hôm nay</Text>
+            <TouchableOpacity className="bg-blue-500 px-4 py-2 rounded-full">
+              <Text className="text-white font-semibold">Xem tất cả</Text>
+            </TouchableOpacity>
+          </View>
 
-              return (
-                <TouchableOpacity
-                  key={visit.visitDetailId}
-                  onPress={() => {
-                    router.push({
-                      pathname: "/VisitDetail",
-                      params: {
-                        visitDetailId: visit.visitDetailId,
-                        id: visit.visitId,
-                        visitName: visit.visitName,
-                        expectedStartDate: visit.expectedStartDate,
-                        expectedEndDate: visit.expectedEndDate,
-                        expectedStartTime: visit.expectedStartTime,
-                        expectedEndTime: visit.expectedEndTime,
-                        visitorName: visit.visitorName,
-                      },
-                    });
-                  }}
-                  className="flex-row items-center mb-4 bg-white p-4 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
-                >
-                  <View className="mr-3">
-                    <Image
-                      source={{
-                        uri: "https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678116-calendar-512.png",
-                      }}
-                      style={{ width: 43, height: 44, borderRadius: 25 }}
-                    />
+          {visits && visits.length > 0 ? (
+            visits.map((visit: Visit2) => (
+              <TouchableOpacity
+                key={visit.visitId}
+                onPress={() => {
+                  router.push({
+                    pathname: "/VisitDetail",
+                    
+                    params: { id: visit.visitId, visitName: visit.visitName, quantity: visit.visitQuantity },
+                  });
+                }}
+                className="mb-4 bg-white p-4 rounded-xl shadow-md border border-gray-100 transition-all duration-300 active:bg-gray-50"
+              >
+                <View className="flex-row items-center">
+                  <View className="mr-4 bg-indigo-100 p-3 rounded-full">
+                  <Image
+                        source={{
+                          uri: "https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678116-calendar-512.png",
+                        }}
+                        style={{ width: 33, height: 34, borderRadius: 25 }}
+                      />
                   </View>
                   <View className="flex-1">
-                    <Text className="mb-1 font-bold text-base text-[#34495e]">
-                      {visit.visitName} - {visit.visitorName}
-                    </Text>
-                    <Text className="text-gray-500 text-xs">
-                      {formattedStartDate} - {formattedEndDate} -
-                       {formattedStartTime} - {formattedEndTime}
+                    <View className="flex-row items-center justify-between">
+                      <Text
+                        className={`font-bold text-lg ${
+                          visit.scheduleTypeName === "daily"
+                            ? "text-green-600"
+                            : "text-gray-800"
+                        }`}
+                      >
+                        {visit.visitName}
+                      </Text>
+                      <Text className="text-sm font-medium text-green-500">
+                        {visit.scheduleTypeName}
+                      </Text>
+                    </View>
+                    <Text className="text-gray-600 mt-1">
+                      Số lượng khách: {visit.visitQuantity}
                     </Text>
                   </View>
-                </TouchableOpacity>
-              );
-            })} */}
-          </View>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <Text className="text-center text-gray-500 italic">
+              Không có lịch hẹn nào
+            </Text>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
