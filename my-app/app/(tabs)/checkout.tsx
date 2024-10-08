@@ -110,7 +110,7 @@ const Checkout = () => {
       }
     }
   };
-  console.log("DATA: ", checkOutData);
+  // console.log("DATA: ", checkOutData);
 
   if (!isPermissionGranted) {
     return (
