@@ -21,4 +21,4 @@ export const visitorSessionApi = createApi({
   }),
 });
 
-export const { useCheckOutMutation } = visitorSessionApi;
+export const { useCheckOutMutation, useGetVissitorSessionQuery } = visitorSessionApi;

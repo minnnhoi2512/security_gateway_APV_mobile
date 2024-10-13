@@ -8,6 +8,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 const VisitDetail = () => {
   const { id, visitName, quantity } = useLocalSearchParams();
+  
 
   const {
     data: visitDetail,
@@ -15,7 +16,7 @@ const VisitDetail = () => {
     isError,
   } = useGetVisitDetailByIdQuery(id as string);
 
-  // console.log("ID: ", id);
+  console.log("ID: ", id);
 
 
   if (isLoading) {

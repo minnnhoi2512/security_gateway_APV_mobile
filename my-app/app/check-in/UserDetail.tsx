@@ -7,6 +7,7 @@ import {
   Button,
   Alert,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -26,7 +27,7 @@ import { useCheckInMutation } from "@/redux/services/checkin.service";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import * as RNPicker from "@react-native-picker/picker";
 
 interface ScanData {
   id: string;
@@ -44,39 +45,51 @@ interface ImageData {
 const UserDetail = () => {
   const { data } = useLocalSearchParams<{ data: string }>();
   const router = useRouter();
+
   const [permission, requestPermission] = useCameraPermissions();
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
-  let credentialCardId: string | null = null;
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const qrLock = useRef(false);
+
   const [userId, setUserId] = useState<string | null>(null);
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
-  const [isCameraActive, setIsCameraActive] = useState(false);
-  const qrLock = useRef(false);
+
+  let credentialCardId: string | null = null;
   const parseQRData = (qrData: string): ScanData => {
     const [id, nationalId, name, dateOfBirth, gender, address, issueDate] =
       qrData.split("|");
     credentialCardId = id;
     return { id, nationalId, name, dateOfBirth, gender, address, issueDate };
   };
-
   const userData: ScanData | null = data ? parseQRData(data) : null;
+
   const [images, setImages] = useState<ImageData[]>([]);
 
+  // RTK QUERY
   const [
     shoeDetect,
     { isLoading: isDetecting, isError: isDetectError, data: detectData },
   ] = useShoeDetectMutation();
+  // const credentialCardId = userData?.id || null;
   const {
     data: visitUser,
-    isLoading,
-    isError,
-  } = credentialCardId
-    ? useGetVisitByCredentialCardQuery(credentialCardId)
-    : { data: null, isLoading: false, isError: true };
-
+    isLoading: isVisitLoading,
+    isError: isVisitError,
+    error: visitError,
+  } = useGetVisitByCredentialCardQuery(credentialCardId!, {
+    skip: !credentialCardId,
+  });
   const [checkIn, { isLoading: isCheckingIn }] = useCheckInMutation();
+// console.log("Visit User: ", visitUser);
 
+  // RTK QUERY
+  const [shoeDetectResult, setShoeDetectResult] = useState<boolean | null>(
+    null
+  );
+  const [securityConfirmation, setSecurityConfirmation] = useState<string>("");
+  //CHECKIN DATA
   const [checkInData, setCheckInData] = useState<CheckIn>({
     visitDetailId: visitUser ? visitUser.visitDetailId : 0,
     securityInId: 0,
@@ -121,9 +134,11 @@ const UserDetail = () => {
       }));
     }
   }, [userId, selectedGateId]);
+  //CHECKIN DATA
 
-  console.log("User Id: ", userId);
+  // console.log("User Id: ", visitUser);
 
+  //PERMISSION
   useEffect(() => {
     if (permission?.granted) {
       setIsPermissionGranted(true);
@@ -138,6 +153,7 @@ const UserDetail = () => {
 
     checkPermissions();
   }, []);
+  //PERMISSION
 
   const takePhoto = async (imageType: "shoe" | "body") => {
     try {
@@ -146,44 +162,67 @@ const UserDetail = () => {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 1,
       });
-  
+
       if (!cameraResp.canceled && cameraResp.assets[0]) {
         const { uri } = cameraResp.assets[0];
-        const fileName = uri.split("/").pop() || `${imageType}_${Date.now()}.jpg`;
-  
+        const fileName =
+          uri.split("/").pop() || `${imageType}_${Date.now()}.jpg`;
+
         const newImage: ImageData = { imageType, imageURL: uri };
         setImages((prevImages) => [
           ...prevImages.filter((img) => img.imageType !== imageType),
           newImage,
         ]);
-  
+
         if (imageType === "shoe") {
           const file = {
             uri,
             type: "image/jpeg",
             name: fileName,
           };
-  
-          // Detailed logging of the file object
-          console.log('File object details:');
-          console.log('- URI:', file.uri);
-          console.log('- Type:', file.type);
-          console.log('- Name:', file.name);
-  
+
+          // LOG VALUE FILE PUSH TO API
+          console.log("File object details:");
+          console.log("- URI:", file.uri);
+          console.log("- Type:", file.type);
+          console.log("- Name:", file.name);
+
           try {
-            console.log('Sending file to shoeDetect:', JSON.stringify(file, null, 2));
+            console.log(
+              "Sending file to shoeDetect:",
+              JSON.stringify(file, null, 2)
+            );
             const result = await shoeDetect(file).unwrap();
-            console.log("Shoe detection result:", JSON.stringify(result, null, 2));
+            console.log(
+              "Shoe detection result:",
+              JSON.stringify(result, null, 2)
+            );
+            setShoeDetectResult(true);
             Alert.alert("Success", "Shoe detection completed successfully.");
           } catch (error: any) {
-            console.error("Shoe detection API call failed:", JSON.stringify(error, null, 2));
-            if (error.error === 'PARSING_ERROR') {
-              Alert.alert("Server Error", `The server responded with an error: ${error.message}`);
+            console.error(
+              "Shoe detection API call failed:",
+              JSON.stringify(error, null, 2)
+            );
+            if (error.error === "PARSING_ERROR") {
+              Alert.alert(
+                "Server Error",
+                `The server responded with an error: ${error.message}`
+              );
             } else if (error.data) {
-              console.error("Server response data:", JSON.stringify(error.data, null, 2));
-              Alert.alert("Error", `Server error: ${JSON.stringify(error.data)}`);
+              console.error(
+                "Server response data:",
+                JSON.stringify(error.data, null, 2)
+              );
+              Alert.alert(
+                "Error",
+                `Server error: ${JSON.stringify(error.data)}`
+              );
             } else {
-              Alert.alert("Error", "An unknown error occurred. Please try again.");
+              Alert.alert(
+                "Error",
+                "An unknown error occurred. Please try again."
+              );
             }
           }
         }
@@ -194,6 +233,15 @@ const UserDetail = () => {
     }
   };
 
+  const isCheckInEnabled = () => {
+    return (
+      images.length === 2 &&
+      shoeDetectResult === true &&
+      checkInData.qrCardVerification !== "" &&
+      securityConfirmation === "correct"
+    );
+  };
+  // console.log("SE CONFIRM: ", securityConfirmation);
 
   const uploadPhotosAndCheckIn = async () => {
     if (images.length < 2) {
@@ -213,7 +261,6 @@ const UserDetail = () => {
             console.log(`Upload of ${image.imageType} is ${progress}% done`);
           }
         );
-      
 
         return { imageType: image.imageType, imageURL: downloadUrl };
       });
@@ -228,9 +275,15 @@ const UserDetail = () => {
 
       const result = await checkIn(updatedCheckInData).unwrap();
       console.log("Check-in successful:", result);
-      Alert.alert("Success", "Check-in completed successfully!");
-    } catch (error: any
-    ) {
+      Alert.alert("Success", "Check-in completed successfully!", [
+        {
+          text: "OK",
+          onPress: () => {
+            router.push("/(tabs)/");
+          },
+        },
+      ]);
+    } catch (error: any) {
       console.error("Upload or check-in failed:", error);
       if (error.response) {
         console.error("Response data:", error.response.data);
@@ -240,10 +293,12 @@ const UserDetail = () => {
     }
   };
 
+  //SCAN QR CERTIFICATION
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (data && !qrLock.current) {
       qrLock.current = true;
       console.log("Scanned QR Code Data:", data);
+
       setCheckInData((prevData) => ({
         ...prevData,
         qrCardVerification: data,
@@ -255,8 +310,11 @@ const UserDetail = () => {
       );
     }
   };
-  // console.log("DATA: ", checkInData);
 
+  // console.log("DATA: ", checkInData);
+  //SCAN QR CERTIFICATION
+
+  //PERMISSION VIEW
   if (!isPermissionGranted) {
     return (
       <View>
@@ -265,12 +323,28 @@ const UserDetail = () => {
       </View>
     );
   }
-  if (isLoading) {
-    return <Text>Loading...</Text>;
+
+  if (isVisitLoading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#6255fa" />
+        <Text>Loading user data...</Text>
+      </View>
+    );
   }
-  if (isError) {
-    return <Text>Error fetching data</Text>;
+
+  if (isVisitError) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text>Error fetching visit data: {JSON.stringify(visitError)}</Text>
+        <Button
+          title="Retry"
+          onPress={() => router.replace("/check-in/UserDetail")}
+        />
+      </View>
+    );
   }
+
   if (!userData) {
     return (
       <SafeAreaView className="flex-1 bg-gray-100 justify-center items-center">
@@ -280,6 +354,9 @@ const UserDetail = () => {
       </SafeAreaView>
     );
   }
+
+  // console.log("check data: ", checkInData);
+
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
       <ScrollView>
@@ -324,8 +401,8 @@ const UserDetail = () => {
                   router.push({
                     pathname: "/VisitDetail",
                     params: {
-                      visitId: visitUser.visitId,
-                      visitDetailId: visitUser.visitDetailId,
+                      // visitId: visitUser.visitId,
+                      id: visitUser.visitId,
                     },
                   });
                 }
@@ -385,6 +462,19 @@ const UserDetail = () => {
               </TouchableOpacity>
             )}
           </View>
+          {/* Security guard confirmation */}
+          <View>
+            <Text>Xác nhận bảo vệ</Text>
+            <RNPicker.Picker
+              selectedValue={securityConfirmation}
+              onValueChange={(itemValue) => setSecurityConfirmation(itemValue)}
+            >
+              <RNPicker.Picker.Item label="Lựa chọn" value="" />
+              <RNPicker.Picker.Item label="Đúng" value="correct" />
+              <RNPicker.Picker.Item label="Sai" value="incorrect" />
+            </RNPicker.Picker>
+          </View>
+
           <View style={styles.container}>
             {isCameraActive ? (
               <View style={styles.cameraContainer}>
@@ -397,7 +487,7 @@ const UserDetail = () => {
                   style={styles.closeButton}
                   onPress={() => setIsCameraActive(false)}
                 >
-                  <Text style={styles.closeButtonText}>Close Camera</Text>
+                  <Text style={styles.closeButtonText}>Thoát Camera</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -405,19 +495,31 @@ const UserDetail = () => {
                 style={styles.scanButton}
                 onPress={() => setIsCameraActive(true)}
               >
-                <Text style={styles.buttonText}>Scan QR Code</Text>
+                <Text style={styles.buttonText}>Quét QR Code</Text>
               </TouchableOpacity>
             )}
           </View>
 
-          <TouchableOpacity
-            className="bg-[#6255fa] rounded-lg py-3 px-4 shadow-md"
+          {/* <TouchableOpacity
+            className={`bg-[#6255fa] rounded-lg py-3 px-4 shadow-md ${
+              !isCheckInEnabled() ? "opacity-50" : ""
+            }`}
             onPress={uploadPhotosAndCheckIn}
             disabled={isCheckingIn || images.length < 2}
           >
             <Text className="text-white text-lg font-semibold text-center">
-              {isCheckingIn ? "Đang xử lý..." : "Upload ảnh và Check-in"}
+              {isCheckingIn ? "Đang xử lý..." : "Check-in"}
             </Text>
+          </TouchableOpacity> */}
+          <TouchableOpacity
+            disabled={!isCheckInEnabled()}
+            style={[
+              styles.checkInButton,
+              { backgroundColor: isCheckInEnabled() ? "#6255fa" : "#ccc" },
+            ]}
+            onPress={uploadPhotosAndCheckIn}
+          >
+            <Text style={styles.buttonText}>Check In</Text>
           </TouchableOpacity>
         </GestureHandlerRootView>
       </ScrollView>
@@ -430,6 +532,66 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f0f0f0",
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
+  },
+  contentContainer: {
+    flex: 1,
+    padding: 20,
+  },
+  userInfoCard: {
+    backgroundColor: "#6255fa",
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "white",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 10,
+  },
+  photoSection: {
+    marginBottom: 20,
+  },
+  photoSectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 10,
+  },
+  capturedImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 10,
+  },
+  captureButton: {
+    backgroundColor: "#4CAF50",
+    padding: 15,
+    borderRadius: 5,
+  },
+  captureButtonText: {
+    color: "white",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  qrScannerContainer: {
+    marginBottom: 20,
   },
   cameraContainer: {
     width: "100%",
@@ -450,32 +612,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
-    elevation: 5,
   },
-
   scanButton: {
     backgroundColor: "#4CAF50",
     padding: 15,
     borderRadius: 5,
     marginVertical: 10,
   },
-  buttonText: {
-    color: "white",
-    textAlign: "center",
-    fontWeight: "bold",
-  },
+
   closeButton: {
     position: "absolute",
     top: 10,
     right: 10,
-    marginBottom: 20,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     padding: 10,
     borderRadius: 5,
@@ -483,8 +631,47 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: "white",
   },
+  qrCodeImage: {
+    width: 200,
+    height: 200,
+    alignSelf: "center",
+    marginTop: 10,
+  },
+  checkInButton: {
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 18,
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  checkInButtonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "red",
+  },
+  pickerContainer: {
+    marginBottom: 20,
+  },
+  pickerLabel: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
+  picker: {
+    height: 50,
+    width: "100%",
+    backgroundColor: "#f0f0f0",
+    borderRadius: 5,
+  },
+  
 });
-
-
-
-

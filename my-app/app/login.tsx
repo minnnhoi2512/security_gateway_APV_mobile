@@ -6,10 +6,12 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from "react-native";
 import { styled } from "nativewind";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import Entypo from "@expo/vector-icons/Entypo";
 import { useRouter } from "expo-router";
 import { useLoginUserMutation } from "@/redux/services/authApi.service";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -39,77 +41,83 @@ const Login: React.FC = () => {
         router.push("/PickGate");
       }
     } catch (error) {
-      Alert.alert("Login Failed", "Invalid credentials. Please try again.");
+      Alert.alert(
+        "Đăng nhập thất bại",
+        "Thông tin không hợp lệ. Vui lòng thử lại."
+      );
     }
   };
 
   return (
-    <View className="flex-1 bg-[#5163B5]">
-      <View className="flex-1 justify-center items-center">
-        <StyledImage
-          source={{
-            uri: "https://cdn-icons-png.flaticon.com/512/11135/11135368.png",
-          }}
-          className="w-32 h-32"
-        />
-      </View>
-      <StyledView className="flex-1 bg-white rounded-t-3xl p-6">
-        <StyledText className="text-2xl font-bold mb-6 text-center text-[#3D6BE0]">
-          Đăng nhập
-        </StyledText>
-
-        <StyledView className="flex flex-row items-center border-b border-gray-400 mb-4">
-          <StyledView className="pr-2">
-            <FontAwesome name="user-circle" size={24} color="black" />
-          </StyledView>
-          <StyledTextInput
-            className="flex-1 bg-transparent p-3"
-            placeholder="Tên đăng nhập"
-            placeholderTextColor="#999"
-            value={username}
-            onChangeText={setUsername}
-          />
-        </StyledView>
-
-        <StyledView className="flex flex-row items-center border-b border-gray-400 mb-8">
-          <StyledView className="pr-2">
-            <Entypo name="lock" size={24} color="black" />
-          </StyledView>
-          <StyledTextInput
-            className="flex-1 bg-transparent p-3"
-            placeholder="Tên đăng nhập"
-            placeholderTextColor="#999"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-        </StyledView>
-
-        {/* <StyledTextInput
-          className="bg-gray-100 rounded-lg p-4 mb-4"
-          placeholder="Mật khẩu"
-          placeholderTextColor="#999"
-          secureTextEntry
-        /> */}
-        <StyledTouchableOpacity>
-          <StyledText className="text-blue-500 text-right mb-6">
-            Quên mật khẩu?
-          </StyledText>
-        </StyledTouchableOpacity>
-
-        <StyledView className="flex items-center justify-center">
-          <StyledTouchableOpacity
-            onPress={handleLogin}
-            disabled={isLoading}
-            className="bg-[#5163B5] rounded-2xl p-4 items-center w-[200px] mt-4"
-          >
-            <StyledText className="text-white font-bold text-lg">
-              {isLoading ? "Đang xử lý..." : "Đăng nhập"}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      className="flex-1 bg-[#34495e]"
+    >
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <StyledView className="flex-1 p-6 mt-[70px]">
+          <StyledView className="items-center mb-8">
+            <StyledImage 
+              source={{ uri: "https://cdn-icons-png.flaticon.com/512/11135/11135368.png" }}
+              className="w-24 h-24"
+            />
+            <StyledText className="text-white text-xl font-bold mt-4">
+              SECURITY GATE APV
             </StyledText>
-          </StyledTouchableOpacity>
+          </StyledView>
+
+          <StyledView className="bg-white rounded-lg p-6 shadow-lg">
+            <StyledText className="text-2xl font-bold mb-4 text-[#5163B5]">
+              Đăng nhập
+            </StyledText>
+            <StyledText className="text-gray-600 mb-6">
+              Vui lòng đăng nhập để tiếp tục
+            </StyledText>
+
+            <StyledView className="mb-4">
+              <StyledText className="text-gray-700 mb-2">Tên đăng nhập</StyledText>
+              <StyledTextInput
+                className="bg-gray-100 rounded-lg p-3"
+                placeholder="Nhập tên đăng nhập của bạn"
+                value={username}
+                onChangeText={setUsername}
+              />
+            </StyledView>
+
+            <StyledView className="mb-4">
+              <StyledText className="text-gray-700 mb-2">Mật khẩu</StyledText>
+              <StyledView className="relative">
+                <StyledTextInput
+                  className="bg-gray-100 rounded-lg p-3 pr-10"
+                  placeholder="Nhập mật khẩu"
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                />
+                <TouchableOpacity className="absolute right-3 top-3">
+                  <FontAwesome name="eye" size={20} color="gray" />
+                </TouchableOpacity>
+              </StyledView>
+            </StyledView>
+
+            <TouchableOpacity className="mb-6">
+              <StyledText className="text-[#5163B5] text-right">
+                Quên mật khẩu?
+              </StyledText>
+            </TouchableOpacity>
+
+            <StyledTouchableOpacity
+              onPress={handleLogin}
+              disabled={isLoading}
+              className="bg-[#5d6d7e] rounded-lg p-4 items-center"
+            >
+              <StyledText className="text-white font-bold text-lg">
+                {isLoading ? "Đang xử lý..." : "Đăng nhập"}
+              </StyledText>
+            </StyledTouchableOpacity>
+          </StyledView>
         </StyledView>
-      </StyledView>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 

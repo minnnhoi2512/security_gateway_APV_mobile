@@ -1,12 +1,12 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Dimensions, ActivityIndicator } from "react-native";
+import React from "react";
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Dimensions, ActivityIndicator, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { useGetAllGateQuery } from "@/redux/services/gate.service";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { setSelectedGate } from "@/redux/slices/gate.slice";
-
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface Gate {
   gateId: number;
@@ -21,8 +21,6 @@ const PickGate: React.FC = () => {
   const screenHeight = Dimensions.get('window').height;
 
   const { data: gates, error, isLoading } = useGetAllGateQuery();
-
-
 
   const handleSelectGate = (id: number) => {
     dispatch(setSelectedGate(id));
@@ -39,58 +37,69 @@ const PickGate: React.FC = () => {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color="#0000ff" />
+      <View className="flex-1 items-center justify-center bg-[#34495e]">
+        <ActivityIndicator size="large" color="#ffffff" />
       </View>
     );
   }
 
   if (error) {
     return (
-      <View className="flex-1 items-center justify-center">
-        <Text className="text-red-500">Failed to load gates</Text>
+      <View className="flex-1 items-center justify-center bg-[#34495e]">
+        <Text className="text-red-500 text-lg">Failed to load gates</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100">
+    <SafeAreaView className="flex-1 bg-[#34495e]">
       <View style={{ minHeight: screenHeight }} className="flex-1 px-4 py-6">
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          <View className="items-center mb-6">
-            <Text className="text-2xl font-bold text-gray-800">Chọn cổng của bạn</Text>
+          <View className="items-center mb-8 mt-5">
+            <Text className="text-3xl font-bold text-white">Chọn cổng của bạn</Text>
           </View>
 
           {gates?.map((gate: Gate) => (
             <TouchableOpacity 
               key={gate.gateId} 
               onPress={() => handleSelectGate(gate.gateId)}
-              className={`mb-3 ${selectedGate === gate.gateId ? 'scale-102 transform transition-all duration-200' : ''}`}
+              className={`mb-4 ${selectedGate === gate.gateId ? ' transform transition-all duration-200' : ''}`}
             >
-              <View className={`bg-blue-600 rounded-xl p-3 shadow-md ${selectedGate === gate.gateId ? 'border-2 border-white' : ''}`}>
-                <View className="flex-row justify-between items-center mb-1">
-                  <Text className="text-white text-xl font-bold">{gate.gateName}</Text>
-                  {selectedGate === gate.gateId && <Feather name="check-circle" size={20} color="white" />}
+              <View
+                className={`rounded-xl p-4 shadow-lg ${selectedGate === gate.gateId ? 'bg-white' : 'bg-white'}`}
+                style={{ 
+                  elevation: 5,
+                  borderRadius: selectedGate === gate.gateId ? 25 : 12
+                }}
+              >
+                <View className="flex-row justify-between items-center mb-2">
+                  <Text className={`text-xl font-bold ${selectedGate === gate.gateId ? 'text-[#34495e]' : 'text-[#34495e]'}`}>
+                    {gate.gateName}
+                  </Text>
+                  {selectedGate === gate.gateId && <Feather name="check-circle" size={24} color="#58d68d" />}
                 </View>
-                <View className="flex-row items-center mb-1">
-                  <Feather name="clock" size={14} color="white" />
-                  <Text className="text-white text-sm ml-1">{gate.gateCoordinate}</Text>
+                <View className="flex-row items-center mb-2">
+                  <Feather name="map-pin" size={16} color={selectedGate === gate.gateId ? "#34495e" : "#34495e"} />
+                  <Text className={`text-sm ml-2 ${selectedGate === gate.gateId ? 'text-[#34495e]' : 'text-gray-600'}`}>
+                    {gate.gateCoordinate}
+                  </Text>
                 </View>
-                <View className="flex-row justify-between items-center">
-                  <Feather name="chevron-right" size={20} color="white" />
+                <View className="flex-row justify-end items-center">
+                  <Feather name="chevron-right" size={20} color={selectedGate === gate.gateId ? "#34495e" : "#34495e"} />
                 </View>
               </View>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        <View className="mt-2">
+        <View className="flex-1 mt-4">
           <TouchableOpacity
             onPress={handleNext}
-            className={`rounded-xl p-3 items-center ${selectedGate ? 'bg-[#5163B5]' : 'bg-gray-400'}`}
-            disabled={!selectedGate} 
+            className={`rounded-xl py-4 items-center ${selectedGate ? 'bg-white' : 'bg-gray-300'}`}
+            disabled={!selectedGate}
+            style={{ elevation: 5 }}
           >
-            <Text className="text-white font-bold text-lg">Tiếp theo</Text>
+            <Text className={`font-bold text-xl ${selectedGate ? 'text-[#34495e]' : 'text-gray-500'}`}>Tiếp theo</Text>
           </TouchableOpacity>
         </View>
       </View>

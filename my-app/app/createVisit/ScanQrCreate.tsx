@@ -81,7 +81,7 @@ export default function ScanQrCreate() {
       } else {
 
         Alert.alert(
-          "No Data Found",
+          "Không tìm thấy dữ liệu",
           "Không tìm thấy dữ liệu cho ID này. Bạn sẽ được chuyển hướng đến tạo khách mới.",
           [
             {
@@ -105,7 +105,7 @@ export default function ScanQrCreate() {
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (data && !qrLock.current) {
       qrLock.current = true;
-      console.log("Scanned QR Code Data:", data);
+      console.log("Dữ liệu quét mã:", data);
       setScannedData(data); 
     }
   };
@@ -130,7 +130,7 @@ export default function ScanQrCreate() {
       <Overlay />
       {scannedData ? (
         <View style={styles.dataContainer}>
-          <Text style={styles.dataText}>Scanned Data: {scannedData}</Text>
+          <Text style={styles.dataText}>Dữ liệu quét: {scannedData}</Text>
         </View>
       ) : null}
     </SafeAreaView>

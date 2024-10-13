@@ -23,7 +23,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: "Trang chủ",
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name="home-circle"
@@ -63,7 +63,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="CreateCustomer"
         options={{
-          title: "Create",
+          title: "Tạo mới lịch hẹn",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name="create-outline"
@@ -77,7 +77,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
+          title: "Hồ sơ",
           tabBarIcon: ({ color, focused }) => (
             <FontAwesome name="user-circle-o" size={24} color={color} />
           ),

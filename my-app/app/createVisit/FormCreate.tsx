@@ -110,13 +110,13 @@ const FormCreate = () => {
     <ScrollView className="flex-1 bg-gradient-to-b from-blue-50 to-white">
       <View className="p-6">
         <Text className="text-3xl font-bold mb-6 text-blue-800 text-center">
-          Create Visit
+          Tạo mới lịch hẹn
         </Text>
 
         <View className="bg-white rounded-xl shadow-lg p-6 mb-6">
           <View className="mb-4">
             <Text className="text-sm font-semibold text-gray-700 mb-2">
-              Visit Name
+              Tiêu đề
             </Text>
             <TextInput
               className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-700"
@@ -127,7 +127,7 @@ const FormCreate = () => {
           </View>
           <View className="mb-4">
             <Text className="text-sm font-semibold text-gray-700 mb-2">
-              Description
+              Mô tả
             </Text>
             <TextInput
               className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-700"
@@ -140,7 +140,7 @@ const FormCreate = () => {
           </View>
           <View className="mb-4">
             <Text className="text-sm font-semibold text-gray-700 mb-2">
-              Expected Start Time
+              Thời gian bắt đầu
             </Text>
             <TouchableOpacity
               className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3"
@@ -162,7 +162,7 @@ const FormCreate = () => {
           </View>
           <View className="mb-4">
             <Text className="text-sm font-semibold text-gray-700 mb-2">
-              Expected End Time
+              Thời gian kết thúc
             </Text>
             <TouchableOpacity
               className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3"
@@ -189,7 +189,7 @@ const FormCreate = () => {
             disabled={isLoading}
           >
             <Text className="text-white text-center font-bold text-lg">
-              {isLoading ? "Creating..." : "Create Visit"}
+              {isLoading ? "Đang xử lý..." : "Tạo mới"}
             </Text>
           </TouchableOpacity>
         </View>

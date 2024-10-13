@@ -208,7 +208,7 @@ const CreateVisitor = () => {
             disabled={isLoading}
           >
             <Text className="text-white text-center font-bold text-lg">
-              {isLoading ? "Creating..." : "Create Visit"}
+              {isLoading ? "Đang xử lý..." : "Tạo mới"}
             </Text>
           </TouchableOpacity>
         </View>

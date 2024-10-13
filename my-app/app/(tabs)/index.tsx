@@ -35,9 +35,6 @@ export default function HomeScreen() {
     );
   }
 
- 
-  
-
   if (isError) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center bg-white">
@@ -46,85 +43,91 @@ export default function HomeScreen() {
     );
   }
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-[#FAFAFA]">
       <Header name="Đặng Dương" />
       <ScrollView className="flex-1">
-        <View className="justify-center items-center px-4 mb-8">
+        {/* <View className="justify-center items-center px-4 mb-8">
           <Image
             source={{
-              uri: "https://www.securitymagazine.com/ext/resources/images/security-guard-freepik.jpg?1624490387",
+              uri: "https://storage.googleapis.com/msgsndr/CaUsaDHBNHw2z2ThM8DV/media/64465bbdd1fb9b690670b270.jpeg",
             }}
             className="w-full h-48 rounded-2xl shadow-lg"
           />
-        </View>
-
-        {selectedGate && (
-          <View className="items-center mb-6">
-            <View className="bg-green-500 px-6 py-2 rounded-full shadow-md">
-              <Text className="text-xl text-white font-bold">
-                Cổng {selectedGate}
-              </Text>
+        </View> */}
+        <View className="bg-white py-6 ">
+          {selectedGate && (
+            <View className="items-center mb-6">
+              <View className="bg-[#34495e] px-6 py-4  rounded-lg shadow-md w-[89%]">
+                <Text className="text-xl text-center text-white font-bold">
+                  Cổng {selectedGate}
+                </Text>
+              </View>
             </View>
-          </View>
-        )}
+          )}
 
-        <View className="px-4">
-          <View className="flex-row justify-between items-center mb-6">
-            <Text className="text-2xl font-bold text-gray-800">Hôm nay</Text>
-            <TouchableOpacity className="bg-blue-500 px-4 py-2 rounded-full">
-              <Text className="text-white font-semibold">Xem tất cả</Text>
-            </TouchableOpacity>
-          </View>
+          <View className="px-4">
+            <View className="flex-row justify-between items-center mb-6">
+              <Text className="text-xl font-bold text-[#3d5a99]">
+                Lịch hẹn hôm nay
+              </Text>
+              <TouchableOpacity className="bg-[#3d5a99] px-4 py-2 rounded-full">
+                <Text className="text-white font-semibold">Xem tất cả</Text>
+              </TouchableOpacity>
+            </View>
 
-          {visits && visits.length > 0 ? (
-            visits.map((visit: Visit2) => (
-              <TouchableOpacity
-                key={visit.visitId}
-                onPress={() => {
-                  router.push({
-                    pathname: "/VisitDetail",
-                    
-                    params: { id: visit.visitId, visitName: visit.visitName, quantity: visit.visitQuantity },
-                  });
-                }}
-                className="mb-4 bg-white p-4 rounded-xl shadow-md border border-gray-100 transition-all duration-300 active:bg-gray-50"
-              >
-                <View className="flex-row items-center">
-                  <View className="mr-4 bg-indigo-100 p-3 rounded-full">
-                  <Image
-                        source={{
-                          uri: "https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678116-calendar-512.png",
-                        }}
-                        style={{ width: 33, height: 34, borderRadius: 25 }}
+            {visits && visits.length > 0 ? (
+              visits.map((visit: Visit2) => (
+                <TouchableOpacity
+                  key={visit.visitId}
+                  onPress={() => {
+                    router.push({
+                      pathname: "/VisitDetail",
+
+                      params: {
+                        id: visit.visitId,
+                        visitName: visit.visitName,
+                        quantity: visit.visitQuantity,
+                      },
+                    });
+                  }}
+                  className="mb-4 bg-[#3d5a99] p-4 rounded-xl shadow-lg transition-all duration-300 active:bg-gray-50 "
+                >
+                  <View className="flex-row items-center p-4 rounded-lg shadow-xl ">
+                    <View className="mr-4 p-3 bg-white rounded-full">
+                      <Ionicons
+                        name="calendar-outline"
+                        size={30}
+                        color="#3d5a99"
                       />
-                  </View>
-                  <View className="flex-1">
-                    <View className="flex-row items-center justify-between">
-                      <Text
-                        className={`font-bold text-lg ${
-                          visit.scheduleTypeName === "daily"
-                            ? "text-green-600"
-                            : "text-gray-800"
-                        }`}
-                      >
-                        {visit.visitName}
-                      </Text>
-                      <Text className="text-sm font-medium text-green-500">
-                        {visit.scheduleTypeName}
+                    </View>
+                    <View className="flex-1">
+                      <View className="flex-row items-center justify-between">
+                        <Text
+                          className={`font-bold text-lg ${
+                            visit.scheduleTypeName === "daily"
+                              ? "text-green-600"
+                              : "text-white"
+                          }`}
+                        >
+                          {visit.visitName}
+                        </Text>
+                        <Text className="text-sm font-medium text-white">
+                          {visit.scheduleTypeName}
+                        </Text>
+                      </View>
+                      <Text className="text-white mt-1">
+                        Số lượng khách: {visit.visitQuantity}
                       </Text>
                     </View>
-                    <Text className="text-gray-600 mt-1">
-                      Số lượng khách: {visit.visitQuantity}
-                    </Text>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))
-          ) : (
-            <Text className="text-center text-gray-500 italic">
-              Không có lịch hẹn nào
-            </Text>
-          )}
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Text className="text-center text-gray-500 italic">
+                Không có lịch hẹn nào
+              </Text>
+            )}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
