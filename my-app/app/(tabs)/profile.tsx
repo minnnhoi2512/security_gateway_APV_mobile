@@ -12,14 +12,14 @@ interface MenuItem {
 const Profile: React.FC = () => {
   const router = useRouter();
   const renderMenuItem = ({ icon, title, rightText }: MenuItem) => (
-    <TouchableOpacity className="flex-row items-center bg-white p-4 rounded-lg mb-4">
-      <View className="bg-gray-200 p-2 rounded-full mr-4">
+    <TouchableOpacity className="flex-row items-center bg-[#34495e] p-4 rounded-lg mb-4">
+      <View className="bg-white p-2 rounded-full mr-4">
         <Feather name={icon} size={24} color="#4B5563" />
       </View>
       <View className="flex-1">
-        <Text className="text-lg font-semibold">{title}</Text>
+        <Text className="text-lg font-semibold text-white">{title}</Text>
       </View>
-      {rightText && <Text className="text-blue-500">{rightText}</Text>}
+      {rightText && <Text className="text-orange-400">{rightText}</Text>}
     </TouchableOpacity>
   );
 
@@ -34,7 +34,7 @@ const Profile: React.FC = () => {
 
   return (
     <ScrollView className="bg-gray-100 flex-1">
-      <View className="bg-white rounded-b-3xl pb-6 shadow">
+      <View className="bg-[#34495e] rounded-b-3xl pb-6 shadow">
         <View className="items-center mt-12">
           <View className="bg-blue-200 rounded-full p-1">
             <Image
@@ -44,8 +44,8 @@ const Profile: React.FC = () => {
               className="w-24 h-24 rounded-full"
             />
           </View>
-          <Text className="text-xl font-bold mt-2">Đặng Dương</Text>
-          <Text className="text-gray-600">
+          <Text className="text-xl text-white font-bold mt-2">Đặng Dương</Text>
+          <Text className="text-white">
             duong@gmail.com | +84 098 901 331
           </Text>
         </View>
@@ -56,12 +56,12 @@ const Profile: React.FC = () => {
           <React.Fragment key={index}>{renderMenuItem(item)}</React.Fragment>
         ))}
        
-        <TouchableOpacity onPress={() => router.push("/login")} className="flex-row items-center bg-white p-4 rounded-lg mb-4">
+        <TouchableOpacity onPress={() => router.push("/login")} className="flex-row items-center bg-[#34495e] p-4 rounded-lg mb-4">
           <View className="bg-gray-200 p-2 rounded-full mr-4">
           <Feather name="log-out" size={24} color="#4B5563" />
           </View>
           <View className="flex-1">
-            <Text className="text-lg font-semibold">Đăng xuất</Text>
+            <Text className="text-lg text-white font-semibold">Đăng xuất</Text>
           </View>
         </TouchableOpacity>
       </View>

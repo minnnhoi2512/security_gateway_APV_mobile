@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Camera, CameraView } from "expo-camera";
+import { CameraView } from "expo-camera";
 import { Stack, useRouter } from "expo-router";
 import {
   AppState,
-  Linking,
   Platform,
   SafeAreaView,
   StatusBar,
@@ -14,11 +13,11 @@ import {
 
 import { Overlay } from "./OverLay";
 
+
 export default function Home() {
   const qrLock = useRef(false);
   const appState = useRef(AppState.currentState);
   const router = useRouter(); 
-  // const [scannedData, setScannedData] = useState("");
   const [scannedData, setScannedData] = useState("");
 
   useEffect(() => {
@@ -27,7 +26,7 @@ export default function Home() {
         appState.current.match(/inactive|background/) &&
         nextAppState === "active"
       ) {
-        qrLock.current = false;
+        qrLock.current = false; 
       }
       appState.current = nextAppState;
     });
@@ -43,11 +42,15 @@ export default function Home() {
       console.log("Scanned QR Code Data:", data);
       setScannedData(data);
       
-      setTimeout(() => {
+      const timeoutId  = setTimeout(() => {
         router.push({
           pathname: '/check-in/UserDetail',
           params: { data: data },
         });
+
+        setScannedData('');
+        qrLock.current = false;
+        clearTimeout(timeoutId);
       }, 500);
     }
   };
@@ -69,7 +72,7 @@ export default function Home() {
       <Overlay />
       {scannedData ? (
         <View style={styles.dataContainer}>
-          <Text style={styles.dataText}>Scanned Data: {scannedData}</Text>
+          <Text style={styles.dataText}>Dữ liệu quét: {scannedData}</Text>
         </View>
       ) : null}
     </SafeAreaView>

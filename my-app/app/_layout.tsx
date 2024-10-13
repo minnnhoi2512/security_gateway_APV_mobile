@@ -43,7 +43,7 @@ export default function RootLayout() {
             options={{ headerShown: true }}
           />
            <Stack.Screen
-            name="check-in/AssignQr"
+            name="createVisit/ScanQrCreate"
             options={{ headerShown: true }}
           />
           <Stack.Screen
@@ -52,6 +52,10 @@ export default function RootLayout() {
           />
            <Stack.Screen
             name="createVisit/FormCreate"
+            options={{ headerShown: true }}
+          />
+           <Stack.Screen
+            name="check-out/CheckOutCard"
             options={{ headerShown: true }}
           />
           <Stack.Screen name="PickGate" options={{ headerShown: false }} />

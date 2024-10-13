@@ -1,19 +1,17 @@
-
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-
+import { CreateVisit } from "@/Types/visit.type";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
-
 export const visitApi = createApi({
-  reducerPath: 'visitApi',
+  reducerPath: "visitApi",
   baseQuery: fetchBaseQuery({
     baseUrl: BASE_URL,
-    prepareHeaders: async  (headers) => {
-      const token = await  AsyncStorage.getItem('userToken');
+    prepareHeaders: async (headers) => {
+      const token = await AsyncStorage.getItem("userToken");
       if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
+        headers.set("Authorization", `Bearer ${token}`);
       }
       return headers;
     },
@@ -21,17 +19,30 @@ export const visitApi = createApi({
   endpoints: (builder) => ({
     getAllVisitsByCurrentDate: builder.query({
       query: () => {
-        const currentDate = new Date().toISOString().split('T')[0]
-        return `Visit/Day?pageSize=10&pageNumber=1&date=${currentDate}`
+        const currentDate = new Date().toISOString().split("T")[0];
+        return `Visit/Day?pageSize=10&pageNumber=1&date=${currentDate}`;
       },
     }),
     getVisitDetailById: builder.query({
       query: (visitId: string) => `Visit/VisitDetail/${visitId}`,
     }),
     getVisitByCredentialCard: builder.query({
-      query: (credentialCard: string) => `Visit/CredentialCard/${credentialCard}` ,
-    })
+      query: (credentialCard: string) =>
+        `Visit/CredentialCard/${credentialCard}`,
+    }),
+    createVisit: builder.mutation({
+      query: (visit: CreateVisit) => ({
+        url: "/Visit",
+        method: "POST",
+        body: visit,
+      }),
+    }),
   }),
 });
 
-export const { useGetAllVisitsByCurrentDateQuery, useGetVisitDetailByIdQuery, useGetVisitByCredentialCardQuery } = visitApi;
+export const {
+  useGetAllVisitsByCurrentDateQuery,
+  useGetVisitDetailByIdQuery,
+  useGetVisitByCredentialCardQuery,
+  useCreateVisitMutation
+} = visitApi;

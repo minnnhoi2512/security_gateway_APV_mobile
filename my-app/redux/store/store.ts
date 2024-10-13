@@ -7,6 +7,7 @@ import gateSlice from "../slices/gate.slice";
 import { qrcodeApi } from "../services/qrcode.service";
 import { checkinApi } from "../services/checkin.service";
 import { visitorSessionApi } from "../services/checkout.service";
+import { visitorApi } from "../services/visitor.service";
 
 export const store = configureStore({
   reducer: {
@@ -17,11 +18,12 @@ export const store = configureStore({
     [qrcodeApi.reducerPath]: qrcodeApi.reducer,
     [checkinApi.reducerPath]: checkinApi.reducer,
     [visitorSessionApi.reducerPath]: visitorSessionApi.reducer,
+    [visitorApi.reducerPath]: visitorApi.reducer,
 
   },
 
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(authApi.middleware, visitApi.middleware, gateApi.middleware, qrcodeApi.middleware, checkinApi.middleware,visitorSessionApi.middleware),
+    getDefaultMiddleware().concat(authApi.middleware, visitApi.middleware, gateApi.middleware, qrcodeApi.middleware, checkinApi.middleware,visitorSessionApi.middleware, visitorApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
