@@ -34,8 +34,8 @@ export interface Visitor {
     visitId: number;
     visitName: string;
     visitQuantity: number;
-    description: string | null;
-    createByname: string;
-    scheduleTypeName: string;
+    description?: string | null;
+    createByname?: string;
+    scheduleTypeName?: string;
   }
   

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useRouter } from "expo-router";
 import { useCameraPermissions } from "expo-camera";
 import { useGetAllVisitsByCurrentDateQuery } from "@/redux/services/visit.service";
-import Header from "@/components/Header";
+import Header from "@/components/UI/Header";
 import { Ionicons } from "@expo/vector-icons";
 const CreateCustomer = () => {
   const [permission, requestPermission] = useCameraPermissions();

@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 
-import Header from "@/components/Header";
+import Header from "@/components/UI/Header";
 
 const Checkout = () => {
   const router = useRouter();

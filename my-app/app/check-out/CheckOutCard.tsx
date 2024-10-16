@@ -21,7 +21,7 @@ import {
 import { useSelector } from "react-redux";
 import { Ionicons } from "@expo/vector-icons";
 
-import Header from "@/components/Header";
+import Header from "@/components/UI/Header";
 import { RootState } from "@/redux/store/store";
 
 const CheckoutCard = () => {

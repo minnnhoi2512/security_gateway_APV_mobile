@@ -399,7 +399,7 @@ const UserDetail = () => {
               onPress={() => {
                 if (visitUser) {
                   router.push({
-                    pathname: "/VisitDetail",
+                    pathname: "/home/VisitDetail",
                     params: {
                       // visitId: visitUser.visitId,
                       id: visitUser.visitId,

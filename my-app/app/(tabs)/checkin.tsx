@@ -7,7 +7,7 @@ import {
   StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Header from "@/components/Header";
+import Header from "@/components/UI/Header";
 import { useRouter } from "expo-router";
 import { useCameraPermissions } from "expo-camera";
 import { useSelector } from "react-redux";

@@ -2,21 +2,28 @@ import { View, Text, ScrollView, ImageBackground } from "react-native";
 import React from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
-import { VisitDetailType } from "@/redux/Types/visit.type";
+import { Visit2, VisitDetailType } from "@/redux/Types/visit.type";
 import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
 const VisitDetail = () => {
-  const { id, visitName, quantity } = useLocalSearchParams();
-  
+  const {  data } = useLocalSearchParams();
+  const visitData = data ? JSON.parse(data.toString()) : null;
+  console.log(visitData);
+  //console.log(data);
 
+  //   const visit: Visit2 = {
+  //   visitId: Number(visitData.visitId),
+  //   visitName: visitData.visitName.toString(),
+  //   visitQuantity: Number(visitData.visitQuantity)
+  // }
   const {
     data: visitDetail,
     isLoading,
     isError,
-  } = useGetVisitDetailByIdQuery(id as string);
+  } = useGetVisitDetailByIdQuery(visitData.visitId as string);
 
-  console.log("ID: ", id);
+  //console.log("ID: ", visitData.visitId);
 
 
   if (isLoading) {
@@ -71,7 +78,7 @@ const VisitDetail = () => {
               style={{ marginRight: 12 }}
             />
             <Text className="text-lg text-white">
-              {visitName || "N/A"}
+              {visitData.visitName || "N/A"}
               {/* Trạng thái:{" "}
               {visitDetail.status ? "Đang hoạt động" : "Đã kết thúc"} */}
             </Text>
@@ -84,7 +91,7 @@ const VisitDetail = () => {
               style={{ marginRight: 12 }}
             />
             <Text className="text-lg text-white">
-              Số lượng khách: {quantity || "N/A"}
+              Số lượng khách: {visitData.visitQuantity || "N/A"}
             </Text>
           </View>
         </LinearGradient>

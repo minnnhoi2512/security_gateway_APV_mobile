@@ -8,11 +8,12 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
-import Header from "@/components/Header";
+import Header from "@/components/UI/Header";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGetAllVisitsByCurrentDateQuery } from "@/redux/services/visit.service";
 import { Ionicons } from "@expo/vector-icons";
 import { Visit2 } from "@/redux/Types/visit.type";
+import VisitItem from "../home/VisitItem";
 // import calendar_icon from '@/assets/images/calendar.png'
 
 export default function HomeScreen() {
@@ -77,50 +78,9 @@ export default function HomeScreen() {
 
             {visits && visits.length > 0 ? (
               visits.map((visit: Visit2) => (
-                <TouchableOpacity
-                  key={visit.visitId}
-                  onPress={() => {
-                    router.push({
-                      pathname: "/VisitDetail",
-
-                      params: {
-                        id: visit.visitId,
-                        visitName: visit.visitName,
-                        quantity: visit.visitQuantity,
-                      },
-                    });
-                  }}
-                  className="mb-4 bg-[#3d5a99] p-4 rounded-xl shadow-lg transition-all duration-300 active:bg-gray-50 "
-                >
-                  <View className="flex-row items-center p-4 rounded-lg shadow-xl ">
-                    <View className="mr-4 p-3 bg-white rounded-full">
-                      <Ionicons
-                        name="calendar-outline"
-                        size={30}
-                        color="#3d5a99"
-                      />
-                    </View>
-                    <View className="flex-1">
-                      <View className="flex-row items-center justify-between">
-                        <Text
-                          className={`font-bold text-lg ${
-                            visit.scheduleTypeName === "daily"
-                              ? "text-green-600"
-                              : "text-white"
-                          }`}
-                        >
-                          {visit.visitName}
-                        </Text>
-                        <Text className="text-sm font-medium text-white">
-                          {visit.scheduleTypeName}
-                        </Text>
-                      </View>
-                      <Text className="text-white mt-1">
-                        Số lượng khách: {visit.visitQuantity}
-                      </Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
+                <View className="py-1">
+                <VisitItem key={visit.visitId} visit={visit} />
+                </View>
               ))
             ) : (
               <Text className="text-center text-gray-500 italic">
