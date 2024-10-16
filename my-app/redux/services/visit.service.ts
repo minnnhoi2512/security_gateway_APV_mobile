@@ -27,8 +27,10 @@ export const visitApi = createApi({
       query: (visitId: string) => `Visit/VisitDetail/${visitId}`,
     }),
     getVisitByCredentialCard: builder.query({
-      query: (credentialCard: string) =>
-        `Visit/CredentialCard/${credentialCard}`,
+      query: (credentialCard: string) => {
+        const currentDate = new Date().toISOString().split("T")[0];
+        return `Visit/CurrentDate/CredentialCard/${credentialCard}?date=${currentDate}`;
+      },
     }),
     createVisit: builder.mutation({
       query: (visit: CreateVisit) => ({
@@ -44,5 +46,5 @@ export const {
   useGetAllVisitsByCurrentDateQuery,
   useGetVisitDetailByIdQuery,
   useGetVisitByCredentialCardQuery,
-  useCreateVisitMutation
+  useCreateVisitMutation,
 } = visitApi;

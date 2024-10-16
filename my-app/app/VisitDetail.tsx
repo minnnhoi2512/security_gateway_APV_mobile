@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 import { VisitDetailType } from "@/redux/Types/visit.type";
 import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+
 
 const VisitDetail = () => {
   const { id, visitName, quantity } = useLocalSearchParams();
@@ -48,19 +48,19 @@ const VisitDetail = () => {
         className="w-full h-64 justify-end"
         resizeMode="cover"
       >
-        <LinearGradient
-          colors={["transparent", "rgba(0,0,0,0.8)"]}
+        <View
+          
           className="w-full h-32 justify-end p-4"
         >
           <Text className="text-3xl font-bold text-white">
             Chi tiết buổi hẹn
           </Text>
-        </LinearGradient>
+        </View>
       </ImageBackground>
 
       <View className="p-4">
-        <LinearGradient
-          colors={["#4c669f", "#3b5998", "#192f6a"]}
+        <View
+      
           className="p-4 rounded-xl shadow-lg mb-6"
         >
           <View className="flex-row items-center mb-3">
@@ -87,7 +87,7 @@ const VisitDetail = () => {
               Số lượng khách: {quantity || "N/A"}
             </Text>
           </View>
-        </LinearGradient>
+        </View>
 
         <Text className="text-2xl font-semibold mb-2 text-[#2e4053]">
           Chi tiết cuộc thăm
@@ -95,9 +95,9 @@ const VisitDetail = () => {
 
         {visitDetail && visitDetail.length > 0 ? (
           visitDetail.map((visit: VisitDetailType, index: number) => (
-            <LinearGradient
+            <View
               key={index}
-              colors={["#ffffff", "#f0f0f0"]}
+              
               className="p-6 rounded-xl shadow-md mb-4"
             >
               <View className="space-y-3">
@@ -157,7 +157,7 @@ const VisitDetail = () => {
                   </Text>
                 </View>
               </View>
-            </LinearGradient>
+            </View>
           ))
         ) : (
           <Text className="text-lg text-gray-800">

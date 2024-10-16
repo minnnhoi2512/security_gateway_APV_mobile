@@ -7,7 +7,7 @@ export interface Images {
   }
 
   export interface CheckIn {
-    visitDetailId: number;
+    visitDetailId: string;
     securityInId: number;
     gateInId: number;
     qrCardVerification: string;
