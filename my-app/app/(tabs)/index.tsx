@@ -72,8 +72,8 @@ export default function HomeScreen() {
 
               {visits && visits.length > 0 ? (
                 visits.map((visit: Visit2) => (
-                  <View className="py-1">
-                    <VisitItem key={visit.visitId} visit={visit} />
+                  <View className="py-1" key={visit.visitId} >
+                    <VisitItem visit={visit} />
                   </View>
                 ))
               ) : (
