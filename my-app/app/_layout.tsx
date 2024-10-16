@@ -47,6 +47,10 @@ export default function RootLayout() {
             options={{ headerShown: true }}
           />
           <Stack.Screen
+            name="check-in/ListVisit"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
             name="check-in/UserDetail"
             options={{ headerShown: true }}
           />

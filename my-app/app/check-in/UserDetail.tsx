@@ -14,6 +14,8 @@ import {
   GestureHandlerRootView,
   TouchableOpacity,
 } from "react-native-gesture-handler";
+ 
+import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Camera, CameraView, useCameraPermissions } from "expo-camera";
@@ -21,13 +23,17 @@ import * as ImagePicker from "expo-image-picker";
 
 import { uploadToFirebase } from "../../firebase-config";
 import { CheckIn } from "@/Types/checkIn.type";
-import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service";
+import {
+  useGetVisitByCredentialCardQuery,
+  useGetVisitDetailByIdQuery,
+} from "@/redux/services/visit.service";
 import { useShoeDetectMutation } from "@/redux/services/qrcode.service";
 import { useCheckInMutation } from "@/redux/services/checkin.service";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as RNPicker from "@react-native-picker/picker";
+import { VisitDetailType } from "@/redux/Types/visit.type";
 
 interface ScanData {
   id: string;
@@ -43,7 +49,9 @@ interface ImageData {
   imageURL: string;
 }
 const UserDetail = () => {
-  const { data } = useLocalSearchParams<{ data: string }>();
+  const { visitId } = useLocalSearchParams<{ visitId: string }>();
+  console.log("visit id: ", visitId);
+
   const router = useRouter();
 
   const [permission, requestPermission] = useCameraPermissions();
@@ -56,15 +64,6 @@ const UserDetail = () => {
     (state: RootState) => state.gate.selectedGateId
   );
 
-  let credentialCardId: string | null = null;
-  const parseQRData = (qrData: string): ScanData => {
-    const [id, nationalId, name, dateOfBirth, gender, address, issueDate] =
-      qrData.split("|");
-    credentialCardId = id;
-    return { id, nationalId, name, dateOfBirth, gender, address, issueDate };
-  };
-  const userData: ScanData | null = data ? parseQRData(data) : null;
-
   const [images, setImages] = useState<ImageData[]>([]);
 
   // RTK QUERY
@@ -72,17 +71,15 @@ const UserDetail = () => {
     shoeDetect,
     { isLoading: isDetecting, isError: isDetectError, data: detectData },
   ] = useShoeDetectMutation();
-  // const credentialCardId = userData?.id || null;
+
   const {
-    data: visitUser,
-    isLoading: isVisitLoading,
-    isError: isVisitError,
-    error: visitError,
-  } = useGetVisitByCredentialCardQuery(credentialCardId!, {
-    skip: !credentialCardId,
-  });
+    data: visitDetail,
+    isLoading,
+    isError,
+  } = useGetVisitDetailByIdQuery(visitId);
+
   const [checkIn, { isLoading: isCheckingIn }] = useCheckInMutation();
-// console.log("Visit User: ", visitUser);
+  // console.log("Visit User: ", visitUser);
 
   // RTK QUERY
   const [shoeDetectResult, setShoeDetectResult] = useState<boolean | null>(
@@ -91,22 +88,12 @@ const UserDetail = () => {
   const [securityConfirmation, setSecurityConfirmation] = useState<string>("");
   //CHECKIN DATA
   const [checkInData, setCheckInData] = useState<CheckIn>({
-    visitDetailId: visitUser ? visitUser.visitDetailId : 0,
+    visitDetailId: visitId,
     securityInId: 0,
     gateInId: Number(selectedGateId) || 0,
     qrCardVerification: "",
     images: [],
   });
-
-  useEffect(() => {
-    if (visitUser && visitUser.length > 0) {
-      const firstVisitUser = visitUser[0];
-      setCheckInData((prevData) => ({
-        ...prevData,
-        visitDetailId: firstVisitUser.visitDetailId,
-      }));
-    }
-  }, [visitUser]);
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -324,34 +311,23 @@ const UserDetail = () => {
     );
   }
 
-  if (isVisitLoading) {
+  if (isLoading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#6255fa" />
-        <Text>Loading user data...</Text>
-      </View>
-    );
-  }
-
-  if (isVisitError) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text>Error fetching visit data: {JSON.stringify(visitError)}</Text>
-        <Button
-          title="Retry"
-          onPress={() => router.replace("/check-in/UserDetail")}
-        />
-      </View>
-    );
-  }
-
-  if (!userData) {
-    return (
-      <SafeAreaView className="flex-1 bg-gray-100 justify-center items-center">
-        <Text className="text-xl font-bold text-gray-800">
-          Không có dữ liệu người dùng
+      <View className="flex-1 justify-center items-center bg-gray-100">
+        <Text className="text-xl font-semibold text-indigo-600">
+          Loading...
         </Text>
-      </SafeAreaView>
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View className="flex-1 justify-center items-center bg-gray-100">
+        <Text className="text-xl font-semibold text-red-500">
+          Error fetching visit details.
+        </Text>
+      </View>
     );
   }
 
@@ -362,57 +338,77 @@ const UserDetail = () => {
       <ScrollView>
         <GestureHandlerRootView className="flex-1 p-5">
           <View className="bg-[#6255fa] rounded-3xl p-6 mb-6 shadow-lg">
-            <Text className="text-3xl font-bold text-white text-center mb-4">
-              {userData.name}
-            </Text>
-            <View className="flex-row justify-between mb-4">
-              <View className="flex-row items-center">
-                <Feather name="credit-card" size={18} color="white" />
-                <Text className="text-white ml-2">CCCD: {userData.id}</Text>
+          {visitDetail && visitDetail.length > 0 ? (
+          visitDetail.map((visit: VisitDetailType, index: number) => (
+            <View
+              key={index}
+        
+              className="p-6 rounded-xl shadow-md mb-4"
+            >
+              <View className="space-y-3">
+                <View className="flex-row items-center">
+                  <MaterialIcons
+                    name="access-time"
+                    size={24}
+                    color="#4c669f"
+                    style={{ marginRight: 12 }}
+                  />
+                  <Text className="text-lg text-gray-800">
+                    Bắt đầu: {visit.expectedStartHour || "N/A"}
+                  </Text>
+                </View>
+                <View className="flex-row items-center">
+                  <MaterialIcons
+                    name="access-time"
+                    size={24}
+                    color="#4c669f"
+                    style={{ marginRight: 12 }}
+                  />
+                  <Text className="text-lg text-gray-800">
+                    Kết thúc: {visit.expectedEndHour || "N/A"}
+                  </Text>
+                </View>
+                <View className="flex-row items-center">
+                  <FontAwesome5
+                    name="building"
+                    size={24}
+                    color="#4c669f"
+                    style={{ marginRight: 12 }}
+                  />
+                  <Text className="text-lg text-gray-800">
+                    Công ty: {visit.visitor?.companyName || "N/A"}
+                  </Text>
+                </View>
+                <View className="flex-row items-center">
+                  <FontAwesome5
+                    name="user"
+                    size={24}
+                    color="#4c669f"
+                    style={{ marginRight: 12 }}
+                  />
+                  <Text className="text-lg text-gray-800">
+                    Người tham gia: {visit.visitor?.visitorName || "N/A"}
+                  </Text>
+                </View>
+                <View className="flex-row items-center">
+                  <FontAwesome5
+                    name="phone"
+                    size={24}
+                    color="#4c669f"
+                    style={{ marginRight: 12 }}
+                  />
+                  <Text className="text-lg text-gray-800">
+                    Số điện thoại: {visit.visitor?.phoneNumber || "N/A"}
+                  </Text>
+                </View>
               </View>
             </View>
-            <View className="flex-row items-center mb-2">
-              <Feather name="calendar" size={18} color="white" />
-              <Text className="text-white ml-2">
-                Ngày sinh: {userData.dateOfBirth}
-              </Text>
-            </View>
-            <View className="flex-row items-center mb-2">
-              <Feather name="user" size={18} color="white" />
-              <Text className="text-white ml-2">
-                Giới tính: {userData.gender}
-              </Text>
-            </View>
-            <View className="flex-row items-center mb-4">
-              <Feather name="map-pin" size={18} color="white" />
-              <Text className="text-white ml-2 text-base">
-                {userData.address}
-              </Text>
-            </View>
-            <View className="flex-row items-center mb-4">
-              <Feather name="calendar" size={18} color="white" />
-              <Text className="text-white ml-2 text-base">
-                Ngày cấp: {userData.issueDate}
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => {
-                if (visitUser) {
-                  router.push({
-                    pathname: "/home/VisitDetail",
-                    params: {
-                      // visitId: visitUser.visitId,
-                      id: visitUser.visitId,
-                    },
-                  });
-                }
-              }}
-              className="bg-white rounded-lg py-3 px-4 shadow-md"
-            >
-              <Text className="text-[#6255fa] text-lg font-semibold text-center">
-                Xem chi tiết lịch hẹn
-              </Text>
-            </TouchableOpacity>
+          ))
+        ) : (
+          <Text className="text-lg text-gray-800">
+            No visit details available.
+          </Text>
+        )}
           </View>
           <Text className="text-xl font-bold text-gray-800 mb-4">Chụp ảnh</Text>
           {/* Shoe photo section */}
@@ -673,5 +669,4 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f0f0",
     borderRadius: 5,
   },
-  
 });

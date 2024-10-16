@@ -1,10 +1,41 @@
+// import React from 'react';
+// import { View, StyleSheet, Dimensions } from 'react-native';
+
+// const { width, height } = Dimensions.get('window');
+// const innerDimension = 300;
+
+// export const Overlay = () => {
+//   return (
+//     <View style={styles.container}>
+//       <View style={styles.overlay} />
+//       <View style={styles.innerHole} />
+//     </View>
+//   );
+// };
+
+// const styles = StyleSheet.create({
+//   container: {
+//     ...StyleSheet.absoluteFillObject,
+//   },
+//   overlay: {
+//     ...StyleSheet.absoluteFillObject,
+//     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+//   },
+//   innerHole: {
+//     position: 'absolute',
+//     width: innerDimension,
+//     height: innerDimension,
+//     left: width / 2 - innerDimension / 2,
+//     top: height / 2 - innerDimension / 2,
+//     backgroundColor: 'transparent',
+//     borderRadius: 50,
+//   },
+// });
+
 import { Canvas, DiffRect, rect, rrect } from "@shopify/react-native-skia";
 import { Dimensions, Platform, StyleSheet } from "react-native";
-
 const { width, height } = Dimensions.get("window");
-
-const innerDimension = 300;
-
+const innerDimension = 200;
 const outer = rrect(rect(0, 0, width, height), 0, 0);
 const inner = rrect(
   rect(
@@ -16,7 +47,6 @@ const inner = rrect(
   50,
   50
 );
-
 export const Overlay = () => {
   return (
     <Canvas
