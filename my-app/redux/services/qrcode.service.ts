@@ -49,6 +49,9 @@ export const qrcodeApi = createApi({
         return response;
       },
     }),
+    getDataByCardVerification: builder.query({
+      query: (cardVerification: string) => `QRCode/${cardVerification}`
+    })
   }),
 });
 
@@ -67,4 +70,4 @@ console.log(`Final file URI being sent: ${fileUri}`);
   return formData;
 }
 
-export const { useShoeDetectMutation } = qrcodeApi;
+export const { useShoeDetectMutation, useGetDataByCardVerificationQuery } = qrcodeApi;

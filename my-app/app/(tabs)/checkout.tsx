@@ -17,7 +17,7 @@ import { useRouter } from "expo-router";
 
 import Header from "@/components/UI/Header";
 import { useState } from "react";
-import ButtonSingleTextMainColor from './../../components/UI/ButtonSingleTextMainColor';
+import ButtonSingleTextMainColor from '../../components/UI/ButtonSingleTextMainColor';
 import { Ionicons } from "@expo/vector-icons";
 import { useGetVissitorSessionByCredentialIdQuery } from "@/redux/services/checkout.service";
 import { VisitorSessionType } from "@/Types/VisitorSession.Type";

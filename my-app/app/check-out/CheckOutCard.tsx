@@ -102,11 +102,11 @@ const CheckoutCard = () => {
     }
   }, [userId, selectedGateId]);
 
-  useEffect(() => {
-    if (visitorSession == undefined) {
-      return    Alert.alert("Thành công", "k co data!");
-    }
-  }, [isLoading]);
+  // useEffect(() => {
+  //   if (visitorSession == undefined) {
+  //     return    Alert.alert("Thành công", "k co data!");
+  //   }
+  // }, [isLoading]);
 
   const handleBarCodeScanned = useCallback(
     async ({ data }: { data: string }) => {
