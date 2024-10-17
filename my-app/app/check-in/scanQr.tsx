@@ -130,7 +130,7 @@ export default function Home() {
                 pathname: "/check-in/ListVisit",
                 params: { data: JSON.stringify(visitOfUser) },
               });
-              resetState();
+              // resetState();
               console.log("Navigating to UserDetail with data:", scannedData);
             },
           },

@@ -52,7 +52,7 @@ export default function RootLayout() {
           />
           <Stack.Screen
             name="check-in/UserDetail"
-            options={{ headerShown: true }}
+            options={{ headerShown: false }}
           />
            <Stack.Screen
             name="createVisit/FormCreate"
