@@ -4,10 +4,11 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 import { Visit2, VisitDetailType } from "@/redux/Types/visit.type";
 import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
+import VisitItem from "./VisitItem";
 
 
 const VisitDetail = () => {
-  const {  data } = useLocalSearchParams();
+  const { data } = useLocalSearchParams();
   const visitData = data ? JSON.parse(data.toString()) : null;
   console.log(visitData);
   //console.log(data);
@@ -56,7 +57,7 @@ const VisitDetail = () => {
         resizeMode="cover"
       >
         <View
-          
+
           className="w-full h-32 justify-end p-4"
         >
           <Text className="text-3xl font-bold text-white">
@@ -67,44 +68,21 @@ const VisitDetail = () => {
 
       <View className="p-4">
         <View
-      
-          className="p-4 rounded-xl shadow-lg mb-6"
+
+          className=" rounded-xl shadow-lg mb-6"
         >
-          <View className="flex-row items-center mb-3">
-            <FontAwesome5
-              name="calendar-alt"
-              size={24}
-              color="#FFFFFF"
-              style={{ marginRight: 12 }}
-            />
-            <Text className="text-lg text-white">
-              {visitData.visitName || "N/A"}
-              {/* Trạng thái:{" "}
-              {visitDetail.status ? "Đang hoạt động" : "Đã kết thúc"} */}
-            </Text>
-          </View>
-          <View className="flex-row items-center">
-            <FontAwesome5
-              name="users"
-              size={24}
-              color="#FFFFFF"
-              style={{ marginRight: 12 }}
-            />
-            <Text className="text-lg text-white">
-              Số lượng khách: {visitData.visitQuantity || "N/A"}
-            </Text>
-          </View>
+          <VisitItem visit={visitData}/>
         </View>
 
         <Text className="text-2xl font-semibold mb-2 text-[#2e4053]">
-          Chi tiết cuộc thăm
+          Chi tiết cuộc hẹn
         </Text>
 
         {visitDetail && visitDetail.length > 0 ? (
           visitDetail.map((visit: VisitDetailType, index: number) => (
             <View
               key={index}
-              
+
               className="p-6 rounded-xl shadow-md mb-4"
             >
               <View className="space-y-3">

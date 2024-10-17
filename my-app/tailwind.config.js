@@ -5,7 +5,10 @@ module.exports = {
       extend: {
         colors: {
           backgroundApp: '#34495e',  
-          buttonColors: '#28b463'
+          buttonGreen: '#28b463',
+          textWhile: '#FFFFFF',
+          textBlack: '#000000',
+
       },
       },
     },
