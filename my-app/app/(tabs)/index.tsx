@@ -65,7 +65,7 @@ export default function HomeScreen() {
                 <Text className="text-xl font-bold text-[#3d5a99]">
                   Lịch hẹn hôm nay
                 </Text>
-                <TouchableOpacity className="bg-buttonColors px-4 py-2 rounded-full">
+                <TouchableOpacity className="bg-buttonGreen px-4 py-2 rounded-full">
                   <Text className="text-white font-semibold">Xem tất cả</Text>
                 </TouchableOpacity>
               </View>

@@ -18,7 +18,10 @@ export const visitorSessionApi = createApi({
     getVissitorSession: builder.query({
       query: (qrCardVerified: string) => `VisitorSession/QrCard/${qrCardVerified}`,
     }),
+    getVissitorSessionByCredentialId: builder.query({
+      query: (credentialId: string) => `VisitorSession/CheckIn/CredentialId/${credentialId}`,
+    }),
   }),
 });
 
-export const { useCheckOutMutation, useGetVissitorSessionQuery } = visitorSessionApi;
+export const { useCheckOutMutation, useGetVissitorSessionQuery, useGetVissitorSessionByCredentialIdQuery } = visitorSessionApi;
