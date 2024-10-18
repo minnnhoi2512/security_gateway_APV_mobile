@@ -88,7 +88,7 @@ export default function Home() {
             onPress: () => {
               resetState();
               router.push({
-                pathname: "/(tabs)/",
+                pathname: "/(tabs)/Checkin",
               });
             },
           },
