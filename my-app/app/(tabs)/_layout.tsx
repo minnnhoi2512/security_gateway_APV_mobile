@@ -26,7 +26,7 @@ export default function TabLayout() {
         }}
       >
         <Tabs.Screen
-          name="Checkin"
+          name="checkin"
           options={{
             title: "Check in",
             tabBarIcon: ({ color, focused }) => (
@@ -40,7 +40,7 @@ export default function TabLayout() {
         />
 
         <Tabs.Screen
-          name="Checkout"
+          name="checkout"
           options={{
             title: "Check out",
             // tabBarIcon: ({ color, focused }) => (
@@ -73,7 +73,7 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="CreateCustomer"
+          name="createCustomer"
           options={{
             title: "Tạo mới lịch hẹn",
             tabBarIcon: ({ color, focused }) => (
