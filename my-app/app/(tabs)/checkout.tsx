@@ -16,27 +16,28 @@ import {
 import { useRouter } from "expo-router";
 
 import Header from "@/components/UI/Header";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ButtonSingleTextMainColor from '../../components/UI/ButtonSingleTextMainColor';
 import { Ionicons } from "@expo/vector-icons";
 import { useGetVissitorSessionByCredentialIdQuery } from "@/redux/services/checkout.service";
 import { VisitorSessionType } from "@/Types/VisitorSession.Type";
+import ModalSearch from "@/components/UI/ModalSearch";
 
 const Checkout = () => {
   const router = useRouter();
   const [isModalVisible, setModalVisible] = useState(false);
   const [cccd, setCccd] = useState("");
   const [visitorSessionData, setVisitorSessionData] = useState([]);
-
+  const [isCameraActive, setIsCameraActive] = useState(false);
   const handleOptionSelect = () => {
     Alert.alert(
       "Chọn phương thức check out",
       "Vui lòng chọn một trong các tùy chọn bên dưới",
       [
-        {
-          text: "Quét bằng thẻ",
-          onPress: () => router.push("/check-out/CheckOutCard"),
-        },
+        // {
+        //   text: "Quét bằng thẻ",
+        //   onPress: () => router.push("/check-out/CheckOutCard"),
+        // },
         {
           text: "Quét bằng CCCD",
           // onPress: () => router.push("/(tabs)check-out/CheckOutCard"),
@@ -50,91 +51,74 @@ const Checkout = () => {
       ]
     );
   };
-  
-  const { data, error, isLoading } = useGetVissitorSessionByCredentialIdQuery(cccd, {
-    skip: !cccd, 
-    refetchOnFocus: true, 
-    refetchOnReconnect: true, 
+
+  const { data, error, isLoading, refetch } = useGetVissitorSessionByCredentialIdQuery(cccd, {
+    skip: !cccd,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
   });
-  const handleSeachVisitSessionBCredentialCard = () =>{
-    console.log(error)
-    console.log(isLoading)
-    console.log(cccd);
-    if (data) {
+  const handleSeachVisitSessionBCredentialCard = () => {
+    if (isLoading) {
+      console.log("Đang tải dữ liệu...");
+      return;
+    }
+
+    // Khi có dữ liệu trả về
+    if ( !isLoading && data && !error) {
+      console.log(isLoading)
       console.log("Dữ liệu phiên khách:", data);
+      router.push("/check-out/CheckOutCard")
       setVisitorSessionData(data);
-      setModalVisible(false);
+      setModalVisible(false)
     } else if (error) {
+      console.log("Dữ liệu phiên khách:", data);
+
       Alert.alert("Lỗi", "Không tìm thấy phiên khách với CCCD đã nhập.");
     }
+    // console.log(error)
+    // console.log(isLoading)
+    // console.log(cccd);
   }
   return (
-    <SafeAreaView>
+    <SafeAreaView className="flex-1">
       <Header name="Đặng Dương" />
+      <View className="flex-1 justify-center mt-[80px] items-center px-4">
+        <TouchableOpacity
+          onPress={() => setIsCameraActive(true)}
+          className="bg-[#34495e] rounded-2xl p-6 items-center justify-center w-64 h-64 shadow-lg"
+        >
+          <Ionicons name="qr-code-outline" size={100} color="white" />
+          <Text className="text-white font-bold text-lg mt-4">
+            Quét mã QR
+          </Text>
+        </TouchableOpacity>
+        <View className="p-4 ">
+          <Text className="text-2xl font-bold text-[#34495e]">
+            Tiến hành check out
+          </Text>
+        </View>
+      </View>
       <View className="items-center justify-center">
         <ButtonSingleTextMainColor
-          text="Chọn hình thức rời đi"
+          text="khách mất thẻ"
           onPress={handleOptionSelect}
           width={200}
           height={50}
         />
       </View>
-      {visitorSessionData && (
-        <View className="mt-4 p-4 bg-white rounded shadow">
-          <Text className="text-lg font-bold">Thông tin phiên khách:</Text>
-          {visitorSessionData && visitorSessionData.length > 0 ? (
-            visitorSessionData.map((session : VisitorSessionType, index : number) => (
-              <View key={index} className="mt-2">
-              <Text>Thời gian vào: {new Date(session.checkinTime).toLocaleString()}</Text>
-              <Text>Thời gian ra: {session.checkoutTime ? new Date(session.checkoutTime).toLocaleString() : 'Chưa ra'}</Text>
-              <Text>Cổng vào: {session.gateIn.gateName}</Text>
-              <Text>Trạng thái: {session.status}</Text>
-              <Text>Người bảo vệ vào: {session.securityIn.fullName}</Text>
-              </View>
-            ))
-          ) : ("")}
-        </View>
-      )}
+      <View>
+        <ModalSearch
+          isVisible={isModalVisible}
+          onClose={() => setModalVisible(false)}
+          value={cccd}
+          setValue={setCccd}
+          handleSearch={handleSeachVisitSessionBCredentialCard}
+          isLoading={isLoading}
+          error={error}
+          placeholder="Nhập CCCD"
+        />
+      </View>
 
-      <Modal visible={isModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => {
-          setModalVisible(!isModalVisible);
-        }}
-      >
-        <View className='flex-1 justify-center items-center bg-[rgba(0,0,0,0.5)]'>
-          <View className="w-72 bg-white rounded-lg p-5 items-center shadow-lg">
-
-            <TouchableOpacity
-              className="absolute top-3 right-3"
-              onPress={() => {setModalVisible(false);
-                setCccd("")
-              }}
-            >
-              <Ionicons name="close" size={24} color="black" />
-            </TouchableOpacity>
-            <Text className="text-xl font-bold mb-4">
-              Nhập CCCD
-            </Text>
-            <TextInput className="w-full p-2 border border-gray-300 rounded mb-5"
-              onChangeText={(text) => setCccd(text)}
-              keyboardType="numeric"
-            />
-            <TouchableOpacity>
-              <ButtonSingleTextMainColor 
-              text="Tìm"
-              onPress={handleSeachVisitSessionBCredentialCard}
-              width={200}
-              height={50}/>
-            </TouchableOpacity>
-            {isLoading && <ActivityIndicator size="small" color="#0000ff" />}
-            {error && (
-              <Text className="text-red-500 mt-3"> Không tìm thấy khách thăm này</Text>
-            ) }
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };
