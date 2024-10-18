@@ -46,8 +46,17 @@ export default function Home() {
   });
 
   const parseQRData = (qrData: string): ScanData | null => {
-    const [id, nationalId, name, dateOfBirth, gender, address, issueDate] = qrData.split("|");
-    if (id && nationalId && name && dateOfBirth && gender && address && issueDate) {
+    const [id, nationalId, name, dateOfBirth, gender, address, issueDate] =
+      qrData.split("|");
+    if (
+      id &&
+      nationalId &&
+      name &&
+      dateOfBirth &&
+      gender &&
+      address &&
+      issueDate
+    ) {
       return { id, nationalId, name, dateOfBirth, gender, address, issueDate };
     }
     return null;
@@ -84,11 +93,20 @@ export default function Home() {
       } else {
         Alert.alert("Thông báo", "Không có dữ liệu visit cho người dùng này.", [
           {
-            text: "OK",
+            text: "Trở về",
             onPress: () => {
               resetState();
               router.push({
-                pathname: "/(tabs)/",
+                pathname: "/(tabs)/Checkin",
+              });
+            },
+          },
+          {
+            text: "Tạo mới lịch hẹn",
+            onPress: () => {
+              resetState();
+              router.push({
+                pathname: "/(tabs)/CreateCustomer",
               });
             },
           },
@@ -162,7 +180,7 @@ export default function Home() {
     }
   };
 
-  console.log("visit data: ", visitOfUser);
+  // console.log("visit data: ", visitOfUser);
   console.log("CCCD ID: ", credentialCardId);
   console.log("Current scanned data:", scannedData);
 

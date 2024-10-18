@@ -69,6 +69,7 @@ const UserDetail = () => {
     isLoading,
     isError,
   } = useGetVisitDetailByIdQuery(visitId);
+  console.log("VISIT DETAIL: ", visitDetail);
 
   //CHECKIN DATA
   const [checkInData, setCheckInData] = useState<CheckIn>({
@@ -331,7 +332,7 @@ const UserDetail = () => {
     }
   };
 
-  console.log("DATA CI: ", checkInData);
+  // console.log("DATA CI: ", checkInData);
 
   //PERMISSION VIEW
   if (!isPermissionGranted) {
@@ -384,24 +385,6 @@ const UserDetail = () => {
               visitDetail.map((visit: VisitDetailType, index: number) => (
                 <View key={index} className="space-y-4">
                   <View className="flex-row items-center space-x-3">
-                    <MaterialIcons name="access-time" size={24} color="#fff" />
-                    <Text className="text-lg text-white">
-                      Bắt đầu: {visit.expectedStartHour || "N/A"}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center space-x-3">
-                    <MaterialIcons name="access-time" size={24} color="#fff" />
-                    <Text className="text-lg text-white">
-                      Kết thúc: {visit.expectedEndHour || "N/A"}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center space-x-3">
-                    <FontAwesome5 name="building" size={24} color="#fff" />
-                    <Text className="text-lg text-white">
-                      Công ty: {visit.visitor?.companyName || "N/A"}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center space-x-3">
                     <FontAwesome5 name="user" size={24} color="#fff" />
                     <Text className="text-lg text-white">
                       Người tham gia: {visit.visitor?.visitorName || "N/A"}
@@ -413,6 +396,33 @@ const UserDetail = () => {
                       Số điện thoại: {visit.visitor?.phoneNumber || "N/A"}
                     </Text>
                   </View>
+                  <View className="flex-row items-center space-x-3">
+                    <FontAwesome5 name="building" size={24} color="#fff" />
+                    <Text className="text-lg text-white">
+                      Công ty: {visit.visitor?.companyName || "N/A"}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center space-x-3">
+                    <MaterialIcons name="access-time" size={24} color="#fff" />
+                    <Text className="text-lg text-white">
+                      Bắt đầu: {visit.expectedStartHour || "N/A"}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center space-x-3">
+                    <MaterialIcons name="access-time" size={24} color="#fff" />
+                    <Text className="text-lg text-white">
+                      Kết thúc: {visit.expectedEndHour || "N/A"}
+                    </Text>
+                  </View>
+
+                  <View className="flex items-center space-x-3 mb-2">
+                    <Text className="text-lg text-white">CCCD:</Text>
+                  </View>
+                  <Image
+                    src={`data:image/;base64,${visit.visitor.visitorCredentialImage}`}
+                    className="w-full h-48 rounded-lg object-contain"
+                    alt="CCCD"
+                  />
                 </View>
               ))
             ) : (

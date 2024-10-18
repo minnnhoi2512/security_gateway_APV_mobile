@@ -11,7 +11,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { Camera, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Picker } from "@react-native-picker/picker";
 import { useCreateVisitorMutation } from "@/redux/services/visitor.service";
 import { Visitor } from "@/Types/visitor.type";
@@ -28,6 +28,7 @@ const CreateVisitor = () => {
   const { data } = useLocalSearchParams<{ data: string }>();
   const [permission, requestPermission] = useCameraPermissions();
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
+  const router = useRouter();
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [createVisitor, { isLoading }] = useCreateVisitorMutation();
   let credentialCardId: string | null = null;
@@ -114,7 +115,14 @@ const CreateVisitor = () => {
   
     try {
       const response = await createVisitor(formData).unwrap();
-      Alert.alert("Success", "Visitor created successfully!");
+      Alert.alert("Thành công", "Tạo khách ghé thăm thành công!", [
+        {
+          text: "OK",
+          onPress: () => {
+            router.push('/(tabs)/CreateCustomer');
+          },
+        },
+      ]);
     } catch (error: any) {
       console.error("Failed to create visitor:", JSON.stringify(error, null, 2));
   
@@ -150,32 +158,30 @@ const CreateVisitor = () => {
   return (
     <ScrollView className="flex-1 bg-gradient-to-b from-blue-50 to-white">
       <View className="p-6">
-        <Text className="text-3xl font-bold mb-6 text-blue-800 text-center">
+        <Text className="text-3xl font-bold mb-6 text-backgroundApp text-center">
           Tạo khách đến thăm
         </Text>
 
-        <View className="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <View className="bg-backgroundApp rounded-xl shadow-lg p-6 mb-6">
           <View className="mb-4">
-            <Text className="text-sm font-semibold text-gray-700 mb-2">
-              CCCD
-            </Text>
-            <View className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-700" />
-            <Text> {userData?.id || ""}</Text>
+        
+            <View className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-white" />
+            <Text> CCCD: {userData?.id || ""}</Text>
           </View>
 
           <View className="mb-4">
-            <Text className="text-sm font-semibold text-gray-700 mb-2">
+            {/* <Text className="text-sm font-semibold text-gray-700 mb-2">
               Tên khách hàng
-            </Text>
-            <View className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-700" />
-            <Text>{userData?.name || ""}</Text>
+            </Text> */}
+            <View className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-white" />
+            <Text> Tên khách hàng: {userData?.name || ""}</Text>
           </View>
           <View className="mb-4">
             <Text className="text-sm font-semibold text-gray-700 mb-2">
               Số điện thoại
             </Text>
             <TextInput
-              className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-700"
+              className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-white"
               value={visitor.PhoneNumber}
               onChangeText={(text) => handleInputChange('PhoneNumber', text)}
               placeholder="Nhập số điện thoại"
@@ -186,7 +192,7 @@ const CreateVisitor = () => {
               Tên công ty
             </Text>
             <TextInput
-              className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-700"
+              className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-white"
               value={visitor.CompanyName}
               onChangeText={(text) => handleInputChange('CompanyName', text)}
               placeholder="Nhập tên công ty"
@@ -195,7 +201,7 @@ const CreateVisitor = () => {
           <View className="mb-4">
             <TouchableOpacity
               onPress={() => takePhoto()}
-              className="bg-green-500 p-3 rounded-lg"
+              className="bg-buttonColors p-3 rounded-lg"
             >
               <Text className="text-white text-center">Chụp ảnh CCCD</Text>
             </TouchableOpacity>

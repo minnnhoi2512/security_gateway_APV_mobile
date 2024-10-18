@@ -56,7 +56,7 @@ export default function RootLayout() {
           />
            <Stack.Screen
             name="createVisit/FormCreate"
-            options={{ headerShown: true }}
+            options={{ headerShown: false }}
           />
            <Stack.Screen
             name="check-out/CheckOutCard"

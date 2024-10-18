@@ -34,7 +34,7 @@ export const visitApi = createApi({
     }),
     createVisit: builder.mutation({
       query: (visit: CreateVisit) => ({
-        url: "/Visit",
+        url: "/Visit/Daily",
         method: "POST",
         body: visit,
       }),

@@ -6,6 +6,7 @@ import {
   AppState,
   Linking,
   Platform,
+  Pressable,
   SafeAreaView,
   StatusBar,
   StyleSheet,
@@ -75,11 +76,9 @@ export default function ScanQrCreate() {
       qrLock.current = true;
 
       if (visitData) {
-
         router.push("/createVisit/FormCreate");
         console.log("Visit search:", visitData);
       } else {
-
         Alert.alert(
           "Không tìm thấy dữ liệu",
           "Không tìm thấy dữ liệu cho ID này. Bạn sẽ được chuyển hướng đến tạo khách mới.",
@@ -88,11 +87,11 @@ export default function ScanQrCreate() {
               text: "OK",
               onPress: () => {
                 router.push({
-                  pathname: '/createVisitor/CreateVisitor',
+                  pathname: "/createVisitor/CreateVisitor",
                   params: { data: scannedData },
                 });
-                qrLock.current = false; 
-                setAlertDisplayed(false); 
+                qrLock.current = false;
+                setAlertDisplayed(false);
               },
             },
           ]
@@ -105,14 +104,16 @@ export default function ScanQrCreate() {
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (data && !qrLock.current) {
       qrLock.current = true;
-      console.log("Dữ liệu quét mã:", data);
-      setScannedData(data); 
+      // console.log("Dữ liệu quét mã:", data);
+      setScannedData(data);
     }
   };
 
-  console.log("scannedData: ", scannedData);
-  console.log("credentialCardId: ", credentialCardId);
-
+  // console.log("scannedData: ", scannedData);
+  // console.log("credentialCardId: ", credentialCardId);
+  const handleGoBack = () => {
+    router.back();
+  };
   return (
     <SafeAreaView style={StyleSheet.absoluteFillObject}>
       <Stack.Screen
@@ -128,11 +129,15 @@ export default function ScanQrCreate() {
         onBarcodeScanned={handleBarCodeScanned}
       />
       <Overlay />
-      {scannedData ? (
+
+      <Pressable style={styles.backButton} onPress={handleGoBack}>
+        <Text style={styles.backButtonText}>Quay về</Text>
+      </Pressable>
+      {/* {scannedData ? (
         <View style={styles.dataContainer}>
           <Text style={styles.dataText}>Dữ liệu quét: {scannedData}</Text>
         </View>
-      ) : null}
+      ) : null} */}
     </SafeAreaView>
   );
 }
@@ -148,6 +153,19 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   dataText: {
+    color: "white",
+    fontSize: 16,
+  },
+
+  backButton: {
+    position: "absolute",
+    top: 60,
+    left: 20,
+    padding: 10,
+    backgroundColor: "black",
+    borderRadius: 5,
+  },
+  backButtonText: {
     color: "white",
     fontSize: 16,
   },
