@@ -6,6 +6,7 @@ export interface Visitor {
     updatedDate: string;
     credentialsCard: string;
     credentialCardType: string | null;
+    visitorCredentialImage: string
   }
   
   export interface VisitDetailType {
