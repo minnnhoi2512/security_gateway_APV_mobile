@@ -11,12 +11,14 @@ import {
   Pressable,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useRouter } from "expo-router";
+import {  useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 
 const FormCreate = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
+  const { visitorId } = useLocalSearchParams<{ visitorId: string }>();
+  const visitorIdNumber = Number(visitorId);
   const [createVisit, { isLoading }] = useCreateVisitMutation();
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
@@ -27,6 +29,9 @@ const FormCreate = () => {
     const seconds = String(now.getSeconds()).padStart(2, "0");
     return `${hours}:${minutes}:${seconds}`;
   };
+
+
+  
   const [visitData, setVisitData] = useState({
     visitName: "",
     visitQuantity: 1,
@@ -39,10 +44,11 @@ const FormCreate = () => {
       {
         expectedStartHour: getCurrentTime(),
         expectedEndHour: "17:00:00",
-        visitorId: 1,
+        visitorId: visitorIdNumber,
       },
     ],
   });
+console.log("VISITOR ID ne 3: ", visitorId);
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -154,10 +160,10 @@ const FormCreate = () => {
               Tiêu đề
             </Text>
             <TextInput
-              className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-white"
+              className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-backgroundApp"
               value={visitData.visitName}
               onChangeText={(text) => handleInputChange("visitName", text)}
-              placeholder="Enter visit name"
+              placeholder="Nhập tên khách hàng"
             />
           </View>
           <View className="mb-4">
@@ -165,10 +171,10 @@ const FormCreate = () => {
               Mô tả
             </Text>
             <TextInput
-              className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-white"
+              className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-backgroundApp"
               value={visitData.description}
               onChangeText={(text) => handleInputChange("description", text)}
-              placeholder="Enter description"
+              placeholder="Nhập mô tả"
               multiline
               numberOfLines={4}
             />

@@ -209,6 +209,8 @@ const UserDetail = () => {
             name: fileName.replace("body", "shoe"),
           };
           const result = await shoeDetect(file);
+          console.log("FILE DETECT SHOE: ", file);
+          
           console.log("Shoe detection response:", result);
 
           if ("data" in result) {

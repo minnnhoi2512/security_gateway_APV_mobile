@@ -6,6 +6,7 @@ const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
 export const visitApi = createApi({
   reducerPath: "visitApi",
+  tagTypes: ['VisitByCard'], 
   baseQuery: fetchBaseQuery({
     baseUrl: BASE_URL,
     prepareHeaders: async (headers) => {
@@ -31,6 +32,7 @@ export const visitApi = createApi({
         const currentDate = new Date().toISOString().split("T")[0];
         return `Visit/CurrentDate/CredentialCard/${credentialCard}?date=${currentDate}`;
       },
+      providesTags: [{ type: 'VisitByCard', id: 'LIST' }]
     }),
     createVisit: builder.mutation({
       query: (visit: CreateVisit) => ({

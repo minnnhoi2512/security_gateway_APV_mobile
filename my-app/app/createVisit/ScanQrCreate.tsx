@@ -1,21 +1,21 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Camera, CameraView } from "expo-camera";
 import { Stack, useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   Alert,
   AppState,
-  Linking,
   Platform,
   Pressable,
   SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
-  View,
 } from "react-native";
-
 import { Overlay } from "../check-in/OverLay";
 import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service";
+import { useGetVisitorByCreadentialCardQuery } from "@/redux/services/visitor.service";
+
 interface ScanData {
   id: string;
   nationalId: string;
@@ -25,6 +25,7 @@ interface ScanData {
   address: string;
   issueDate: string;
 }
+
 export default function ScanQrCreate() {
   const qrLock = useRef(false);
   const appState = useRef(AppState.currentState);
@@ -44,9 +45,31 @@ export default function ScanQrCreate() {
     data: visitData,
     error,
     isLoading,
-  } = useGetVisitByCredentialCardQuery(credentialCardId || "", {
+    isFetching,
+  } = useGetVisitorByCreadentialCardQuery(credentialCardId || "", {
     skip: !credentialCardId,
   });
+
+  console.log("VISITỎR DATA ID: ", visitData);
+
+  // Reset states function
+  const resetStates = () => {
+    setScannedData("");
+    setCredentialCardId(null);
+    setAlertDisplayed(false);
+    qrLock.current = false;
+  };
+
+  // Use useFocusEffect to reset states when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      resetStates();
+
+      return () => {
+        // Cleanup if needed
+      };
+    }, [])
+  );
 
   useEffect(() => {
     if (scannedData) {
@@ -61,7 +84,7 @@ export default function ScanQrCreate() {
         appState.current.match(/inactive|background/) &&
         nextAppState === "active"
       ) {
-        qrLock.current = false;
+        resetStates();
       }
       appState.current = nextAppState;
     });
@@ -72,12 +95,15 @@ export default function ScanQrCreate() {
   }, []);
 
   useEffect(() => {
-    if (credentialCardId && !isLoading && !alertDisplayed) {
+    if (credentialCardId && !isFetching && !alertDisplayed) {
       qrLock.current = true;
-
-      if (visitData) {
-        router.push("/createVisit/FormCreate");
-        console.log("Visit search:", visitData);
+      if (visitData && !isFetching && !isLoading && !error) {
+        router.push({
+          pathname: "/createVisit/FormCreate",
+          params: {
+            visitorId: visitData.visitorId,
+          },
+        });
       } else {
         Alert.alert(
           "Không tìm thấy dữ liệu",
@@ -99,21 +125,21 @@ export default function ScanQrCreate() {
         setAlertDisplayed(true);
       }
     }
-  }, [credentialCardId, visitData, error, isLoading]);
+  }, [credentialCardId, visitData, error]);
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (data && !qrLock.current) {
       qrLock.current = true;
-      // console.log("Dữ liệu quét mã:", data);
       setScannedData(data);
     }
   };
 
-  // console.log("scannedData: ", scannedData);
-  // console.log("credentialCardId: ", credentialCardId);
   const handleGoBack = () => {
+    resetStates();
     router.back();
   };
+  // console.log("visit data: ", visitData);
+
   return (
     <SafeAreaView style={StyleSheet.absoluteFillObject}>
       <Stack.Screen
@@ -133,30 +159,11 @@ export default function ScanQrCreate() {
       <Pressable style={styles.backButton} onPress={handleGoBack}>
         <Text style={styles.backButtonText}>Quay về</Text>
       </Pressable>
-      {/* {scannedData ? (
-        <View style={styles.dataContainer}>
-          <Text style={styles.dataText}>Dữ liệu quét: {scannedData}</Text>
-        </View>
-      ) : null} */}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  dataContainer: {
-    position: "absolute",
-    bottom: 20,
-    left: 20,
-    right: 20,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    padding: 10,
-    borderRadius: 5,
-  },
-  dataText: {
-    color: "white",
-    fontSize: 16,
-  },
-
   backButton: {
     position: "absolute",
     top: 60,
