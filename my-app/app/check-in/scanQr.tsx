@@ -97,7 +97,7 @@ export default function Home() {
             onPress: () => {
               resetState();
               router.push({
-                pathname: "/(tabs)/Checkin",
+                pathname: "/(tabs)/checkin",
               });
             },
           },
@@ -106,7 +106,7 @@ export default function Home() {
             onPress: () => {
               resetState();
               router.push({
-                pathname: "/(tabs)/CreateCustomer",
+                pathname: "/(tabs)/createCustomer",
               });
             },
           },
@@ -133,7 +133,7 @@ export default function Home() {
             text: "Hủy",
             onPress: () => {
               router.push({
-                pathname: "/(tabs)/Checkin",
+                pathname: "/(tabs)/checkin",
                 params: { data: JSON.stringify(scannedData) },
               });
               resetState();

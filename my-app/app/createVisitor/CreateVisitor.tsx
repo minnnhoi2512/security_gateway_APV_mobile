@@ -144,7 +144,11 @@ const CreateVisitor = () => {
         {
           text: "OK",
           onPress: () => {
+<<<<<<< HEAD
             router.push("/(tabs)/CreateCustomer");
+=======
+            router.push('/(tabs)/createCustomer');
+>>>>>>> 833492a201467f74280e57275fa9a52fa5b84bdc
           },
         },
       ]);
