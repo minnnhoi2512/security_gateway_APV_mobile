@@ -12,6 +12,8 @@ import {
   Pressable,
 } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
+import { Video } from "expo-av";
+import * as FileSystem from "expo-file-system";
 import {
   GestureHandlerRootView,
   TouchableOpacity,
@@ -35,13 +37,16 @@ import { RootState } from "@/redux/store/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as RNPicker from "@react-native-picker/picker";
 import { VisitDetailType } from "@/redux/Types/visit.type";
-
+import { captureRef } from "react-native-view-shot";
 interface ImageData {
-  imageType: "shoe" | "body";
+  imageType: "Shoe";
   imageFile: string;
 }
 
 const UserDetail = () => {
+  const videoRef = useRef<Video>(null);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(true);
   const { visitId } = useLocalSearchParams<{ visitId: string }>();
   const router = useRouter();
   const [isUploading, setIsUploading] = useState(false);
@@ -57,6 +62,7 @@ const UserDetail = () => {
   // const screenWidth = Dimensions.get("window").width;
   const [qrImage, setQrImage] = useState<string | null>(null);
   const [images, setImages] = useState<ImageData[]>([]);
+ 
 
   // RTK QUERY
   const [
@@ -69,7 +75,6 @@ const UserDetail = () => {
     isLoading,
     isError,
   } = useGetVisitDetailByIdQuery(visitId);
-
 
   //CHECKIN DATA
   const [checkInData, setCheckInData] = useState<CheckInVer02>({
@@ -148,128 +153,159 @@ const UserDetail = () => {
   const handleGoBack = () => {
     router.back();
   };
-  const takePhoto = async () => {
-    setShoeDetectResult(null);
-    try {
-      const cameraResp = await ImagePicker.launchCameraAsync({
-        allowsEditing: false,
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 1,
-      });
 
-      if (!cameraResp.canceled && cameraResp.assets[0]) {
-        const { uri } = cameraResp.assets[0];
 
-        // Body Image
-        const bodyImage: ImageData = { imageType: "body", imageFile: uri };
-        setImages((prevImages) => [
-          ...prevImages.filter((img) => img.imageType !== "body"),
-          bodyImage,
-        ]);
-        addImage({ ImageType: "body", ImageURL: uri, Image: uri });
+  // const captureImage = async () => {
+  //   try {
+ 
+  //     const uri = await captureRef(videoRef, {
+  //       format: "jpg",
+  //       quality: 0.8,
+  //     });
 
-        // Process Shoe Image (Cropped Lower Half)
-        const imageInfo = await new Promise<{ width: number; height: number }>(
-          (resolve, reject) => {
-            Image.getSize(
-              uri,
-              (width, height) => resolve({ width, height }),
-              (error) => reject(error)
-            );
-          }
-        );
+  //     const shoeImage: ImageData = {
+  //       imageType: "Shoe",
+  //       imageFile: uri,
+  //     };
 
-        const croppedImage = await manipulateAsync(
-          uri,
-          [
-            {
-              crop: {
-                originX: 0,
-                originY: imageInfo.height / 2,
-                width: imageInfo.width,
-                height: imageInfo.height / 2,
-              },
-            },
-          ],
-          { compress: 1, format: SaveFormat.JPEG }
-        );
+  //     setImages((prevImages) => [
+  //       ...prevImages.filter((img) => img.imageType !== "Shoe"),
+  //       shoeImage,
+  //     ]);
 
-        const shoeImage: ImageData = {
-          imageType: "shoe",
-          imageFile: croppedImage.uri,
-        };
-        setImages((prevImages) => [
-          ...prevImages.filter((img) => img.imageType !== "shoe"),
-          shoeImage,
+  //     console.log("Captured image URI:", shoeImage);
+  //   } catch (error) {
+  //     console.error("Failed to capture image:", error);
+  //   }
+  // };
+
+  const captureImage = async () => {
+    if (videoRef.current) {
+      try {
+        // Pause the video to capture the current frame
+        await videoRef.current.pauseAsync();
         
-        ]);
-        addImage({
-          ImageType: "shoe",
-          ImageURL: croppedImage.uri,
-          Image: croppedImage.uri,
+        // Get the video frame using a suitable method; this is a placeholder
+        const snapshot = await videoRef.current.getStatusAsync();
+  
+        // Assuming you have a method to extract a frame, for example, using `captureRef`
+        const frameUri = await captureRef(videoRef.current, {
+          format: 'png',
+          quality: 0.8,
         });
+  
+        // Save the captured frame to the file system
+        const savedFileUri = `${FileSystem.documentDirectory}captured_image.png`;
+        
+        // You can use FileSystem.copyAsync to save the image if necessary
+        await FileSystem.copyAsync({
+          from: frameUri,
+          to: savedFileUri,
+        });
+  
+        const shoeImage: ImageData = {
+          imageType: 'Shoe',
+          imageFile: savedFileUri,
+        };
+  
+        // Update the images state
+        setImages((prevImages) => [
+          ...prevImages.filter((img) => img.imageType !== 'Shoe'),
+          shoeImage,
+        ]);
+  
+        setCapturedImage(savedFileUri);
+        console.log("Captured image URI:", savedFileUri);
+      } catch (error) {
+        console.error("Capture Error:", error);
       }
-    } catch (error) {
-      console.error("Error processing photo:", error);
-      Alert.alert("Error", "Failed to process photo. Please try again.");
     }
   };
 
-  const handleImagePress = (imageUrl: string) => {
-    setSelectedImage(imageUrl);
-  };
-  const addImage = (newImage: {
-    ImageType: string;
-    ImageURL: string;
-    Image: string;
-  }) => {
-    setCheckInData((prevState) => {
-      const newData = {
-        ...prevState,
-        Images: [...prevState.Images, newImage],
-      };
-      console.log("Updated CheckInData with new image:", newData);
-      return newData;
-    });
+  
+  //   try {
+  //     await playVideo(); // Ensure video is playing
+  //     setTimeout(async () => {
+  //       const uri = await captureRef(videoRef, {
+  //         format: "jpg",
+  //         quality: 0.8,
+  //       });
+  
+  //       const shoeImage: ImageData = {
+  //         imageType: "Shoe",
+  //         imageFile: uri,
+  //       };
+  
+  //       setImages((prevImages) => [
+  //         ...prevImages.filter((img) => img.imageType !== "Shoe"),
+  //         shoeImage,
+  //       ]);
+  
+  //       console.log("Captured image URI:", shoeImage);
+  //     }, 1000); // Delay for 1 second
+  //   } catch (error) {
+  //     console.error("Failed to capture image:", error);
+  //   }
+  // };
+  
+
+  const playVideo = async () => {
+    if (videoRef.current) {
+      try {
+        await videoRef.current.playAsync();
+        setIsPlaying(true);
+      } catch (error) {
+        console.error("Play Video Error:", error);
+      }
+    }
   };
 
   const uploadPhotosAndCheckIn = async () => {
-    if (images.length < 2) {
-      Alert.alert("Error", "Please take both full-body and shoe photos.");
-      return;
-    }
-    setIsUploading(true);
+    // if (images.length < 1) {
+    //   Alert.alert("Error", "Please take both full-body and shoe photos.");
+    //   return;
+    // }
+
+    // setIsUploading(true);
+
     try {
       const formData = new FormData();
       formData.append("VisitDetailId", checkInData.VisitDetailId.toString());
       formData.append("SecurityInId", checkInData.SecurityInId.toString());
       formData.append("GateInId", checkInData.GateInId.toString());
       formData.append("QrCardVerification", checkInData.QrCardVerification);
-  
+
       for (const image of images) {
-        // Upload ảnh lên Firebase và lấy URL
+        // Upload the image to Firebase and get the download URL
         const { downloadUrl } = await uploadToFirebase(
           image.imageFile,
           `${image.imageType}_${Date.now()}.jpg`
         );
-        
-        // Tạo file object từ local image uri
+
+        // Extract the filename and type
         const localUri = image.imageFile;
-        const filename = localUri.split('/').pop();
-        const match = /\.(\w+)$/.exec(filename || '');
+        const filename = localUri.split("/").pop();
+        const match = /\.(\w+)$/.exec(filename || "");
         const type = match ? `image/${match[1]}` : `image`;
-        
-        formData.append(`Images[${images.indexOf(image)}].ImageType`, image.imageType);
-        formData.append(`Images[${images.indexOf(image)}].ImageURL`, downloadUrl.replace(/"/g, '')); // Remove quotes
+
+        // Append fields for this image to formData
+        formData.append(
+          `Images[${images.indexOf(image)}].ImageType`,
+          image.imageType
+        );
+        formData.append(
+          `Images[${images.indexOf(image)}].ImageURL`,
+          downloadUrl.replace(/"/g, "")
+        );
         formData.append(`Images[${images.indexOf(image)}].Image`, {
           uri: localUri,
           name: filename,
-          type
+          type,
         } as any);
       }
-  
+
       console.log("FORM DATA: ", formData);
-  
+
       const result = await checkIn(formData).unwrap();
       Alert.alert("Success", "Check-in was successful!");
       router.push("/(tabs)/");
@@ -280,7 +316,6 @@ const UserDetail = () => {
       setIsUploading(false);
     }
   };
-
   const isCheckInEnabled = () => {
     return (
       images.length === 2 && checkInData.QrCardVerification !== ""
@@ -425,89 +460,39 @@ const UserDetail = () => {
 
           {/* Photo Section */}
           <Text className="text-xl font-bold text-gray-800 mb-4">Chụp ảnh</Text>
-          <View className="flex-row justify-center mb-6">
-            <View className="flex-1 mr-1">
-              <View className="mb-6">
-                <Text className="text-lg font-semibold mb-2">
-                  Ảnh toàn thân
-                </Text>
-                {images.find((img) => img.imageType === "body") ? (
-                  <TouchableOpacity
-                    onPress={() =>
-                      handleImagePress(
-                        images.find((img) => img.imageType === "body")!.imageFile
-                      )
-                    }
-                    className="relative"
-                  >
-                    <Image
-                      source={{
-                        uri: images.find((img) => img.imageType === "body")!
-                          .imageFile,
-                      }}
-                      className="w-[90%] aspect-square rounded-lg"
-                    />
-                    <View className="absolute m-1 bottom-1 bg-black/50 px-2 py-1 rounded">
-                      <Text className="text-white text-xs">Xem</Text>
-                    </View>
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity
-                    onPress={takePhoto}
-                    className="bg-backgroundApp p-3 rounded-lg active:bg-backgroundApp/80"
-                  >
-                    <Text className="text-white text-center font-medium">
-                      Chụp ảnh toàn thân
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-            <View className="flex-1 ml-2">
-              <Text className="text-lg font-semibold mb-2">Ảnh giày</Text>
-              {isDetecting ? (
-                <View className="flex items-center justify-center h-full">
-                  <ActivityIndicator size="large" color="#6255fa" />
-                </View>
-              ) : isDetectError ? (
-                <View className="flex items-center">
-                  <Text className="text-red-600 text-center mb-2">
-                    Đã có lỗi xảy ra khi phát hiện giày.
-                  </Text>
-                  <TouchableOpacity
-                    onPress={takePhoto}
-                    className="bg-backgroundApp px-4 py-2 rounded"
-                  >
-                    <Text className="text-white">Chụp lại</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : images.find((img) => img.imageType === "shoe") ? (
-                <TouchableOpacity
-                  onPress={() =>
-                    handleImagePress(
-                      images.find((img) => img.imageType === "shoe")!.imageFile
-                    )
-                  }
-                  className="relative"
-                >
-                  <Image
-                    source={{
-                      uri: images.find((img) => img.imageType === "shoe")!
-                        .imageFile,
-                    }}
-                    className="w-[90%] mt-[2px] aspect-square rounded-lg"
-                  />
-                  <View className="absolute bottom-8 m-1 bg-black/50 px-2 py-1 rounded">
-                    <Text className="text-white text-xs">Xem</Text>
-                  </View>
-                </TouchableOpacity>
-              ) : (
-                <Text className="text-gray-600 text-center text-sm">
-                  Chưa có ảnh giày. Chụp ảnh toàn thân trước để lấy ảnh giày.
-                </Text>
-              )}
-            </View>
+          <View>
+            <Text>Streaming</Text>
+            <Video
+              ref={videoRef}
+              source={{
+                uri: "https://security-gateway-camera.tools.kozow.com/index.m3u8",
+              }}
+              style={{ width: "100%", height: 300 }}
+              onError={(e) => console.log("Video Error:", e)}
+              shouldPlay={true}
+            />
+            {isPlaying && (
+              <Button title="Capture Image" onPress={captureImage} />
+            )}
+            {!isPlaying && <Button title="Play Video" onPress={playVideo} />}
+
+            {/* Show Captured Image */}
+            {capturedImage && (
+              <Image
+                source={{ uri: capturedImage }}
+                style={{ width: "100%", height: 300, marginTop: 10 }}
+              />
+            )}
+
+            {images.map((img, index) => (
+              <Image
+                key={index}
+                source={{ uri: img.imageFile }}
+                className="w-[150px] h-[150px]"
+              />
+            ))}
           </View>
+
           {/* MODAL VIEW IMAGE */}
           <Modal
             visible={!!selectedImage}
@@ -584,20 +569,6 @@ const UserDetail = () => {
             )}
           </View>
 
-          {/* MODAL LOADING TO CHECK IN */}
-          <Modal visible={isUploading} transparent={true} animationType="fade">
-            <View className="flex-1 bg-black/50 justify-center items-center">
-              <View className="bg-white p-6 rounded-2xl items-center">
-                <ActivityIndicator size="large" color="#6255fa" />
-                <Text className="mt-4 text-lg font-medium text-gray-700">
-                  Đang trong quá trình check in
-                </Text>
-                <Text className="mt-2 text-sm text-gray-500">
-                  Vui lòng đợi trong giây lát...
-                </Text>
-              </View>
-            </View>
-          </Modal>
 
           {/* Check In Button */}
           <TouchableOpacity

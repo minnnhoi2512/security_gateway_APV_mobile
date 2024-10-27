@@ -32,7 +32,7 @@ const ListVisit: React.FC = () => {
 
   let data: Visit[] = [];
 
-  console.log("Serialized Data:", serializedData);
+  // console.log("Serialized Data:", serializedData);
 
   if (serializedData) {
     try {
@@ -51,7 +51,7 @@ const ListVisit: React.FC = () => {
 
   const handleBackPress = () => {
     router.push({
-      pathname: '/(tabs)/Checkin',
+      pathname: '/(tabs)/checkin',
     });
   };
 

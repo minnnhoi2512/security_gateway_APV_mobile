@@ -126,6 +126,7 @@ export default function ScanQrCreate() {
           params: {
             visitorId: visitData.visitorId,
           },
+          
         });
         resetStates();
       } else {
