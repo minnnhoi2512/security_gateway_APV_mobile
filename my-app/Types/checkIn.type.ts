@@ -14,6 +14,19 @@ export interface Images {
     images: Images[];
 }
 
+
+export interface CheckInVer02 {
+  VisitDetailId: number;
+  SecurityInId: number; 
+  GateInId: number;
+  QrCardVerification: string;
+  Images: Array<{
+    ImageType: string;
+    ImageURL: string;
+    Image: string;
+  }>;
+}
+
   
 
   

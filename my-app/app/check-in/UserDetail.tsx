@@ -23,7 +23,7 @@ import { Camera, CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 
 import { uploadToFirebase } from "../../firebase-config";
-import { CheckIn } from "@/Types/checkIn.type";
+import { CheckIn, CheckInVer02 } from "@/Types/checkIn.type";
 import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 import {
   useGetDataByCardVerificationQuery,
@@ -38,7 +38,7 @@ import { VisitDetailType } from "@/redux/Types/visit.type";
 
 interface ImageData {
   imageType: "shoe" | "body";
-  imageURL: string;
+  imageFile: string;
 }
 
 const UserDetail = () => {
@@ -69,22 +69,22 @@ const UserDetail = () => {
     isLoading,
     isError,
   } = useGetVisitDetailByIdQuery(visitId);
-  console.log("VISIT DETAIL: ", visitDetail);
+
 
   //CHECKIN DATA
-  const [checkInData, setCheckInData] = useState<CheckIn>({
-    visitDetailId: visitDetail ? visitDetail.visitDetailId : 0,
-    securityInId: 0,
-    gateInId: Number(selectedGateId) || 0,
-    qrCardVerification: "",
-    images: [],
+  const [checkInData, setCheckInData] = useState<CheckInVer02>({
+    VisitDetailId: visitDetail ? visitDetail.visitDetailId : 0,
+    SecurityInId: 0,
+    GateInId: Number(selectedGateId) || 0,
+    QrCardVerification: "",
+    Images: [],
   });
 
   const {
     data: qrCardData,
     isLoading: isLoadingQr,
     isError: isErrorQr,
-  } = useGetDataByCardVerificationQuery(checkInData.qrCardVerification);
+  } = useGetDataByCardVerificationQuery(checkInData.QrCardVerification);
   const [checkIn, { isLoading: isCheckingIn }] = useCheckInMutation();
 
   const [shoeDetectResult, setShoeDetectResult] = useState<boolean | null>(
@@ -114,7 +114,7 @@ const UserDetail = () => {
     if (userId) {
       setCheckInData((prevState) => ({
         ...prevState,
-        securityInId: Number(userId) || 0,
+        SecurityInId: Number(userId) || 0,
       }));
     }
   }, [userId, selectedGateId]);
@@ -124,7 +124,7 @@ const UserDetail = () => {
       const { visitDetailId } = visitDetail[0];
       setCheckInData((prevData) => ({
         ...prevData,
-        visitDetailId,
+        VisitDetailId: visitDetailId,
       }));
     }
   }, [visitDetail]);
@@ -159,14 +159,16 @@ const UserDetail = () => {
 
       if (!cameraResp.canceled && cameraResp.assets[0]) {
         const { uri } = cameraResp.assets[0];
-        const fileName = uri.split("/").pop() || `body_${Date.now()}.jpg`;
-        const bodyImage: ImageData = { imageType: "body", imageURL: uri };
+
+        // Body Image
+        const bodyImage: ImageData = { imageType: "body", imageFile: uri };
         setImages((prevImages) => [
           ...prevImages.filter((img) => img.imageType !== "body"),
           bodyImage,
         ]);
+        addImage({ ImageType: "body", ImageURL: uri, Image: uri });
 
-        // Lấy kích thước ảnh để cắt phần giày
+        // Process Shoe Image (Cropped Lower Half)
         const imageInfo = await new Promise<{ width: number; height: number }>(
           (resolve, reject) => {
             Image.getSize(
@@ -177,16 +179,15 @@ const UserDetail = () => {
           }
         );
 
-        // Step 2: Cắt ảnh lấy phần giày (nửa dưới)
         const croppedImage = await manipulateAsync(
           uri,
           [
             {
               crop: {
                 originX: 0,
-                originY: imageInfo.height / 2, // Cắt từ nửa trở xuống
+                originY: imageInfo.height / 2,
                 width: imageInfo.width,
-                height: imageInfo.height / 2, // lấy nửa dưới
+                height: imageInfo.height / 2,
               },
             },
           ],
@@ -195,38 +196,18 @@ const UserDetail = () => {
 
         const shoeImage: ImageData = {
           imageType: "shoe",
-          imageURL: croppedImage.uri,
+          imageFile: croppedImage.uri,
         };
         setImages((prevImages) => [
           ...prevImages.filter((img) => img.imageType !== "shoe"),
           shoeImage,
+        
         ]);
-        // console.log("Cropped shoe image URL: ", croppedImage.uri);
-        if (shoeImage) {
-          const file = {
-            uri: croppedImage.uri,
-            type: "image/jpeg",
-            name: fileName.replace("body", "shoe"),
-          };
-          const result = await shoeDetect(file);
-          console.log("FILE DETECT SHOE: ", file);
-          
-          console.log("Shoe detection response:", result);
-
-          if ("data" in result) {
-            setShoeDetectResult(true);
-            Alert.alert(
-              "Thành công",
-              "Kiểm tra giày đã được thực hiện thành công!"
-            );
-          } else if ("error" in result) {
-            setShoeDetectResult(false);
-            Alert.alert(
-              "Thất bại",
-              "Kiểm tra giày không thành công. Vui lòng chụp lại ảnh."
-            );
-          }
-        }
+        addImage({
+          ImageType: "shoe",
+          ImageURL: croppedImage.uri,
+          Image: croppedImage.uri,
+        });
       }
     } catch (error) {
       console.error("Error processing photo:", error);
@@ -237,64 +218,72 @@ const UserDetail = () => {
   const handleImagePress = (imageUrl: string) => {
     setSelectedImage(imageUrl);
   };
+  const addImage = (newImage: {
+    ImageType: string;
+    ImageURL: string;
+    Image: string;
+  }) => {
+    setCheckInData((prevState) => {
+      const newData = {
+        ...prevState,
+        Images: [...prevState.Images, newImage],
+      };
+      console.log("Updated CheckInData with new image:", newData);
+      return newData;
+    });
+  };
 
   const uploadPhotosAndCheckIn = async () => {
     if (images.length < 2) {
-      Alert.alert(
-        "Lỗi",
-        "Please take both shoe and body photos before checking in."
-      );
+      Alert.alert("Error", "Please take both full-body and shoe photos.");
       return;
     }
     setIsUploading(true);
     try {
-      const uploadPromises = images.map(async (image) => {
+      const formData = new FormData();
+      formData.append("VisitDetailId", checkInData.VisitDetailId.toString());
+      formData.append("SecurityInId", checkInData.SecurityInId.toString());
+      formData.append("GateInId", checkInData.GateInId.toString());
+      formData.append("QrCardVerification", checkInData.QrCardVerification);
+  
+      for (const image of images) {
+        // Upload ảnh lên Firebase và lấy URL
         const { downloadUrl } = await uploadToFirebase(
-          image.imageURL,
-          `${image.imageType}_${Date.now()}.jpg`,
-          (progress: number) => {
-            console.log(`Upload of ${image.imageType} is ${progress}% done`);
-          }
+          image.imageFile,
+          `${image.imageType}_${Date.now()}.jpg`
         );
-
-        return { imageType: image.imageType, imageURL: downloadUrl };
-      });
-
-      const uploadedImages = await Promise.all(uploadPromises);
-      const updatedCheckInData = {
-        ...checkInData,
-        images: uploadedImages,
-      };
-
-      console.log("Updated CheckIn Data: ", updatedCheckInData);
-
-      const result = await checkIn(updatedCheckInData).unwrap();
-      console.log("Check-in successful:", result);
-      setIsUploading(false);
-      Alert.alert("Thành công", "Check in thành công!", [
-        {
-          text: "OK",
-          onPress: () => {
-            router.push("/(tabs)/");
-          },
-        },
-      ]);
-    } catch (error: any) {
-      setIsUploading(false);
-      console.error("Upload or check-in failed:", error);
-      if (error.response) {
-        console.error("Response data:", error.response.data);
-        console.error("Response status:", error.response.status);
+        
+        // Tạo file object từ local image uri
+        const localUri = image.imageFile;
+        const filename = localUri.split('/').pop();
+        const match = /\.(\w+)$/.exec(filename || '');
+        const type = match ? `image/${match[1]}` : `image`;
+        
+        formData.append(`Images[${images.indexOf(image)}].ImageType`, image.imageType);
+        formData.append(`Images[${images.indexOf(image)}].ImageURL`, downloadUrl.replace(/"/g, '')); // Remove quotes
+        formData.append(`Images[${images.indexOf(image)}].Image`, {
+          uri: localUri,
+          name: filename,
+          type
+        } as any);
       }
-      Alert.alert("Error", "Upload or check-in failed. Please try again.");
+  
+      console.log("FORM DATA: ", formData);
+  
+      const result = await checkIn(formData).unwrap();
+      Alert.alert("Success", "Check-in was successful!");
+      router.push("/(tabs)/");
+    } catch (error) {
+      console.error("Error during check-in process:", error);
+      Alert.alert("Error", "Check-in failed. Please try again.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
   const isCheckInEnabled = () => {
     return (
-      images.length === 2 &&
-      shoeDetectResult === true &&
-      checkInData.qrCardVerification !== ""
+      images.length === 2 && checkInData.QrCardVerification !== ""
       // &&
       // securityConfirmation === "correct"
     );
@@ -306,7 +295,7 @@ const UserDetail = () => {
     setQrImage(null);
     setCheckInData((prev) => ({
       ...prev,
-      qrCardVerification: "",
+      QrCardVerification: "",
     }));
   };
 
@@ -324,7 +313,7 @@ const UserDetail = () => {
 
       setCheckInData((prevData) => ({
         ...prevData,
-        qrCardVerification: data,
+        QrCardVerification: data,
       }));
       setIsCameraActive(false);
       Alert.alert(
@@ -334,7 +323,7 @@ const UserDetail = () => {
     }
   };
 
-  // console.log("DATA CI: ", checkInData);
+  console.log("DATA CI: ", checkInData);
 
   //PERMISSION VIEW
   if (!isPermissionGranted) {
@@ -446,7 +435,7 @@ const UserDetail = () => {
                   <TouchableOpacity
                     onPress={() =>
                       handleImagePress(
-                        images.find((img) => img.imageType === "body")!.imageURL
+                        images.find((img) => img.imageType === "body")!.imageFile
                       )
                     }
                     className="relative"
@@ -454,7 +443,7 @@ const UserDetail = () => {
                     <Image
                       source={{
                         uri: images.find((img) => img.imageType === "body")!
-                          .imageURL,
+                          .imageFile,
                       }}
                       className="w-[90%] aspect-square rounded-lg"
                     />
@@ -496,7 +485,7 @@ const UserDetail = () => {
                 <TouchableOpacity
                   onPress={() =>
                     handleImagePress(
-                      images.find((img) => img.imageType === "shoe")!.imageURL
+                      images.find((img) => img.imageType === "shoe")!.imageFile
                     )
                   }
                   className="relative"
@@ -504,22 +493,13 @@ const UserDetail = () => {
                   <Image
                     source={{
                       uri: images.find((img) => img.imageType === "shoe")!
-                        .imageURL,
+                        .imageFile,
                     }}
                     className="w-[90%] mt-[2px] aspect-square rounded-lg"
                   />
                   <View className="absolute bottom-8 m-1 bg-black/50 px-2 py-1 rounded">
                     <Text className="text-white text-xs">Xem</Text>
                   </View>
-                  {shoeDetectResult === true ? (
-                    <Text className="mt-2 text-green-600 text-center">
-                      Kiểm tra thành công!
-                    </Text>
-                  ) : shoeDetectResult === false ? (
-                    <Text className="text-red-600 text-center">
-                      Kiểm tra thất bại! Chụp lại ảnh toàn thân.
-                    </Text>
-                  ) : null}
                 </TouchableOpacity>
               ) : (
                 <Text className="text-gray-600 text-center text-sm">
@@ -621,7 +601,7 @@ const UserDetail = () => {
 
           {/* Check In Button */}
           <TouchableOpacity
-            disabled={!isCheckInEnabled()}
+            // disabled={!isCheckInEnabled()}
             onPress={uploadPhotosAndCheckIn}
             className={`p-4 rounded-lg ${
               isCheckInEnabled()

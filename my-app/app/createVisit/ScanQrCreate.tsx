@@ -13,7 +13,6 @@ import {
   Text,
 } from "react-native";
 import { Overlay } from "../check-in/OverLay";
-import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service";
 import { useGetVisitorByCreadentialCardQuery } from "@/redux/services/visitor.service";
 
 interface ScanData {
@@ -30,10 +29,9 @@ export default function ScanQrCreate() {
   const qrLock = useRef(false);
   const appState = useRef(AppState.currentState);
   const router = useRouter();
-
   const [scannedData, setScannedData] = useState<string>("");
   const [credentialCardId, setCredentialCardId] = useState<string | null>(null);
-  const [alertDisplayed, setAlertDisplayed] = useState(false);
+  const processingRef = useRef(false);
 
   const parseQRData = (qrData: string): ScanData => {
     const [id, nationalId, name, dateOfBirth, gender, address, issueDate] =
@@ -50,26 +48,23 @@ export default function ScanQrCreate() {
     skip: !credentialCardId,
   });
 
-  console.log("VISITỎR DATA ID: ", visitData);
-
-  // Reset states function
   const resetStates = () => {
     setScannedData("");
     setCredentialCardId(null);
-    setAlertDisplayed(false);
     qrLock.current = false;
+    processingRef.current = false;
   };
 
-  // Use useFocusEffect to reset states when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       resetStates();
-
       return () => {
-        // Cleanup if needed
+        resetStates();
       };
     }, [])
   );
+
+
 
   useEffect(() => {
     if (scannedData) {
@@ -88,47 +83,59 @@ export default function ScanQrCreate() {
       }
       appState.current = nextAppState;
     });
-
     return () => {
       subscription.remove();
     };
   }, []);
 
+  const handleVisitorNotFound = () => {
+    Alert.alert(
+      "Không tìm thấy dữ liệu",
+      "Không tìm thấy dữ liệu cho ID này. Bạn sẽ được chuyển hướng đến tạo khách mới.",
+      [
+        {
+          text: "OK",
+          onPress: () => {
+            router.push({
+              pathname: "/createVisitor/CreateVisitor",
+              params: { data: scannedData },
+            });
+            resetStates();
+          },
+        },
+        {
+          text: "Hủy",
+          onPress: () => {
+            resetStates();
+          },
+        },
+      ]
+    );
+  };
+
+  // Separate useEffect for data fetching response
   useEffect(() => {
-    if (credentialCardId && !isFetching && !alertDisplayed) {
-      qrLock.current = true;
-      if (visitData && !isFetching && !isLoading && !error) {
+    if (!credentialCardId || processingRef.current) return;
+
+    if (!isLoading && !isFetching) {
+      processingRef.current = true;
+
+      if (visitData?.visitorId && !isFetching && !isLoading && !error) {
         router.push({
           pathname: "/createVisit/FormCreate",
           params: {
             visitorId: visitData.visitorId,
           },
         });
+        resetStates();
       } else {
-        Alert.alert(
-          "Không tìm thấy dữ liệu",
-          "Không tìm thấy dữ liệu cho ID này. Bạn sẽ được chuyển hướng đến tạo khách mới.",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                router.push({
-                  pathname: "/createVisitor/CreateVisitor",
-                  params: { data: scannedData },
-                });
-                qrLock.current = false;
-                setAlertDisplayed(false);
-              },
-            },
-          ]
-        );
-        setAlertDisplayed(true);
+        handleVisitorNotFound();
       }
     }
-  }, [credentialCardId, visitData, error]);
+  }, [visitData, isLoading, isFetching]);
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
-    if (data && !qrLock.current) {
+    if (data && !qrLock.current && !processingRef.current) {
       qrLock.current = true;
       setScannedData(data);
     }
@@ -138,7 +145,6 @@ export default function ScanQrCreate() {
     resetStates();
     router.back();
   };
-  // console.log("visit data: ", visitData);
 
   return (
     <SafeAreaView style={StyleSheet.absoluteFillObject}>
@@ -155,7 +161,6 @@ export default function ScanQrCreate() {
         onBarcodeScanned={handleBarCodeScanned}
       />
       <Overlay />
-
       <Pressable style={styles.backButton} onPress={handleGoBack}>
         <Text style={styles.backButtonText}>Quay về</Text>
       </Pressable>

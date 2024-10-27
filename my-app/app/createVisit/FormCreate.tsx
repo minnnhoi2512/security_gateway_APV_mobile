@@ -1,4 +1,3 @@
-import { useCreateVisitMutation } from "@/redux/services/visit.service";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
 import {
@@ -11,14 +10,20 @@ import {
   Pressable,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import {  useLocalSearchParams, useRouter } from "expo-router";
+import { Picker } from "@react-native-picker/picker";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useGetAllStaffQuery } from "@/redux/services/user.service";
+import { useCreateVisitMutation } from "@/redux/services/visit.service";
+import { Staff } from "@/Types/user.type";
 
 const FormCreate = () => {
   const [userId, setUserId] = useState<string | null>(null);
+  const [selectedStaffId, setSelectedStaffId] = useState<number>(0);
   const router = useRouter();
   const { visitorId } = useLocalSearchParams<{ visitorId: string }>();
-  const visitorIdNumber = Number(visitorId);
+  // const visitorIdNumber = Number(visitorId);
+  const visitorIdNumber = isNaN(Number(visitorId)) ? 0 : Number(visitorId);
   const [createVisit, { isLoading }] = useCreateVisitMutation();
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
@@ -30,8 +35,14 @@ const FormCreate = () => {
     return `${hours}:${minutes}:${seconds}`;
   };
 
+  const {
+    data: staffList,
+    isLoading: isLoadingStaff,
+    isError: isErrorStaff,
+    isFetching: isFetchingStaff,
+  } = useGetAllStaffQuery({});
+  console.log("List Staff: ", staffList);
 
-  
   const [visitData, setVisitData] = useState({
     visitName: "",
     visitQuantity: 1,
@@ -39,16 +50,16 @@ const FormCreate = () => {
     expectedEndTime: new Date().toISOString().split("T")[0],
     createById: 0,
     description: "",
-    // scheduleId: 6,
+    responsiblePersonId: 0,
     visitDetail: [
       {
         expectedStartHour: getCurrentTime(),
-        expectedEndHour: "17:00:00",
+        expectedEndHour: "12:00:00",
         visitorId: visitorIdNumber,
       },
     ],
   });
-console.log("VISITOR ID ne 3: ", visitorId);
+  console.log("VISITOR ID ne 3: ", visitorId);
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -87,6 +98,14 @@ console.log("VISITOR ID ne 3: ", visitorId);
     }));
   };
 
+  const handleStaffSelect = (itemValue: number) => {
+    setSelectedStaffId(itemValue);
+    setVisitData((prevState) => ({
+      ...prevState,
+      responsiblePersonId: itemValue,
+    }));
+  };
+
   const handleTimeChange = (
     event: any,
     selectedDate: Date | undefined,
@@ -108,15 +127,13 @@ console.log("VISITOR ID ne 3: ", visitorId);
 
   const handleSubmit = async () => {
     try {
-      // Prepare the data for API submission
       const submitData = {
         ...visitData,
         visitQuantity: Number(visitData.visitQuantity),
-        // scheduleId: Number(visitData.scheduleId),
         expectedStartTime: `${visitData.expectedStartTime}T${visitData.visitDetail[0].expectedStartHour}`,
         expectedEndTime: `${visitData.expectedEndTime}T${visitData.visitDetail[0].expectedEndHour}`,
       };
-
+      console.log("Submit Data:", submitData);
       const result = await createVisit(submitData).unwrap();
       Alert.alert("Thành công", "Tạo lịch ghé thăm thành công!", [
         {
@@ -167,9 +184,7 @@ console.log("VISITOR ID ne 3: ", visitorId);
             />
           </View>
           <View className="mb-4">
-            <Text className="text-sm font-semibold text-white mb-2">
-              Mô tả
-            </Text>
+            <Text className="text-sm font-semibold text-white mb-2">Mô tả</Text>
             <TextInput
               className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-backgroundApp"
               value={visitData.description}
@@ -231,6 +246,31 @@ console.log("VISITOR ID ne 3: ", visitorId);
                 }
               />
             )}
+          </View>
+
+          <View className="mb-4">
+            <Text className="text-sm font-semibold text-white mb-2">
+              Chọn nhân viên phụ trách
+            </Text>
+            <Picker
+              selectedValue={selectedStaffId}
+              onValueChange={(itemValue) => handleStaffSelect(itemValue)}
+              style={{
+                backgroundColor: "#f0f0f0",
+                borderRadius: 8,
+                padding: 10,
+                color: "#333",
+              }}
+            >
+              <Picker.Item label="Chọn nhân viên" value={null} />
+              {staffList?.map((staff: Staff) => (
+                <Picker.Item
+                  key={staff.userId}
+                  label={staff.userName}
+                  value={staff.userId}
+                />
+              ))}
+            </Picker>
           </View>
 
           <TouchableOpacity

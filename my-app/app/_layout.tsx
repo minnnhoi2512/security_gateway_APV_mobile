@@ -45,7 +45,7 @@ export default function RootLayout() {
           />
            <Stack.Screen
             name="createVisit/ScanQrCreate"
-            options={{ headerShown: true }}
+            options={{ headerShown: false }}
           />
           <Stack.Screen
             name="check-in/ListVisit"
@@ -59,9 +59,17 @@ export default function RootLayout() {
             name="createVisit/FormCreate"
             options={{ headerShown: false }}
           />
+          <Stack.Screen
+            name="createVisitor/CreateVisitor"
+            options={{ headerShown: false }}
+          />
            <Stack.Screen
             name="check-out/CheckOutCard"
             options={{ headerShown: true }}
+          />
+           <Stack.Screen
+            name="profile/ProfileDetail"
+            options={{ headerShown: false }}
           />
           <Stack.Screen name="PickGate" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />

@@ -32,9 +32,16 @@ const Profile: React.FC = () => {
     { icon: "lock", title: "Điều khoản" },
   ];
 
+  const handleNavigateToUserDetail = () => {
+    router.push("/profile/ProfileDetail");
+  };
+
   return (
     <ScrollView className="bg-gray-100 flex-1">
-      <View className="bg-[#34495e] rounded-b-3xl pb-6 shadow">
+      <TouchableOpacity
+        className="bg-[#34495e] rounded-b-3xl pb-6 shadow"
+        onPress={handleNavigateToUserDetail}
+      >
         <View className="items-center mt-12">
           <View className="bg-blue-200 rounded-full p-1">
             <Image
@@ -45,20 +52,26 @@ const Profile: React.FC = () => {
             />
           </View>
           <Text className="text-xl text-white font-bold mt-2">Đặng Dương</Text>
-          <Text className="text-white">
-            duong@gmail.com | +84 098 901 331
-          </Text>
+          <Text className="text-white">duong@gmail.com | +84 098 901 331</Text>
+          {/* Optional: Add a visual indicator that this is clickable */}
+          <View className="flex-row items-center mt-2">
+            <Text className="text-white text-sm mr-1">Xem chi tiết</Text>
+            <Feather name="chevron-right" size={16} color="white" />
+          </View>
         </View>
-      </View>
+      </TouchableOpacity>
 
       <View className="px-4 mt-6">
         {menuItems.map((item, index) => (
           <React.Fragment key={index}>{renderMenuItem(item)}</React.Fragment>
         ))}
-       
-        <TouchableOpacity onPress={() => router.push("/login")} className="flex-row items-center bg-[#34495e] p-4 rounded-lg mb-4">
+
+        <TouchableOpacity
+          onPress={() => router.push("/login")}
+          className="flex-row items-center bg-[#34495e] p-4 rounded-lg mb-4"
+        >
           <View className="bg-gray-200 p-2 rounded-full mr-4">
-          <Feather name="log-out" size={24} color="#4B5563" />
+            <Feather name="log-out" size={24} color="#4B5563" />
           </View>
           <View className="flex-1">
             <Text className="text-lg text-white font-semibold">Đăng xuất</Text>

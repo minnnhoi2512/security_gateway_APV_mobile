@@ -7,6 +7,7 @@ import {
   Alert,
   Image,
   SafeAreaView,
+  Pressable,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Camera, useCameraPermissions } from "expo-camera";
@@ -14,6 +15,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCreateVisitorMutation } from "@/redux/services/visitor.service";
 import { Visitor } from "@/Types/visitor.type";
+import { MaterialIcons } from "@expo/vector-icons";
 
 interface ScanData {
   id: string;
@@ -101,8 +103,13 @@ const CreateVisitor = () => {
 
   // Validation function
   const validateForm = () => {
-    const { VisitorName, CompanyName, PhoneNumber, VisitorCredentialImageFromRequest } = visitor;
-    
+    const {
+      VisitorName,
+      CompanyName,
+      PhoneNumber,
+      VisitorCredentialImageFromRequest,
+    } = visitor;
+
     if (!VisitorName) {
       Alert.alert("Validation Error", "Please provide the visitor's name.");
       return false;
@@ -132,10 +139,16 @@ const CreateVisitor = () => {
     formData.append("CompanyName", visitor.CompanyName);
     formData.append("PhoneNumber", visitor.PhoneNumber);
     formData.append("CredentialsCard", visitor.CredentialsCard);
-    formData.append("CredentialCardTypeId", visitor.CredentialCardTypeId.toString());
+    formData.append(
+      "CredentialCardTypeId",
+      visitor.CredentialCardTypeId.toString()
+    );
 
     if (visitor.VisitorCredentialImageFromRequest) {
-      formData.append("VisitorCredentialImageFromRequest", visitor.VisitorCredentialImageFromRequest);
+      formData.append(
+        "VisitorCredentialImageFromRequest",
+        visitor.VisitorCredentialImageFromRequest
+      );
     }
 
     try {
@@ -149,10 +162,14 @@ const CreateVisitor = () => {
         },
       ]);
     } catch (error: any) {
-      console.error("Failed to create visitor:", JSON.stringify(error, null, 2));
+      console.error(
+        "Failed to create visitor:",
+        JSON.stringify(error, null, 2)
+      );
       const errors = error?.data?.errors;
       if (errors) {
-        let errorMessage = "Failed to create visitor due to validation errors:\n";
+        let errorMessage =
+          "Failed to create visitor due to validation errors:\n";
         Object.keys(errors).forEach((field) => {
           errorMessage += `${field}: ${errors[field].join(", ")}\n`;
         });
@@ -163,8 +180,21 @@ const CreateVisitor = () => {
     }
   };
 
+  const handleGoBack = () => {
+    router.back();
+  };
+
   return (
-    <ScrollView className="flex-1 bg-gradient-to-b from-blue-50 to-white">
+    <ScrollView className="flex-1 bg-gradient-to-b from-blue-50 to-white mt-[53px]">
+      <View>
+        <Pressable
+          onPress={handleGoBack}
+          className="flex flex-row items-center space-x-2 px-4 py-2 bg-gray-100 rounded-lg active:bg-gray-200"
+        >
+          <MaterialIcons name="arrow-back" size={24} color="#4B5563" />
+          <Text className="text-gray-600 font-medium">Quay về</Text>
+        </Pressable>
+      </View>
       <View className="p-6">
         <Text className="text-3xl font-bold mb-6 text-backgroundApp text-center">
           Tạo khách đến thăm
@@ -179,14 +209,18 @@ const CreateVisitor = () => {
           </View>
 
           <View className="mb-4">
-            <Text className="text-sm font-semibold text-white mb-2">Tên khách hàng</Text>
+            <Text className="text-sm font-semibold text-white mb-2">
+              Tên khách hàng
+            </Text>
             <View className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-white">
               <Text className="text-backgroundApp">{userData?.name || ""}</Text>
             </View>
           </View>
 
           <View className="mb-4">
-            <Text className="text-sm font-semibold text-white mb-2">Số điện thoại</Text>
+            <Text className="text-sm font-semibold text-white mb-2">
+              Số điện thoại
+            </Text>
             <TextInput
               className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-backgroundApp"
               value={visitor.PhoneNumber}
@@ -196,7 +230,9 @@ const CreateVisitor = () => {
           </View>
 
           <View className="mb-4">
-            <Text className="text-sm font-semibold text-white mb-2">Tên công ty</Text>
+            <Text className="text-sm font-semibold text-white mb-2">
+              Tên công ty
+            </Text>
             <TextInput
               className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-backgroundApp"
               value={visitor.CompanyName}
@@ -218,14 +254,16 @@ const CreateVisitor = () => {
             <View className="mb-4">
               <Image
                 source={{ uri: photoUri }}
-                style={{ width: 200, height: 200 }}
+                style={{ width: 290, height: 220 }}
                 className="rounded-lg"
               />
             </View>
           )}
 
           <TouchableOpacity
-            className={`bg-buttonGreen rounded-lg py-4 px-6 shadow-md ${isLoading ? "opacity-50" : ""}`}
+            className={`bg-buttonGreen rounded-lg py-4 px-6 shadow-md ${
+              isLoading ? "opacity-50" : ""
+            }`}
             onPress={handleSubmit}
             disabled={isLoading}
           >

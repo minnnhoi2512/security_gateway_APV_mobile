@@ -8,6 +8,7 @@ import { qrcodeApi } from "../services/qrcode.service";
 import { checkinApi } from "../services/checkin.service";
 import { visitorSessionApi } from "../services/checkout.service";
 import { visitorApi } from "../services/visitor.service";
+import { userApi } from "../services/user.service";
 
 export const store = configureStore({
   reducer: {
@@ -19,11 +20,12 @@ export const store = configureStore({
     [checkinApi.reducerPath]: checkinApi.reducer,
     [visitorSessionApi.reducerPath]: visitorSessionApi.reducer,
     [visitorApi.reducerPath]: visitorApi.reducer,
+    [userApi.reducerPath]: userApi.reducer,
 
   },
 
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(authApi.middleware, visitApi.middleware, gateApi.middleware, qrcodeApi.middleware, checkinApi.middleware,visitorSessionApi.middleware, visitorApi.middleware),
+    getDefaultMiddleware().concat(authApi.middleware, visitApi.middleware, gateApi.middleware, qrcodeApi.middleware, checkinApi.middleware,visitorSessionApi.middleware, visitorApi.middleware, userApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
