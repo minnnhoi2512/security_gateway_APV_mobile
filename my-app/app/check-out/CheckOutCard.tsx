@@ -13,7 +13,7 @@ import {
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Camera, CameraView, useCameraPermissions } from "expo-camera";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   useCheckOutMutation,
   useGetVissitorSessionQuery,
@@ -25,24 +25,24 @@ import Header from "@/components/UI/Header";
 import { RootState } from "@/redux/store/store";
 
 const CheckoutCard = () => {
+  const { data, qrCardVerifiedProps } = useLocalSearchParams();
+  const visitData = data ? JSON.parse(data.toString()) : null;
+  console.log("visitData: ", visitData);
+  console.log("qrCardVerifiedProps: ", qrCardVerifiedProps);
   const [permission, requestPermission] = useCameraPermissions();
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
-  const [isCameraActive, setIsCameraActive] = useState(false);
-  const [showVisitorInfo, setShowVisitorInfo] = useState(false);
-  const qrLock = useRef(false);
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
-  const [qrCardVerified, setQrCardVerified] = useState<string | null>(null);
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
   const [checkOut, { isLoading }] = useCheckOutMutation();
-  const {
-    data: visitorSession,
-    isError,
-    refetch,
-    isFetching,
-  } = useGetVissitorSessionQuery(qrCardVerified as string);
+  // const {
+  //   data: visitorSession,
+  //   isError,
+  //   refetch,
+  //   isFetching,
+  // } = useGetVissitorSessionQuery(qrCardVerified as string);
 
   // if(visitorSession == undefined) {
   //   return <View><Text>FUCK</Text></View>
@@ -51,7 +51,6 @@ const CheckoutCard = () => {
 
   const [refreshing, setRefreshing] = useState(false);
   const [checkOutData, setCheckOutData] = useState({
-    checkoutTime: "",
     securityOutId: 0,
     gateOutId: Number(selectedGateId) || 0,
   });
@@ -60,7 +59,6 @@ const CheckoutCard = () => {
     const date = new Date(dateString);
     return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
   };
-
   useEffect(() => {
     if (permission?.granted) {
       setIsPermissionGranted(true);
@@ -108,81 +106,102 @@ const CheckoutCard = () => {
   //   }
   // }, [isLoading]);
 
-  const handleBarCodeScanned = useCallback(
-    async ({ data }: { data: string }) => {
-      if (data && !qrLock.current) {
-        qrLock.current = true;
-        setIsCameraActive(false);
+  // const handleBarCodeScanned = useCallback(
+  //   async ({ data }: { data: string }) => {
+  //     if (data && !qrLock.current) {
+  //       qrLock.current = true;
+  //       setIsCameraActive(false);
+  //       const currentTime = new Date().toISOString();
+  //       setQrCardVerified(data);
+  //       setShowVisitorInfo(true);
+  //       setCheckOutData((prevState) => ({
+  //         ...prevState,
+  //         checkoutTime: currentTime,
+  //       }));
+  //       qrLock.current = false;
+  //     }
+  //   },
+  //   [setIsCameraActive, setQrCardVerified, setShowVisitorInfo, setCheckOutData]
+  // );
 
-        const currentTime = new Date().toISOString();
+  const handleCheckout1 = useCallback(() => {
 
-        setQrCardVerified(data);
-        setShowVisitorInfo(true);
+    onPress: async () => {
+      try {
+        const response = await checkOut({
+          qrCardVerifi: qrCardVerifiedProps,
+          checkoutData: checkOutData,
+        }).unwrap();
+        Alert.alert("Thành công", "Checkout thành công!");
 
-        setCheckOutData((prevState) => ({
-          ...prevState,
-          checkoutTime: currentTime,
-        }));
+        // Clear visitor session state and related data
+        //setQrCardVerified(null);
 
-        qrLock.current = false;
+        //setShowVisitorInfo(false);
+        setCheckOutData({
+          //checkoutTime: "",
+          securityOutId: 0,
+          gateOutId: Number(selectedGateId) || 0,
+        });
+        //refetch();
+        //console.log("QR VER: ", qrCardVerified);
+
+        //setIsCameraActive(false);
+
+        // Remove session data from AsyncStorage
+        await AsyncStorage.removeItem("visitorSession");
+
+        // Navigate back to the main screen
+        router.push("/(tabs)/");
+      } catch (error) {
+        console.error("Checkout error:", error);
+        Alert.alert("Lỗi", "Checkout thất bại.");
       }
-    },
-    [setIsCameraActive, setQrCardVerified, setShowVisitorInfo, setCheckOutData]
-  );
 
-  const handleCheckout = useCallback(() => {
-    Alert.alert("Xác nhận Checkout", "Bạn có chắc chắn muốn checkout không?", [
-      {
-        text: "Hủy",
-        style: "cancel",
-      },
-      {
-        text: "OK",
-        onPress: async () => {
-          try {
-            const response = await checkOut({
-              qrCardVerifi: qrCardVerified,
-              checkoutData: checkOutData,
-            }).unwrap();
-            Alert.alert("Thành công", "Checkout thành công!");
-
-            // Clear visitor session state and related data
-            setQrCardVerified(null);
-
-            setShowVisitorInfo(false);
-            setCheckOutData({
-              checkoutTime: "",
-              securityOutId: 0,
-              gateOutId: Number(selectedGateId) || 0,
-            });
-            refetch();
-            console.log("QR VER: ", qrCardVerified);
-
-            setIsCameraActive(false);
-
-            // Remove session data from AsyncStorage
-            await AsyncStorage.removeItem("visitorSession");
-
-            // Navigate back to the main screen
-            router.push("/(tabs)/");
-          } catch (error) {
-            console.error("Checkout error:", error);
-            Alert.alert("Lỗi", "Checkout thất bại.");
-          }
-
-          // console.log("QR VER2: ", qrCardVerified);
-        },
-      },
-    ]);
-  }, [checkOut, qrCardVerified, checkOutData, selectedGateId, router]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    if (qrCardVerified) {
-      await refetch();
+      // console.log("QR VER2: ", qrCardVerified);
     }
-    setRefreshing(false);
-  }, [qrCardVerified, refetch]);
+  }, [checkOut, checkOutData, selectedGateId, router]);
+
+const  handleCheckout = async () => {
+  try {
+    const response = await  checkOut({
+      qrCardVerifi: qrCardVerifiedProps,
+      checkoutData: checkOutData,
+    }).unwrap();
+    Alert.alert("Thành công", "Checkout thành công!");
+
+    // Clear visitor session state and related data
+    //setQrCardVerified(null);
+
+    //setShowVisitorInfo(false);
+    // setCheckOutData({
+    //   checkoutTime: "",
+    //   securityOutId: 0,
+    //   gateOutId: Number(selectedGateId) || 0,
+    // });
+    //refetch();
+    //console.log("QR VER: ", qrCardVerified);
+
+    //setIsCameraActive(false);
+
+    // Remove session data from AsyncStorage
+     //AsyncStorage.removeItem("visitorSession");
+
+    // Navigate back to the main screen
+    router.push("/(tabs)/");
+  } catch (error) {
+    console.error("Checkout error:", error);
+    Alert.alert("Lỗi", "Checkout thất bại.");
+  }
+};
+
+  // const onRefresh = useCallback(async () => {
+  //   setRefreshing(true);
+  //   if (qrCardVerified) {
+  //     await refetch();
+  //   }
+  //   setRefreshing(false);
+  // }, [qrCardVerified, refetch]);
   if (!isPermissionGranted) {
     return (
       <View>
@@ -192,45 +211,45 @@ const CheckoutCard = () => {
     );
   }
 
-  const renderContent = () => {
-    if (showVisitorInfo && visitorSession && visitorSession.length > 0) {
-      return (
-        <View style={styles.visitorInfoContainer}>
-          {/* ... (keep the existing visitor info display logic) */}
-          <TouchableOpacity
-            style={styles.checkoutButton}
-            onPress={handleCheckout}
-            disabled={isLoading}
-          >
-            <Text style={styles.buttonText}>
-              {isLoading ? "Đang tiến hành..." : "Xác nhận Checkout"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      );
-    } else {
-      return (
-        <View className="flex-1 justify-center mt-[125px] items-center px-4">
-          <TouchableOpacity
-            onPress={() => setIsCameraActive(true)}
-            className="bg-[#34495e] rounded-2xl p-6 items-center justify-center w-64 h-64 shadow-lg"
-          >
-            <Ionicons name="qr-code-outline" size={100} color="white" />
-            <Text className="text-white font-bold text-lg mt-4">
-              Quét mã QR
-            </Text>
-          </TouchableOpacity>
-          <View className="p-4 ">
-            <Text className="text-2xl font-bold text-[#34495e]">
-              Tiến hành check out
-            </Text>
-          </View>
-        </View>
-      );
-    }
-  };
+  // const renderContent = () => {
+  //   if (showVisitorInfo && visitorSession && visitorSession.length > 0) {
+  //     return (
+  //       <View style={styles.visitorInfoContainer}>
+  //         {/* ... (keep the existing visitor info display logic) */}
+  //         <TouchableOpacity
+  //           style={styles.checkoutButton}
+  //           onPress={handleCheckout}
+  //           disabled={isLoading}
+  //         >
+  //           <Text style={styles.buttonText}>
+  //             {isLoading ? "Đang tiến hành..." : "Xác nhận Checkout"}
+  //           </Text>
+  //         </TouchableOpacity>
+  //       </View>
+  //     );
+  //   } else {
+  //     return (
+  //       <View className="flex-1 justify-center mt-[125px] items-center px-4">
+  //         <TouchableOpacity
+  //           onPress={() => setIsCameraActive(true)}
+  //           className="bg-[#34495e] rounded-2xl p-6 items-center justify-center w-64 h-64 shadow-lg"
+  //         >
+  //           <Ionicons name="qr-code-outline" size={100} color="white" />
+  //           <Text className="text-white font-bold text-lg mt-4">
+  //             Quét mã QR
+  //           </Text>
+  //         </TouchableOpacity>
+  //         <View className="p-4 ">
+  //           <Text className="text-2xl font-bold text-[#34495e]">
+  //             Tiến hành check out
+  //           </Text>
+  //         </View>
+  //       </View>
+  //     );
+  //   }
+  // };
 
-  console.log("visitor session data: ", visitorSession);
+  //console.log("visitor session data: ", visitorSession);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -238,60 +257,62 @@ const CheckoutCard = () => {
       <ScrollView
         contentContainerStyle={styles.scrollViewContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing}
+          // onRefresh={onRefresh} 
+          />
         }
       >
-        {visitorSession && visitorSession.length > 0 ? (
+        {data && data.length > 0 ? (
           <View style={styles.visitorInfoContainer}>
             <Text style={styles.title}>Thông tin khách hàng</Text>
-            {/* <View style={styles.infoRow}>
-                <Text style={styles.label}>Session ID:</Text>
-                <Text style={styles.value}>{visitorSession[0].visitorSessionId}</Text>
-              </View> */}
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Session ID:</Text>
+              <Text style={styles.value}>{visitData[0].visitorSessionId}</Text>
+            </View>
 
             <View style={styles.infoRow}>
               <Text style={styles.label}>Mã thẻ:</Text>
-              <Text style={styles.value}>{visitorSession[0].qrCardId}</Text>
+              <Text style={styles.value}>{visitData[0].qrCardId}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.label}>Thời gian vào:</Text>
               <Text style={styles.value}>
-                {formatDate(visitorSession[0].checkinTime)}
+                {formatDate(visitData[0].checkinTime)}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.label}>Cổng vào:</Text>
               <Text style={styles.value}>
-                {visitorSession[0].gateIn.gateName}
+                {visitData[0].gateIn.gateName}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.label}>Bảo vệ:</Text>
               <Text style={styles.value}>
-                {visitorSession[0].securityIn.fullName}
+                {visitData[0].securityIn.fullName}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.label}>Trạng thái:</Text>
               <Text style={[styles.value, styles.statusText]}>
-                {visitorSession[0].status}
+                {visitData[0].status}
               </Text>
             </View>
 
             <Text style={styles.subTitle}>Hình ảnh</Text>
             <View style={styles.imagesContainer}>
-              {visitorSession[0].images.map(
+              {visitData[0].images.map(
                 (
                   image: { imageURL: string; imageType: string },
                   index: number
                 ) => (
                   <View key={index} style={styles.imageWrapper}>
                     <Image
-                      source={{ uri: image.imageURL }}
+                      source={{ uri: "https://img.freepik.com/premium-psd/blue-sport-sneakers-shoes-isolated-transparent-background-png-psd_888962-1190.jpg" }}
                       style={styles.image}
                     />
                     <Text style={styles.imageType}>
-                      {image.imageType === "shoe" ? "Giày" : "Ảnh khách hàng"}
+                      {image.imageType === "Shoe" ? "Giày" : "Ảnh khách hàng"}
                     </Text>
                   </View>
                 )
@@ -304,37 +325,19 @@ const CheckoutCard = () => {
               disabled={isLoading}
             >
               <Text style={styles.buttonText}>
-                {isLoading ? "Đang tiến hành..." : "Xác nhận Checkout"}
+                Xác nhận Checkout
               </Text>
             </TouchableOpacity>
           </View>
         ) : (
-          <View style={styles.scannerContainer}>
-            {isCameraActive ? (
-              <View style={styles.cameraContainer}>
-                <CameraView
-                  style={styles.cameraView}
-                  onBarcodeScanned={handleBarCodeScanned}
-                />
-                <View style={styles.scanningFrame} />
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setIsCameraActive(false)}
-                >
-                  <Text style={styles.closeButtonText}>Thoát Camera</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              renderContent()
-            )}
-          </View>
+          ""
         )}
       </ScrollView>
-      {isFetching && (
+      {/* {isFetching && (
         <View style={styles.loadingContainer}>
           <Text>Đang tải thông tin khách hàng...</Text>
         </View>
-      )}
+      )} */}
     </SafeAreaView>
   );
 };
