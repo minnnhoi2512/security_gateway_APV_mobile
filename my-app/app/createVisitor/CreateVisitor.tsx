@@ -16,7 +16,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCreateVisitorMutation } from "@/redux/services/visitor.service";
 import { Visitor } from "@/Types/visitor.type";
 import { MaterialIcons } from "@expo/vector-icons";
-
+import * as FileSystem from "expo-file-system";
 interface ScanData {
   id: string;
   nationalId: string;
@@ -86,14 +86,18 @@ const CreateVisitor = () => {
 
       if (!cameraResp.canceled && cameraResp.assets[0]) {
         const { uri } = cameraResp.assets[0];
-        const fileName = uri.split("/").pop();
-        const file = {
-          uri,
-          type: "image/jpeg",
-          name: fileName,
-        };
-        handleInputChange("VisitorCredentialImageFromRequest", file);
         setPhotoUri(uri);
+        const base64 = await FileSystem.readAsStringAsync(uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        // const fileName = uri.split("/").pop();
+        // const file = {
+        //   uri,
+        //   type: "image/jpeg",
+        //   name: fileName,
+        // };
+        const file = `data:image/jpeg;base64,${base64}`;
+        handleInputChange("VisitorCredentialImageFromRequest", file);
       }
     } catch (error) {
       console.error("Error taking photo:", JSON.stringify(error, null, 2));
@@ -183,6 +187,7 @@ const CreateVisitor = () => {
   const handleGoBack = () => {
     router.back();
   };
+console.log("Create visitor data: ", visitor);
 
   return (
     <ScrollView className="flex-1 bg-gradient-to-b from-blue-50 to-white mt-[53px]">

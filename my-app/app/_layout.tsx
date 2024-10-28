@@ -4,14 +4,15 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Provider } from "react-redux";
 import { store } from "@/redux/store/store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -21,12 +22,47 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);  
+  const router = useRouter();
+
+
+
+  useEffect(() => {
+    const checkAuthToken = async () => {
+      try {
+        const token = await AsyncStorage.getItem("userToken");
+        setIsAuthenticated(!!token);
+      } catch (error) {
+        console.log("Error checking auth token:", error);
+      }
+    };
+    checkAuthToken();
+  }, []);
+
 
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
+
+
+
+  useEffect(() => {
+    if (isAuthenticated !== null && loaded) {
+      if (isAuthenticated) {
+        router.replace("/(tabs)");  
+      } else {
+        router.replace("/login");   
+      }
+    }
+  }, [isAuthenticated, loaded]);
+
+  if (!loaded || isAuthenticated === null) {
+    return null; 
+  }
+
+
 
   if (!loaded) {
     return null;

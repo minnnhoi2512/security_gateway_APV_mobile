@@ -3,6 +3,7 @@ import { View, Text, Image, TouchableOpacity, ScrollView } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 interface MenuItem {
   icon: React.ComponentProps<typeof Feather>["name"];
   title: string;
@@ -67,7 +68,18 @@ const Profile: React.FC = () => {
         ))}
 
         <TouchableOpacity
-          onPress={() => router.push("/login")}
+          onPress={async () => {
+            try {
+              
+              await AsyncStorage.removeItem("userToken");
+              await AsyncStorage.removeItem("userId");
+
+              console.log("Logout successful");
+              router.push("/login");
+            } catch (error) {
+              console.log("Error during logout:", error);
+            }
+          }}
           className="flex-row items-center bg-[#34495e] p-4 rounded-lg mb-4"
         >
           <View className="bg-gray-200 p-2 rounded-full mr-4">
