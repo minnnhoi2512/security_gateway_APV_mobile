@@ -25,13 +25,16 @@ import { Camera, CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 
 import { uploadToFirebase } from "../../firebase-config";
-import { CheckIn, CheckInVer02 } from "@/Types/checkIn.type";
+import { CheckIn, CheckInVer02, ValidCheckIn } from "@/Types/checkIn.type";
 import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 import {
   useGetDataByCardVerificationQuery,
   useShoeDetectMutation,
 } from "@/redux/services/qrcode.service";
-import { useCheckInMutation } from "@/redux/services/checkin.service";
+import {
+  useCheckInMutation,
+  useValidCheckInMutation,
+} from "@/redux/services/checkin.service";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -65,13 +68,7 @@ const UserDetail = () => {
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
   const [images, setImages] = useState<ImageData[]>([]);
 
-  const handleImageCapture = (imageData: ImageData) => {
-    setCapturedImage((prev) => [...prev, imageData]);
-    console.log("Captured Images: ", [...capturedImage, imageData]);
-  };
-
   console.log("GATE ID", selectedGateId);
-  
 
   // RTK QUERY
   const [
@@ -93,13 +90,36 @@ const UserDetail = () => {
     QrCardVerification: "",
     Images: [],
   });
+  const [validCheckInData, setValidCheckInData] = useState<ValidCheckIn>({
+    VisitDetailId: visitDetail ? visitDetail.visitDetailId : 0,
+    QrCardVerification: "",
+    ImageShoe: [],
+  });
 
+  // const handleImageCapture = (imageData: ImageData) => {
+  //   setCapturedImage((prev) => [...prev, imageData]);
+
+  //   // console.log("Captured Images: ", [...capturedImage, imageData]);
+  // };
+  const handleImageCapture = (imageData: ImageData) => {
+    // Clear existing images before adding new one
+    setCapturedImage([imageData]);
+
+    // Update valid check-in data with new image
+    setValidCheckInData((prev) => ({
+      ...prev,
+      ImageShoe: [imageData],
+    }));
+  };
   const {
     data: qrCardData,
     isLoading: isLoadingQr,
     isError: isErrorQr,
   } = useGetDataByCardVerificationQuery(checkInData.QrCardVerification);
   const [checkIn, { isLoading: isCheckingIn }] = useCheckInMutation();
+  const [validCheckIn, { isLoading: isValidCheckingIn }] =
+    useValidCheckInMutation();
+  const [isCheckInEnabled, setIsCheckInEnabled] = useState(false);
 
   const [shoeDetectResult, setShoeDetectResult] = useState<boolean | null>(
     null
@@ -140,6 +160,10 @@ const UserDetail = () => {
         ...prevData,
         VisitDetailId: visitDetailId,
       }));
+      setValidCheckInData((prevData) => ({
+        ...prevData,
+        VisitDetailId: visitDetailId,
+      }));
     }
   }, [visitDetail]);
 
@@ -163,80 +187,144 @@ const UserDetail = () => {
     router.back();
   };
 
-  const uploadPhotosAndCheckIn = async () => {
-    // if (images.length < 1) {
-    //   Alert.alert("Error", "Please take both full-body and shoe photos.");
-    //   return;
-    // }
+  useEffect(() => {
+    const validateCheckInData = async () => {
+      // Basic validation checks
+      const isQrValid = !!validCheckInData.QrCardVerification;
+      const hasOneImage = validCheckInData.ImageShoe.length === 1;
+      const hasValidVisitId = validCheckInData.VisitDetailId > 0;
 
-    // setIsUploading(true);
+      if (!isQrValid || !hasOneImage || !hasValidVisitId) {
+        setIsCheckInEnabled(false);
+        return;
+      }
 
+      try {
+        const result = await validCheckIn(validCheckInData).unwrap();
+        setIsCheckInEnabled(result);
+      } catch (error) {
+        console.error("Validation error:", error);
+        setIsCheckInEnabled(false);
+        Alert.alert(
+          "Validation Error",
+          "Please ensure all requirements are met."
+        );
+      }
+    };
+
+    validateCheckInData();
+  }, [validCheckInData]);
+
+  const handleCheckIn = async () => {
+    if (!isCheckInEnabled || capturedImage.length !== 1) {
+      Alert.alert("Error", "Please ensure exactly one shoe image is captured.");
+      return;
+    }
+
+    setIsUploading(true);
     try {
       const formData = new FormData();
       formData.append("VisitDetailId", checkInData.VisitDetailId.toString());
       formData.append("SecurityInId", checkInData.SecurityInId.toString());
       formData.append("GateInId", checkInData.GateInId.toString());
       formData.append("QrCardVerification", checkInData.QrCardVerification);
-      let imageIndex = 0; 
-      for (const image of capturedImage) {
-        // Upload the image to Firebase and get the download URL
-        const { downloadUrl } = await uploadToFirebase(
-            image.imageFile,
-            `${image.imageType}_${Date.now()}.jpg`
-        );
-    
-        // Extract the filename and type
-        const localUri = image.imageFile;
-    
-        // Initialize default values
-        let filename = "default.jpg"; // Default filename
-        let type = "image/jpeg"; // Default type
-    
-        // Check if localUri is valid before proceeding
-        if (localUri) {
-            const extractedFilename = localUri.split("/").pop(); // Extract filename
-            const match = /\.(\w+)$/.exec(extractedFilename || ""); // Extract file type
-    
-            // Update filename and type if valid
-            filename = extractedFilename || filename; // Use the extracted filename if available
-            type = match ? `image/${match[1]}` : type; // Use extracted type or default
-        } else {
-            // Handle the case when 'localUri' is null
-            console.error("Image file is not available.");
-        }
-    
-        // Append fields for this image to formData
-        formData.append(
-            `Images[${imageIndex}].ImageType`,
-            image.imageType
-        );
-        formData.append(
-            `Images[${imageIndex}].ImageURL`,
-            downloadUrl.replace(/"/g, "")
-        );
-    
-        // Append the image data
-        formData.append(`Images[${imageIndex}].Image`, {
-            uri: localUri || "", // Fallback to an empty string if localUri is null
-            name: filename,
-            type,
-        } as any);
-    
-        imageIndex++; // Increment the index counter
-    }
 
-      console.log("FORM DATA: ", formData);
+      const image = capturedImage[0];
+      const { downloadUrl } = await uploadToFirebase(
+        image.imageFile,
+        `${image.imageType}_${Date.now()}.jpg`
+      );
+
+      const localUri = image.imageFile;
+      const filename = localUri
+        ? localUri.split("/").pop() || "default.jpg"
+        : "default.jpg";
+      const type = "image/jpeg";
+
+      formData.append("Images[0].ImageType", image.imageType);
+      formData.append("Images[0].ImageURL", downloadUrl.replace(/"/g, ""));
+      formData.append("Images[0].Image", {
+        uri: localUri || "",
+        name: filename,
+        type,
+      } as any);
 
       const result = await checkIn(formData).unwrap();
-      Alert.alert("Success", "Check-in was successful!");
+      Alert.alert("Success", "Check-in completed successfully!");
       router.push("/(tabs)/");
     } catch (error) {
-      console.error("Error during check-in process:", error);
+      console.error("Check-in error:", error);
       Alert.alert("Error", "Check-in failed. Please try again.");
     } finally {
       setIsUploading(false);
     }
   };
+
+  // const uploadPhotosAndCheckIn = async () => {
+  //   try {
+  //     const formData = new FormData();
+  //     formData.append("VisitDetailId", checkInData.VisitDetailId.toString());
+  //     formData.append("SecurityInId", checkInData.SecurityInId.toString());
+  //     formData.append("GateInId", checkInData.GateInId.toString());
+  //     formData.append("QrCardVerification", checkInData.QrCardVerification);
+
+  //     let imageIndex = 0;
+  //     for (const image of capturedImage) {
+  //       // Upload the image to Firebase and get the download URL
+  //       const { downloadUrl } = await uploadToFirebase(
+  //         image.imageFile,
+  //         `${image.imageType}_${Date.now()}.jpg`
+  //       );
+
+  //       // Extract the filename and type
+  //       const localUri = image.imageFile;
+
+  //       // Initialize default values
+  //       let filename = "default.jpg"; // Default filename
+  //       let type = "image/jpeg"; // Default type
+
+  //       // Check if localUri is valid before proceeding
+  //       if (localUri) {
+  //         const extractedFilename = localUri.split("/").pop(); // Extract filename
+  //         const match = /\.(\w+)$/.exec(extractedFilename || ""); // Extract file type
+
+  //         // Update filename and type if valid
+  //         filename = extractedFilename || filename; // Use the extracted filename if available
+  //         type = match ? `image/${match[1]}` : type; // Use extracted type or default
+  //       } else {
+  //         // Handle the case when 'localUri' is null
+  //         console.error("Image file is not available.");
+  //       }
+
+  //       // Append fields for this image to formData
+  //       formData.append(`Images[${imageIndex}].ImageType`, image.imageType);
+  //       formData.append(
+  //         `Images[${imageIndex}].ImageURL`,
+  //         downloadUrl.replace(/"/g, "")
+  //       );
+
+  //       // Append the image data
+  //       formData.append(`Images[${imageIndex}].Image`, {
+  //         uri: localUri || "", // Fallback to an empty string if localUri is null
+  //         name: filename,
+  //         type,
+  //       } as any);
+
+  //       imageIndex++; // Increment the index counter
+  //     }
+
+  //     console.log("FORM DATA: ", formData);
+
+  //     const result = await checkIn(formData).unwrap();
+  //     Alert.alert("Success", "Check-in was successful!");
+  //     router.push("/(tabs)/");
+  //   } catch (error) {
+  //     console.error("Error during check-in process:", error);
+  //     Alert.alert("Error", "Check-in failed. Please try again.");
+  //   } finally {
+  //     setIsUploading(false);
+  //   }
+  // };
 
   console.log("CApture image: ", capturedImage);
 
@@ -263,6 +351,10 @@ const UserDetail = () => {
       console.log("Scanned QR Code Data:", data);
 
       setCheckInData((prevData) => ({
+        ...prevData,
+        QrCardVerification: data,
+      }));
+      setValidCheckInData((prevData) => ({
         ...prevData,
         QrCardVerification: data,
       }));
@@ -306,7 +398,7 @@ const UserDetail = () => {
     );
   }
 
-  // console.log("check data: ", checkInData);
+  console.log("Valid check data: ", validCheckInData);
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
@@ -322,7 +414,7 @@ const UserDetail = () => {
 
       <ScrollView>
         <GestureHandlerRootView className="flex-1 p-5">
-          <View className="bg-backgroundApp rounded-3xl p-6 mb-6 shadow-lg">
+          {/* <View className="bg-backgroundApp rounded-3xl p-6 mb-6 shadow-lg">
             {visitDetail && visitDetail.length > 0 ? (
               visitDetail.map((visit: VisitDetailType, index: number) => (
                 <View key={index} className="space-y-4">
@@ -372,21 +464,21 @@ const UserDetail = () => {
                 No visit details available.
               </Text>
             )}
-          </View>
+          </View> */}
 
           {/* Photo Section */}
           <Text className="text-xl font-bold text-gray-800 mb-4">Chụp ảnh</Text>
           <View>
             <VideoPlayer onCaptureImage={handleImageCapture} />
 
-            {capturedImage.map((image, index) => (
+            {/* {capturedImage.map((image, index) => (
               <Image
                 key={index} // Provide a unique key for each image
                 source={{ uri: image.imageFile || undefined }}
                 style={{ width: 200, height: 200 }}
                 resizeMode="contain"
               />
-            ))}
+            ))} */}
           </View>
 
           {/* MODAL VIEW IMAGE */}
@@ -466,14 +558,31 @@ const UserDetail = () => {
           </View>
 
           {/* Check In Button */}
-          <TouchableOpacity
-            // disabled={!isCheckInEnabled()}
+          {/* <TouchableOpacity
             onPress={uploadPhotosAndCheckIn}
+            disabled={!isCheckInEnabled} // Disable button if not enabled
             className={`p-4 rounded-lg bg-backgroundApp active:bg-backgroundApp/80`}
           >
             <Text className="text-white text-center text-lg font-medium">
               Check In
             </Text>
+          </TouchableOpacity> */}
+          <TouchableOpacity
+            onPress={handleCheckIn}
+            disabled={!isCheckInEnabled || isUploading}
+            className={`p-4 rounded-lg ${
+              isCheckInEnabled && !isUploading
+                ? "bg-backgroundApp"
+                : "bg-gray-400"
+            }`}
+          >
+            {isUploading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text className="text-white text-center text-lg font-medium">
+                {isCheckInEnabled ? "Check In" : "Capture Required Images"}
+              </Text>
+            )}
           </TouchableOpacity>
         </GestureHandlerRootView>
       </ScrollView>

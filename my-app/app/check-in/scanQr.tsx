@@ -16,6 +16,7 @@ import {
 
 import { Overlay } from "./OverLay";
 import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service";
+import { useFocusEffect } from "@react-navigation/native";
 
 interface ScanData {
   id: string;
@@ -31,36 +32,67 @@ export default function Home() {
   const qrLock = useRef(false);
   const appState = useRef(AppState.currentState);
   const router = useRouter();
-  const [scannedData, setScannedData] = useState<ScanData | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [scannedData, setScannedData] = useState<string>("");
+  const processingRef = useRef(false);
+  const redirected = useRef(false);
+
   const [credentialCardId, setCredentialCardId] = useState<string | null>(null);
 
   const {
     data: visitOfUser,
-    isLoading,
-    isError,
-    error,
+    isLoading: isLoadingVisit,
+    error: isError,
+    isFetching: isFetchingVisit,
     refetch,
   } = useGetVisitByCredentialCardQuery(credentialCardId || "", {
     skip: !credentialCardId,
   });
-
-  const parseQRData = (qrData: string): ScanData | null => {
+  const parseQRData = (qrData: string): ScanData => {
     const [id, nationalId, name, dateOfBirth, gender, address, issueDate] =
       qrData.split("|");
-    if (
-      id &&
-      nationalId &&
-      name &&
-      dateOfBirth &&
-      gender &&
-      address &&
-      issueDate
-    ) {
-      return { id, nationalId, name, dateOfBirth, gender, address, issueDate };
-    }
-    return null;
+    return { id, nationalId, name, dateOfBirth, gender, address, issueDate };
   };
+  // const parseQRData = (qrData: string): ScanData | null => {
+  //   const [id, nationalId, name, dateOfBirth, gender, address, issueDate] =
+  //     qrData.split("|");
+  //   if (
+  //     id &&
+  //     nationalId &&
+  //     name &&
+  //     dateOfBirth &&
+  //     gender &&
+  //     address &&
+  //     issueDate
+  //   ) {
+  //     return { id, nationalId, name, dateOfBirth, gender, address, issueDate };
+  //   }
+  //   return null;
+  // };
+
+  const resetState = () => {
+    console.log("Resetting state...");
+    setScannedData('');
+    setCredentialCardId(null);
+    qrLock.current = false;
+    processingRef.current = false;
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      resetState();
+      redirected.current = false;
+      return () => {};
+    }, [])
+  );
+  
+
+  useEffect(() => {
+    if (scannedData) {
+      const parsedData = parseQRData(scannedData);
+      setCredentialCardId(parsedData.id);
+    }
+  }, [scannedData]);
+
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -78,105 +110,139 @@ export default function Home() {
     };
   }, []);
 
-  useEffect(() => {
-    if (credentialCardId) {
-      setIsProcessing(true);
-      refetch();
-    }
-  }, [credentialCardId, refetch]);
+  const handleVisitNotFound = () => {
+    Alert.alert(
+      "Không tìm thấy dữ liệu",
+      "Không tìm thấy dữ liệu cho ID này. Bạn sẽ được chuyển hướng đến tạo mới lịch hẹn",
+      [
+        {
+          text: "OK",
+          onPress: () => {
+            router.push({
+              pathname: "/(tabs)/createCustomer",
+            });
+            resetState();
+          },
+        },
+        {
+          text: "Hủy",
+          onPress: () => {
+            resetState();
+          },
+        },
+      ]
+    );
+  };
 
   useEffect(() => {
-    if (!isLoading && credentialCardId) {
-      setIsProcessing(false);
-      if (visitOfUser && Array.isArray(visitOfUser) && visitOfUser.length > 0) {
-        handleVisitData();
+    if (!credentialCardId || processingRef.current || redirected.current)
+      return;
+
+    if (credentialCardId && !isLoadingVisit && !isFetchingVisit) {
+      processingRef.current = true;
+      qrLock.current = true;
+      if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
+        redirected.current = true;
+        router.push({
+          pathname: "/check-in/ListVisit",
+          params: { data: JSON.stringify(visitOfUser) },
+        });
+        resetState();
       } else {
-        Alert.alert("Thông báo", "Không có dữ liệu visit cho người dùng này.", [
-          {
-            text: "Trở về",
-            onPress: () => {
-              resetState();
-              router.push({
-                pathname: "/(tabs)/checkin",
-              });
-            },
-          },
-          {
-            text: "Tạo mới lịch hẹn",
-            onPress: () => {
-              resetState();
-              router.push({
-                pathname: "/(tabs)/createCustomer",
-              });
-            },
-          },
-        ]);
+        handleVisitNotFound();
       }
     }
-  }, [isLoading, visitOfUser, credentialCardId]);
+  }, [visitOfUser, isLoadingVisit, isFetchingVisit, credentialCardId]);
 
-  const resetState = () => {
-    console.log("Resetting state...");
-    qrLock.current = false;
-    setScannedData(null);
-    setCredentialCardId(null);
-    setIsProcessing(false);
-  };
+  // const handleVisitData = () => {
+  //   if (visitOfUser && visitOfUser.length > 0 && scannedData) {
+  //     Alert.alert(
+  //       "Xác nhận thông tin",
+  //       `Bạn có muốn đi đến chi tiết của: ${scannedData.name}?`,
+  //       [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+  //             router.push({
+  //               pathname: "/check-in/ListVisit",
+  //               params: { data: JSON.stringify(visitOfUser) },
+  //             });
+  //             resetState();
+  //             console.log("Navigating to UserDetail with data:", scannedData);
+  //           },
+  //         },
+  //         {
+  //           text: "Hủy",
+  //           onPress: () => {
+  //             router.push({
+  //               pathname: "/(tabs)/checkin",
+  //               params: { data: JSON.stringify(scannedData) },
+  //             });
+  //             resetState();
+  //             console.log("User cancelled, state reset.");
+  //           },
+  //           style: "cancel",
+  //         },
+  //       ],
+  //       { cancelable: false }
+  //     );
+  //   } else {
+  //     console.log("Không có dữ liệu visit hoặc dữ liệu quét không hợp lệ.");
+  //     resetState();
+  //   }
+  // };
 
-  const handleVisitData = () => {
-    if (visitOfUser && visitOfUser.length > 0 && scannedData) {
-      Alert.alert(
-        "Xác nhận thông tin",
-        `Bạn có muốn đi đến chi tiết của: ${scannedData.name}?`,
-        [
-          {
-            text: "Hủy",
-            onPress: () => {
-              router.push({
-                pathname: "/(tabs)/checkin",
-                params: { data: JSON.stringify(scannedData) },
-              });
-              resetState();
-              console.log("User cancelled, state reset.");
-            },
-            style: "cancel",
-          },
-          {
-            text: "OK",
-            onPress: () => {
-              router.push({
-                pathname: "/check-in/ListVisit",
-                params: { data: JSON.stringify(visitOfUser) },
-              });
-              // resetState();
-              console.log("Navigating to UserDetail with data:", scannedData);
-            },
-          },
-        ],
-        { cancelable: false }
-      );
-    } else {
-      console.log("Không có dữ liệu visit hoặc dữ liệu quét không hợp lệ.");
-      resetState();
-    }
-  };
+  // useEffect(() => {
+  //   if (credentialCardId) {
+  //     setIsProcessing(true);
+  //     refetch();
+  //   }
+  // }, [credentialCardId, refetch]);
+
+  // useEffect(() => {
+  //   if (credentialCardId && !isLoadingVisit && !isFetchingVisit) {
+  //     setIsProcessing(false);
+  //     if (visitOfUser && Array.isArray(visitOfUser) && visitOfUser.length > 0) {
+  //       handleVisitData();
+  //     } else {
+  //       Alert.alert("Thông báo", "Không có dữ liệu visit cho người dùng này.", [
+  //         {
+  //           text: "Tạo mới lịch hẹn",
+  //           onPress: () => {
+  //             router.push({
+  //               pathname: "/(tabs)/createCustomer",
+  //             });
+  //             resetState();
+  //           },
+  //         },
+  //         {
+  //           text: "Trở về",
+  //           onPress: () => {
+  //             router.push({
+  //               pathname: "/(tabs)/checkin",
+  //             });
+  //             resetState();
+  //           },
+  //         },
+  //       ]);
+  //     }
+  //   }
+  // }, [isLoadingVisit, visitOfUser, isFetchingVisit, credentialCardId]);
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
-    if (data && !qrLock.current && !isProcessing) {
+    if (data && !qrLock.current && !processingRef.current) {
       qrLock.current = true;
-      setIsProcessing(true);
+      setScannedData(data);
       console.log("Scanned QR Code Data:", data);
 
-      const parsedData = parseQRData(data);
-      if (parsedData) {
-        setScannedData(parsedData);
-        setCredentialCardId(parsedData.id);
-      } else {
-        Alert.alert("Lỗi", "Dữ liệu quét không hợp lệ.");
-        resetState();
-      }
-    } else {
-      console.log("Scanning is locked or processing is in progress.");
+      // const parsedData = parseQRData(data);
+      // if (parsedData) {
+      //   setScannedData(parsedData);
+      //   setCredentialCardId(parsedData.id);
+      // } else {
+      //   Alert.alert("Lỗi", "Dữ liệu quét không hợp lệ.");
+      //   resetState();
+      // }
     }
   };
 
@@ -185,6 +251,7 @@ export default function Home() {
   console.log("Current scanned data:", scannedData);
 
   const handleGoBack = () => {
+    resetState();
     router.back();
   };
 
@@ -205,12 +272,13 @@ export default function Home() {
       />
 
       <Overlay />
-      {isProcessing && (
+      {isLoadingVisit && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#ffffff" />
           <Text style={styles.loadingText}>Đang xử lý...</Text>
         </View>
       )}
+
       <Pressable style={styles.backButton} onPress={handleGoBack}>
         <Text style={styles.backButtonText}>Quay về</Text>
       </Pressable>

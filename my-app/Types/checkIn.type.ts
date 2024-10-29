@@ -27,6 +27,13 @@ export interface CheckInVer02 {
   }>;
 }
 
+export interface ValidCheckIn {
+  VisitDetailId: number;
+  QrCardVerification: string;
+  ImageShoe: any
+}
+
+
   
 
   

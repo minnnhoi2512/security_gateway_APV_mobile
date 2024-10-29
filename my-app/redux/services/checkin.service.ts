@@ -1,4 +1,4 @@
-import { CheckIn, CheckInVer02 } from "@/Types/checkIn.type";
+import { CheckInVer02, ValidCheckIn } from "@/Types/checkIn.type";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
@@ -22,9 +22,8 @@ export const checkinApi = createApi({
         let formData: FormData;
 
         if (data instanceof FormData) {
-          formData = data; // Nếu đã là FormData, dùng trực tiếp
+          formData = data;
         } else {
-          // Nếu là CheckInVer02, chuyển thành FormData
           formData = new FormData();
           formData.append("VisitDetailId", data.VisitDetailId.toString());
           formData.append("SecurityInId", data.SecurityInId.toString());
@@ -34,7 +33,7 @@ export const checkinApi = createApi({
           data.Images.forEach((image, index) => {
             formData.append(`Images[${index}].ImageType`, image.ImageType);
             formData.append(`Images[${index}].ImageURL`, image.ImageURL);
-            formData.append(`Images[${index}].Image`, image.Image); 
+            formData.append(`Images[${index}].Image`, image.Image);
           });
         }
 
@@ -42,11 +41,44 @@ export const checkinApi = createApi({
           url: "/VisitorSession/CheckIn",
           method: "POST",
           body: formData,
-          // Không cần Content-Type vì fetch sẽ tự thêm boundary
+        };
+      },
+    }),
+
+    validCheckIn: builder.mutation<any, FormData | ValidCheckIn>({
+      query: (data) => {
+        let formData: FormData;
+
+        if (data instanceof FormData) {
+          formData = data;
+        } else {
+          formData = new FormData();
+          formData.append("VisitDetailId", data.VisitDetailId.toString());
+          formData.append("QrCardVerification", data.QrCardVerification);
+
+          if (data.ImageShoe && data.ImageShoe.length === 1) {
+            const image = data.ImageShoe[0]; // Get the first image
+            const imageName = image.imageFile.split("/").pop() || "default.jpg";
+
+            formData.append("ImageShoe", {
+              uri: image.imageFile,
+              type: "image/jpeg",
+              name: imageName,
+            } as any);
+          } else {
+            console.error("ImageShoe is not populated correctly.");
+            throw new Error("ImageShoe must contain exactly one image.");
+          }
+        }
+
+        return {
+          url: "/VisitorSession/ValidCheckIn",
+          method: "POST",
+          body: formData,
         };
       },
     }),
   }),
 });
 
-export const { useCheckInMutation } = checkinApi;
+export const { useCheckInMutation, useValidCheckInMutation } = checkinApi;

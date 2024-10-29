@@ -51,7 +51,7 @@ export default function RootLayout() {
   useEffect(() => {
     if (isAuthenticated !== null && loaded) {
       if (isAuthenticated) {
-        router.replace("/(tabs)");  
+        router.replace("/PickGate");  
       } else {
         router.replace("/login");   
       }

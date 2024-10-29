@@ -30,7 +30,8 @@ export const visitApi = createApi({
     getVisitByCredentialCard: builder.query({
       query: (credentialCard: string) => {
         const currentDate = new Date().toISOString().split('T')[0];
-        return `Visit/CurrentDate/CredentialCard/${credentialCard}?date=${currentDate}`;
+        // return `Visit/CurrentDate/CredentialCard/${credentialCard}?date=${currentDate}`;
+        return `Visit/CurrentDate/CredentialCard/${credentialCard}`;
       },
       providesTags: [{ type: 'VisitByCard', id: 'LIST' }]
     }),
