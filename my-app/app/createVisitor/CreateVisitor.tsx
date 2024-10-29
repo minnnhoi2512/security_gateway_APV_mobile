@@ -16,7 +16,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCreateVisitorMutation } from "@/redux/services/visitor.service";
 import { Visitor } from "@/Types/visitor.type";
 import { MaterialIcons } from "@expo/vector-icons";
-import * as FileSystem from "expo-file-system";
 interface ScanData {
   id: string;
   nationalId: string;
@@ -26,7 +25,6 @@ interface ScanData {
   address: string;
   issueDate: string;
 }
-
 const CreateVisitor = () => {
   const { data } = useLocalSearchParams<{ data: string }>();
   const [permission, requestPermission] = useCameraPermissions();
@@ -35,17 +33,14 @@ const CreateVisitor = () => {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [createVisitor, { isLoading }] = useCreateVisitorMutation();
   let credentialCardId: string | null = null;
-
   const parseQRData = (qrData: string): ScanData => {
     const [id, nationalId, name, dateOfBirth, gender, address, issueDate] =
       qrData.split("|");
     credentialCardId = id;
     return { id, nationalId, name, dateOfBirth, gender, address, issueDate };
   };
-
   const userData: ScanData | null = data ? parseQRData(data) : null;
   const [photoUri, setPhotoUri] = useState<string | null>(null);
-
   const [visitor, setVisitor] = useState<Visitor>({
     VisitorName: userData?.name || "",
     CompanyName: "",
@@ -54,13 +49,11 @@ const CreateVisitor = () => {
     CredentialCardTypeId: 2,
     VisitorCredentialImageFromRequest: null,
   });
-
   useEffect(() => {
     if (permission?.granted) {
       setIsPermissionGranted(true);
     }
   }, [permission]);
-
   useEffect(() => {
     const checkPermissions = async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
@@ -68,14 +61,12 @@ const CreateVisitor = () => {
     };
     checkPermissions();
   }, []);
-
   const handleInputChange = (field: string, value: any) => {
     setVisitor((prevState) => ({
       ...prevState,
       [field]: value,
     }));
   };
-
   const takePhoto = async () => {
     try {
       const cameraResp = await ImagePicker.launchCameraAsync({
@@ -83,28 +74,22 @@ const CreateVisitor = () => {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 1,
       });
-
       if (!cameraResp.canceled && cameraResp.assets[0]) {
         const { uri } = cameraResp.assets[0];
-        setPhotoUri(uri);
-        const base64 = await FileSystem.readAsStringAsync(uri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-        // const fileName = uri.split("/").pop();
-        // const file = {
-        //   uri,
-        //   type: "image/jpeg",
-        //   name: fileName,
-        // };
-        const file = `data:image/jpeg;base64,${base64}`;
+        const fileName = uri.split("/").pop();
+        const file = {
+          uri,
+          type: "image/jpeg",
+          name: fileName,
+        };
         handleInputChange("VisitorCredentialImageFromRequest", file);
+        setPhotoUri(uri);
       }
     } catch (error) {
       console.error("Error taking photo:", JSON.stringify(error, null, 2));
       Alert.alert("Error", "Failed to take photo. Please try again.");
     }
   };
-
   // Validation function
   const validateForm = () => {
     const {
@@ -113,7 +98,6 @@ const CreateVisitor = () => {
       PhoneNumber,
       VisitorCredentialImageFromRequest,
     } = visitor;
-
     if (!VisitorName) {
       Alert.alert("Validation Error", "Please provide the visitor's name.");
       return false;
@@ -132,12 +116,10 @@ const CreateVisitor = () => {
     }
     return true;
   };
-
   const handleSubmit = async () => {
     if (!validateForm()) {
       return; // If validation fails, exit the function
     }
-
     const formData = new FormData();
     formData.append("VisitorName", visitor.VisitorName);
     formData.append("CompanyName", visitor.CompanyName);
@@ -147,14 +129,12 @@ const CreateVisitor = () => {
       "CredentialCardTypeId",
       visitor.CredentialCardTypeId.toString()
     );
-
     if (visitor.VisitorCredentialImageFromRequest) {
       formData.append(
         "VisitorCredentialImageFromRequest",
         visitor.VisitorCredentialImageFromRequest
       );
     }
-
     try {
       const response = await createVisitor(formData).unwrap();
       Alert.alert("Thành công", "Tạo khách vãng lai thành công", [
@@ -183,12 +163,10 @@ const CreateVisitor = () => {
       }
     }
   };
-
   const handleGoBack = () => {
     router.back();
   };
 console.log("Create visitor data: ", visitor);
-
   return (
     <ScrollView className="flex-1 bg-gradient-to-b from-blue-50 to-white mt-[53px]">
       <View>
@@ -204,7 +182,6 @@ console.log("Create visitor data: ", visitor);
         <Text className="text-3xl font-bold mb-6 text-backgroundApp text-center">
           Tạo khách đến thăm
         </Text>
-
         <View className="bg-backgroundApp rounded-xl shadow-lg p-6 mb-6">
           <View className="mb-4">
             <Text className="text-sm font-semibold text-white mb-2">CCCD</Text>
@@ -212,7 +189,6 @@ console.log("Create visitor data: ", visitor);
               <Text className="text-backgroundApp">{userData?.id || ""}</Text>
             </View>
           </View>
-
           <View className="mb-4">
             <Text className="text-sm font-semibold text-white mb-2">
               Tên khách hàng
@@ -221,7 +197,6 @@ console.log("Create visitor data: ", visitor);
               <Text className="text-backgroundApp">{userData?.name || ""}</Text>
             </View>
           </View>
-
           <View className="mb-4">
             <Text className="text-sm font-semibold text-white mb-2">
               Số điện thoại
@@ -233,7 +208,6 @@ console.log("Create visitor data: ", visitor);
               placeholder="Nhập số điện thoại"
             />
           </View>
-
           <View className="mb-4">
             <Text className="text-sm font-semibold text-white mb-2">
               Tên công ty
@@ -245,7 +219,6 @@ console.log("Create visitor data: ", visitor);
               placeholder="Nhập tên công ty"
             />
           </View>
-
           <View className="mb-4">
             <TouchableOpacity
               onPress={takePhoto}
@@ -254,7 +227,6 @@ console.log("Create visitor data: ", visitor);
               <Text className="text-white text-center">Chụp ảnh CCCD</Text>
             </TouchableOpacity>
           </View>
-
           {photoUri && (
             <View className="mb-4">
               <Image
@@ -264,7 +236,6 @@ console.log("Create visitor data: ", visitor);
               />
             </View>
           )}
-
           <TouchableOpacity
             className={`bg-buttonGreen rounded-lg py-4 px-6 shadow-md ${
               isLoading ? "opacity-50" : ""
@@ -281,5 +252,4 @@ console.log("Create visitor data: ", visitor);
     </ScrollView>
   );
 };
-
 export default CreateVisitor;

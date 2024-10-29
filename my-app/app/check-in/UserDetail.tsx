@@ -38,14 +38,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as RNPicker from "@react-native-picker/picker";
 import { VisitDetailType } from "@/redux/Types/visit.type";
 import { captureRef } from "react-native-view-shot";
+import VideoPlayer from "../(tabs)/streaming";
 interface ImageData {
   imageType: "Shoe";
-  imageFile: string;
+  imageFile: string | null;
 }
 
 const UserDetail = () => {
   const videoRef = useRef<Video>(null);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const { visitId } = useLocalSearchParams<{ visitId: string }>();
   const router = useRouter();
@@ -61,8 +61,17 @@ const UserDetail = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   // const screenWidth = Dimensions.get("window").width;
   const [qrImage, setQrImage] = useState<string | null>(null);
+
+  const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
   const [images, setImages] = useState<ImageData[]>([]);
- 
+
+  const handleImageCapture = (imageData: ImageData) => {
+    setCapturedImage((prev) => [...prev, imageData]);
+    console.log("Captured Images: ", [...capturedImage, imageData]);
+  };
+
+  console.log("GATE ID", selectedGateId);
+  
 
   // RTK QUERY
   const [
@@ -154,112 +163,6 @@ const UserDetail = () => {
     router.back();
   };
 
-
-  // const captureImage = async () => {
-  //   try {
- 
-  //     const uri = await captureRef(videoRef, {
-  //       format: "jpg",
-  //       quality: 0.8,
-  //     });
-
-  //     const shoeImage: ImageData = {
-  //       imageType: "Shoe",
-  //       imageFile: uri,
-  //     };
-
-  //     setImages((prevImages) => [
-  //       ...prevImages.filter((img) => img.imageType !== "Shoe"),
-  //       shoeImage,
-  //     ]);
-
-  //     console.log("Captured image URI:", shoeImage);
-  //   } catch (error) {
-  //     console.error("Failed to capture image:", error);
-  //   }
-  // };
-
-  const captureImage = async () => {
-    if (videoRef.current) {
-      try {
-        // Pause the video to capture the current frame
-        await videoRef.current.pauseAsync();
-        
-        // Get the video frame using a suitable method; this is a placeholder
-        const snapshot = await videoRef.current.getStatusAsync();
-  
-        // Assuming you have a method to extract a frame, for example, using `captureRef`
-        const frameUri = await captureRef(videoRef.current, {
-          format: 'png',
-          quality: 0.8,
-        });
-  
-        // Save the captured frame to the file system
-        const savedFileUri = `${FileSystem.documentDirectory}captured_image.png`;
-        
-        // You can use FileSystem.copyAsync to save the image if necessary
-        await FileSystem.copyAsync({
-          from: frameUri,
-          to: savedFileUri,
-        });
-  
-        const shoeImage: ImageData = {
-          imageType: 'Shoe',
-          imageFile: savedFileUri,
-        };
-  
-        // Update the images state
-        setImages((prevImages) => [
-          ...prevImages.filter((img) => img.imageType !== 'Shoe'),
-          shoeImage,
-        ]);
-  
-        setCapturedImage(savedFileUri);
-        console.log("Captured image URI:", savedFileUri);
-      } catch (error) {
-        console.error("Capture Error:", error);
-      }
-    }
-  };
-
-  
-  //   try {
-  //     await playVideo(); // Ensure video is playing
-  //     setTimeout(async () => {
-  //       const uri = await captureRef(videoRef, {
-  //         format: "jpg",
-  //         quality: 0.8,
-  //       });
-  
-  //       const shoeImage: ImageData = {
-  //         imageType: "Shoe",
-  //         imageFile: uri,
-  //       };
-  
-  //       setImages((prevImages) => [
-  //         ...prevImages.filter((img) => img.imageType !== "Shoe"),
-  //         shoeImage,
-  //       ]);
-  
-  //       console.log("Captured image URI:", shoeImage);
-  //     }, 1000); // Delay for 1 second
-  //   } catch (error) {
-  //     console.error("Failed to capture image:", error);
-  //   }
-  // };
-  
-
-  const playVideo = async () => {
-    if (videoRef.current) {
-      try {
-        await videoRef.current.playAsync();
-        setIsPlaying(true);
-      } catch (error) {
-        console.error("Play Video Error:", error);
-      }
-    }
-  };
-
   const uploadPhotosAndCheckIn = async () => {
     // if (images.length < 1) {
     //   Alert.alert("Error", "Please take both full-body and shoe photos.");
@@ -274,35 +177,53 @@ const UserDetail = () => {
       formData.append("SecurityInId", checkInData.SecurityInId.toString());
       formData.append("GateInId", checkInData.GateInId.toString());
       formData.append("QrCardVerification", checkInData.QrCardVerification);
-
-      for (const image of images) {
+      let imageIndex = 0; 
+      for (const image of capturedImage) {
         // Upload the image to Firebase and get the download URL
         const { downloadUrl } = await uploadToFirebase(
-          image.imageFile,
-          `${image.imageType}_${Date.now()}.jpg`
+            image.imageFile,
+            `${image.imageType}_${Date.now()}.jpg`
         );
-
+    
         // Extract the filename and type
         const localUri = image.imageFile;
-        const filename = localUri.split("/").pop();
-        const match = /\.(\w+)$/.exec(filename || "");
-        const type = match ? `image/${match[1]}` : `image`;
-
+    
+        // Initialize default values
+        let filename = "default.jpg"; // Default filename
+        let type = "image/jpeg"; // Default type
+    
+        // Check if localUri is valid before proceeding
+        if (localUri) {
+            const extractedFilename = localUri.split("/").pop(); // Extract filename
+            const match = /\.(\w+)$/.exec(extractedFilename || ""); // Extract file type
+    
+            // Update filename and type if valid
+            filename = extractedFilename || filename; // Use the extracted filename if available
+            type = match ? `image/${match[1]}` : type; // Use extracted type or default
+        } else {
+            // Handle the case when 'localUri' is null
+            console.error("Image file is not available.");
+        }
+    
         // Append fields for this image to formData
         formData.append(
-          `Images[${images.indexOf(image)}].ImageType`,
-          image.imageType
+            `Images[${imageIndex}].ImageType`,
+            image.imageType
         );
         formData.append(
-          `Images[${images.indexOf(image)}].ImageURL`,
-          downloadUrl.replace(/"/g, "")
+            `Images[${imageIndex}].ImageURL`,
+            downloadUrl.replace(/"/g, "")
         );
-        formData.append(`Images[${images.indexOf(image)}].Image`, {
-          uri: localUri,
-          name: filename,
-          type,
+    
+        // Append the image data
+        formData.append(`Images[${imageIndex}].Image`, {
+            uri: localUri || "", // Fallback to an empty string if localUri is null
+            name: filename,
+            type,
         } as any);
-      }
+    
+        imageIndex++; // Increment the index counter
+    }
 
       console.log("FORM DATA: ", formData);
 
@@ -316,13 +237,8 @@ const UserDetail = () => {
       setIsUploading(false);
     }
   };
-  const isCheckInEnabled = () => {
-    return (
-      images.length === 2 && checkInData.QrCardVerification !== ""
-      // &&
-      // securityConfirmation === "correct"
-    );
-  };
+
+  console.log("CApture image: ", capturedImage);
 
   const resetQrScanning = () => {
     qrLock.current = false;
@@ -461,34 +377,14 @@ const UserDetail = () => {
           {/* Photo Section */}
           <Text className="text-xl font-bold text-gray-800 mb-4">Chụp ảnh</Text>
           <View>
-            <Text>Streaming</Text>
-            <Video
-              ref={videoRef}
-              source={{
-                uri: "https://security-gateway-camera.tools.kozow.com/index.m3u8",
-              }}
-              style={{ width: "100%", height: 300 }}
-              onError={(e) => console.log("Video Error:", e)}
-              shouldPlay={true}
-            />
-            {isPlaying && (
-              <Button title="Capture Image" onPress={captureImage} />
-            )}
-            {!isPlaying && <Button title="Play Video" onPress={playVideo} />}
+            <VideoPlayer onCaptureImage={handleImageCapture} />
 
-            {/* Show Captured Image */}
-            {capturedImage && (
+            {capturedImage.map((image, index) => (
               <Image
-                source={{ uri: capturedImage }}
-                style={{ width: "100%", height: 300, marginTop: 10 }}
-              />
-            )}
-
-            {images.map((img, index) => (
-              <Image
-                key={index}
-                source={{ uri: img.imageFile }}
-                className="w-[150px] h-[150px]"
+                key={index} // Provide a unique key for each image
+                source={{ uri: image.imageFile || undefined }}
+                style={{ width: 200, height: 200 }}
+                resizeMode="contain"
               />
             ))}
           </View>
@@ -569,16 +465,11 @@ const UserDetail = () => {
             )}
           </View>
 
-
           {/* Check In Button */}
           <TouchableOpacity
             // disabled={!isCheckInEnabled()}
             onPress={uploadPhotosAndCheckIn}
-            className={`p-4 rounded-lg ${
-              isCheckInEnabled()
-                ? "bg-backgroundApp active:bg-backgroundApp/80"
-                : "bg-gray-400"
-            }`}
+            className={`p-4 rounded-lg bg-backgroundApp active:bg-backgroundApp/80`}
           >
             <Text className="text-white text-center text-lg font-medium">
               Check In

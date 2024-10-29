@@ -32,6 +32,7 @@ export default function ScanQrCreate() {
   const [scannedData, setScannedData] = useState<string>("");
   const [credentialCardId, setCredentialCardId] = useState<string | null>(null);
   const processingRef = useRef(false);
+  const redirected = useRef(false);
 
   const parseQRData = (qrData: string): ScanData => {
     const [id, nationalId, name, dateOfBirth, gender, address, issueDate] =
@@ -58,8 +59,9 @@ export default function ScanQrCreate() {
   useFocusEffect(
     React.useCallback(() => {
       resetStates();
+      redirected.current = false;
       return () => {
-        resetStates();
+      
       };
     }, [])
   );
@@ -113,14 +115,15 @@ export default function ScanQrCreate() {
     );
   };
 
-  // Separate useEffect for data fetching response
+
   useEffect(() => {
-    if (!credentialCardId || processingRef.current) return;
+    if (!credentialCardId || processingRef.current || redirected.current) return;
 
-    if (!isLoading && !isFetching) {
+    if (credentialCardId && !isLoading && !isFetching) {
       processingRef.current = true;
-
+      qrLock.current = true;
       if (visitData?.visitorId && !isFetching && !isLoading && !error) {
+        redirected.current = true;  
         router.push({
           pathname: "/createVisit/FormCreate",
           params: {
@@ -133,12 +136,14 @@ export default function ScanQrCreate() {
         handleVisitorNotFound();
       }
     }
-  }, [visitData, isLoading, isFetching]);
+  }, [visitData, isLoading, isFetching, credentialCardId]);
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (data && !qrLock.current && !processingRef.current) {
       qrLock.current = true;
       setScannedData(data);
+      console.log("QR SS QUET MOI");
+      
     }
   };
 
