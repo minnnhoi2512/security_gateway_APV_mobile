@@ -18,9 +18,13 @@ interface ImageData {
 
 interface VideoPlayerProps {
   onCaptureImage: (imageData: ImageData) => void;
+  autoCapture: boolean;
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ onCaptureImage }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({
+  onCaptureImage,
+  autoCapture,
+}) => {
   const videoRef = useRef<Video | null>(null);
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
 
@@ -92,6 +96,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ onCaptureImage }) => {
       throw error;
     }
   };
+
+  useEffect(() => {
+    if (autoCapture && !isLoading) {
+      handleCapture();
+    }
+  }, [autoCapture]);
 
   const handleCapture = async () => {
     if (!videoRef.current) return;
@@ -175,26 +185,30 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ onCaptureImage }) => {
           }
         }}
       />
-      <Text style={styles.text}>
+      {/* <Text style={styles.text}>
         Press Capture to take a screenshot of the current frame
       </Text>
       <Button
         title={isLoading ? "Capturing..." : "Capture Frame"}
         onPress={handleCapture}
         disabled={isLoading}
-      />
+      /> */}
+
+      <Text style={styles.text}>
+        Hình ảnh chụp từ camera
+      </Text>
       {capturedImage.map((image, index) => (
         <Image
           key={index} // Provide a unique key for each image
-          source={{ uri: image.imageFile  || undefined  }}
+          source={{ uri: image.imageFile || undefined }}
           style={styles.capturedImage}
           resizeMode="contain"
         />
       ))}
 
       <View style={styles.buttonContainer}>
-        <Button title="Previous" onPress={handlePrevious} />
-        <Button title="Next" onPress={handleNext} />
+        <Button title="Trở lại" onPress={handlePrevious} />
+        <Button title="Tiếp theo" onPress={handleNext} />
       </View>
     </View>
   );

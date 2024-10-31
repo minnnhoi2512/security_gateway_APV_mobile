@@ -35,7 +35,7 @@ export default function Home() {
   const [scannedData, setScannedData] = useState<string>("");
   const processingRef = useRef(false);
   const redirected = useRef(false);
-
+  const [isProcessing, setIsProcessing] = useState(false);
   const [credentialCardId, setCredentialCardId] = useState<string | null>(null);
 
   const {
@@ -71,8 +71,9 @@ export default function Home() {
 
   const resetState = () => {
     console.log("Resetting state...");
-    setScannedData('');
+    setScannedData("");
     setCredentialCardId(null);
+    setIsProcessing(false);
     qrLock.current = false;
     processingRef.current = false;
   };
@@ -84,15 +85,14 @@ export default function Home() {
       return () => {};
     }, [])
   );
-  
 
   useEffect(() => {
     if (scannedData) {
       const parsedData = parseQRData(scannedData);
       setCredentialCardId(parsedData.id);
+      setIsProcessing(true);
     }
   }, [scannedData]);
-
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -111,6 +111,7 @@ export default function Home() {
   }, []);
 
   const handleVisitNotFound = () => {
+    setIsProcessing(false);
     Alert.alert(
       "Không tìm thấy dữ liệu",
       "Không tìm thấy dữ liệu cho ID này. Bạn sẽ được chuyển hướng đến tạo mới lịch hẹn",
@@ -135,24 +136,50 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (!credentialCardId || processingRef.current || redirected.current)
-      return;
+    const handleNavigation = async () => {
+      if (!credentialCardId || processingRef.current || redirected.current) return;
 
-    if (credentialCardId && !isLoadingVisit && !isFetchingVisit) {
-      processingRef.current = true;
-      qrLock.current = true;
-      if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
-        redirected.current = true;
-        router.push({
-          pathname: "/check-in/ListVisit",
-          params: { data: JSON.stringify(visitOfUser) },
-        });
-        resetState();
-      } else {
-        handleVisitNotFound();
+      if (credentialCardId && !isLoadingVisit && !isFetchingVisit) {
+        processingRef.current = true;
+        qrLock.current = true;
+
+        if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
+          redirected.current = true;
+       
+          await new Promise(resolve => setTimeout(resolve, 500));
+          router.push({
+            pathname: "/check-in/ListVisit",
+            params: { data: JSON.stringify(visitOfUser) },
+          });
+          resetState();
+        } else {
+          handleVisitNotFound();
+        }
       }
-    }
+    };
+
+    handleNavigation();
   }, [visitOfUser, isLoadingVisit, isFetchingVisit, credentialCardId]);
+
+  // useEffect(() => {
+  //   if (!credentialCardId || processingRef.current || redirected.current)
+  //     return;
+
+  //   if (credentialCardId && !isLoadingVisit && !isFetchingVisit) {
+  //     processingRef.current = true;
+  //     qrLock.current = true;
+  //     if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
+  //       redirected.current = true;
+  //       router.push({
+  //         pathname: "/check-in/ListVisit",
+  //         params: { data: JSON.stringify(visitOfUser) },
+  //       });
+  //       // resetState();
+  //     } else {
+  //       handleVisitNotFound();
+  //     }
+  //   }
+  // }, [visitOfUser, isLoadingVisit, isFetchingVisit, credentialCardId]);
 
   // const handleVisitData = () => {
   //   if (visitOfUser && visitOfUser.length > 0 && scannedData) {
@@ -233,6 +260,7 @@ export default function Home() {
     if (data && !qrLock.current && !processingRef.current) {
       qrLock.current = true;
       setScannedData(data);
+      setIsProcessing(true);
       console.log("Scanned QR Code Data:", data);
 
       // const parsedData = parseQRData(data);
@@ -272,7 +300,7 @@ export default function Home() {
       />
 
       <Overlay />
-      {isLoadingVisit && (
+      {(isProcessing || isLoadingVisit || isFetchingVisit) && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#ffffff" />
           <Text style={styles.loadingText}>Đang xử lý...</Text>
@@ -300,17 +328,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   loadingContainer: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
   },
   loadingText: {
-    color: "#ffffff",
+    color: '#ffffff',
     marginTop: 10,
     fontSize: 16,
   },

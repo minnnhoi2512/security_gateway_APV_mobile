@@ -7,25 +7,21 @@ import {
   Button,
   Alert,
   ActivityIndicator,
-  Dimensions,
   Modal,
   Pressable,
 } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
-import { Video } from "expo-av";
-import * as FileSystem from "expo-file-system";
 import {
   GestureHandlerRootView,
   TouchableOpacity,
 } from "react-native-gesture-handler";
-import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
-import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
+import {  SaveFormat } from "expo-image-manipulator";
+import {  MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Camera, CameraView, useCameraPermissions } from "expo-camera";
-import * as ImagePicker from "expo-image-picker";
 
 import { uploadToFirebase } from "../../firebase-config";
-import { CheckIn, CheckInVer02, ValidCheckIn } from "@/Types/checkIn.type";
+import { CheckInVer02, ValidCheckIn } from "@/Types/checkIn.type";
 import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 import {
   useGetDataByCardVerificationQuery,
@@ -38,9 +34,6 @@ import {
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as RNPicker from "@react-native-picker/picker";
-import { VisitDetailType } from "@/redux/Types/visit.type";
-import { captureRef } from "react-native-view-shot";
 import VideoPlayer from "../(tabs)/streaming";
 interface ImageData {
   imageType: "Shoe";
@@ -48,8 +41,6 @@ interface ImageData {
 }
 
 const UserDetail = () => {
-  const videoRef = useRef<Video>(null);
-  const [isPlaying, setIsPlaying] = useState(true);
   const { visitId } = useLocalSearchParams<{ visitId: string }>();
   const router = useRouter();
   const [isUploading, setIsUploading] = useState(false);
@@ -62,11 +53,10 @@ const UserDetail = () => {
     (state: RootState) => state.gate.selectedGateId
   );
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  // const screenWidth = Dimensions.get("window").width;
   const [qrImage, setQrImage] = useState<string | null>(null);
 
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
-  const [images, setImages] = useState<ImageData[]>([]);
+  const [isAutoCapture, setIsAutoCapture] = useState(false);
 
   console.log("GATE ID", selectedGateId);
 
@@ -96,13 +86,8 @@ const UserDetail = () => {
     ImageShoe: [],
   });
 
-  // const handleImageCapture = (imageData: ImageData) => {
-  //   setCapturedImage((prev) => [...prev, imageData]);
 
-  //   // console.log("Captured Images: ", [...capturedImage, imageData]);
-  // };
   const handleImageCapture = (imageData: ImageData) => {
-    // Clear existing images before adding new one
     setCapturedImage([imageData]);
 
     // Update valid check-in data with new image
@@ -125,7 +110,7 @@ const UserDetail = () => {
     null
   );
   const [securityConfirmation, setSecurityConfirmation] = useState<string>("");
-
+  const [autoCapture, setAutoCapture] = useState(false);
   useEffect(() => {
     const fetchUserId = async () => {
       try {
@@ -186,10 +171,11 @@ const UserDetail = () => {
   const handleGoBack = () => {
     router.back();
   };
-
+  const handleNext = () => {
+    router.push("/check-in/CheckInOverall");
+  };
   useEffect(() => {
     const validateCheckInData = async () => {
-      // Basic validation checks
       const isQrValid = !!validCheckInData.QrCardVerification;
       const hasOneImage = validCheckInData.ImageShoe.length === 1;
       const hasValidVisitId = validCheckInData.VisitDetailId > 0;
@@ -249,9 +235,15 @@ const UserDetail = () => {
         type,
       } as any);
 
-      const result = await checkIn(formData).unwrap();
+      const response = await checkIn(formData).unwrap();
+      console.log("DATA PASS CHECKIN...: ", response.data);
+
+      router.push({
+        pathname: "/check-in/CheckInOverall",
+        params: { data: JSON.stringify(response) },
+      });
+      console.log("DATA PASS TO...: ", response);
       Alert.alert("Success", "Check-in completed successfully!");
-      router.push("/(tabs)/");
     } catch (error) {
       console.error("Check-in error:", error);
       Alert.alert("Error", "Check-in failed. Please try again.");
@@ -260,73 +252,11 @@ const UserDetail = () => {
     }
   };
 
-  // const uploadPhotosAndCheckIn = async () => {
-  //   try {
-  //     const formData = new FormData();
-  //     formData.append("VisitDetailId", checkInData.VisitDetailId.toString());
-  //     formData.append("SecurityInId", checkInData.SecurityInId.toString());
-  //     formData.append("GateInId", checkInData.GateInId.toString());
-  //     formData.append("QrCardVerification", checkInData.QrCardVerification);
 
-  //     let imageIndex = 0;
-  //     for (const image of capturedImage) {
-  //       // Upload the image to Firebase and get the download URL
-  //       const { downloadUrl } = await uploadToFirebase(
-  //         image.imageFile,
-  //         `${image.imageType}_${Date.now()}.jpg`
-  //       );
 
-  //       // Extract the filename and type
-  //       const localUri = image.imageFile;
-
-  //       // Initialize default values
-  //       let filename = "default.jpg"; // Default filename
-  //       let type = "image/jpeg"; // Default type
-
-  //       // Check if localUri is valid before proceeding
-  //       if (localUri) {
-  //         const extractedFilename = localUri.split("/").pop(); // Extract filename
-  //         const match = /\.(\w+)$/.exec(extractedFilename || ""); // Extract file type
-
-  //         // Update filename and type if valid
-  //         filename = extractedFilename || filename; // Use the extracted filename if available
-  //         type = match ? `image/${match[1]}` : type; // Use extracted type or default
-  //       } else {
-  //         // Handle the case when 'localUri' is null
-  //         console.error("Image file is not available.");
-  //       }
-
-  //       // Append fields for this image to formData
-  //       formData.append(`Images[${imageIndex}].ImageType`, image.imageType);
-  //       formData.append(
-  //         `Images[${imageIndex}].ImageURL`,
-  //         downloadUrl.replace(/"/g, "")
-  //       );
-
-  //       // Append the image data
-  //       formData.append(`Images[${imageIndex}].Image`, {
-  //         uri: localUri || "", // Fallback to an empty string if localUri is null
-  //         name: filename,
-  //         type,
-  //       } as any);
-
-  //       imageIndex++; // Increment the index counter
-  //     }
-
-  //     console.log("FORM DATA: ", formData);
-
-  //     const result = await checkIn(formData).unwrap();
-  //     Alert.alert("Success", "Check-in was successful!");
-  //     router.push("/(tabs)/");
-  //   } catch (error) {
-  //     console.error("Error during check-in process:", error);
-  //     Alert.alert("Error", "Check-in failed. Please try again.");
-  //   } finally {
-  //     setIsUploading(false);
-  //   }
-  // };
-
-  console.log("CApture image: ", capturedImage);
+  // console.log("CApture image: ", capturedImage);
+  console.log("QR DATA: ", qrCardData);
+  
 
   const resetQrScanning = () => {
     qrLock.current = false;
@@ -359,6 +289,7 @@ const UserDetail = () => {
         QrCardVerification: data,
       }));
       setIsCameraActive(false);
+      setAutoCapture(true); 
       Alert.alert(
         "Đã quét QR Code",
         "QR Code đã được quét thành công và sẽ hiển thị ảnh bên dưới"
@@ -414,71 +345,14 @@ const UserDetail = () => {
 
       <ScrollView>
         <GestureHandlerRootView className="flex-1 p-5">
-          {/* <View className="bg-backgroundApp rounded-3xl p-6 mb-6 shadow-lg">
-            {visitDetail && visitDetail.length > 0 ? (
-              visitDetail.map((visit: VisitDetailType, index: number) => (
-                <View key={index} className="space-y-4">
-                  <View className="flex-row items-center space-x-3">
-                    <FontAwesome5 name="user" size={24} color="#fff" />
-                    <Text className="text-lg text-white">
-                      Người tham gia: {visit.visitor?.visitorName || "N/A"}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center space-x-3">
-                    <FontAwesome5 name="phone" size={24} color="#fff" />
-                    <Text className="text-lg text-white">
-                      Số điện thoại: {visit.visitor?.phoneNumber || "N/A"}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center space-x-3">
-                    <FontAwesome5 name="building" size={24} color="#fff" />
-                    <Text className="text-lg text-white">
-                      Công ty: {visit.visitor?.companyName || "N/A"}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center space-x-3">
-                    <MaterialIcons name="access-time" size={24} color="#fff" />
-                    <Text className="text-lg text-white">
-                      Bắt đầu: {visit.expectedStartHour || "N/A"}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center space-x-3">
-                    <MaterialIcons name="access-time" size={24} color="#fff" />
-                    <Text className="text-lg text-white">
-                      Kết thúc: {visit.expectedEndHour || "N/A"}
-                    </Text>
-                  </View>
-
-                  <View className="flex items-center space-x-3 mb-2">
-                    <Text className="text-lg text-white">CCCD:</Text>
-                  </View>
-                  <Image
-                    src={`data:image/;base64,${visit.visitor.visitorCredentialImage}`}
-                    className="w-full h-48 rounded-lg object-contain"
-                    alt="CCCD"
-                  />
-                </View>
-              ))
-            ) : (
-              <Text className="text-lg text-white">
-                No visit details available.
-              </Text>
-            )}
-          </View> */}
-
+          {/* <TouchableOpacity onPress={handleNext}>
+            <Text>Next</Text>
+          </TouchableOpacity> */}
           {/* Photo Section */}
           <Text className="text-xl font-bold text-gray-800 mb-4">Chụp ảnh</Text>
           <View>
-            <VideoPlayer onCaptureImage={handleImageCapture} />
-
-            {/* {capturedImage.map((image, index) => (
-              <Image
-                key={index} // Provide a unique key for each image
-                source={{ uri: image.imageFile || undefined }}
-                style={{ width: 200, height: 200 }}
-                resizeMode="contain"
-              />
-            ))} */}
+            {/* <VideoPlayer onCaptureImage={handleImageCapture} /> */}
+            <VideoPlayer onCaptureImage={handleImageCapture} autoCapture={autoCapture} />
           </View>
 
           {/* MODAL VIEW IMAGE */}
@@ -529,6 +403,7 @@ const UserDetail = () => {
               <>
                 {qrImage ? (
                   <View className="mb-4">
+                    <Text className="text-center">Mã thẻ: {qrCardData.cardVerification}</Text>
                     <Image
                       source={{ uri: qrImage }}
                       className="w-full h-48 rounded-lg"

@@ -107,6 +107,10 @@ export default function RootLayout() {
             name="profile/ProfileDetail"
             options={{ headerShown: false }}
           />
+           <Stack.Screen
+            name="check-in/CheckInOverall"
+            options={{ headerShown: false }}
+          />
           <Stack.Screen name="PickGate" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>
