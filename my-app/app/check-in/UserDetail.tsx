@@ -15,8 +15,8 @@ import {
   GestureHandlerRootView,
   TouchableOpacity,
 } from "react-native-gesture-handler";
-import {  SaveFormat } from "expo-image-manipulator";
-import {  MaterialIcons } from "@expo/vector-icons";
+import { SaveFormat } from "expo-image-manipulator";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Camera, CameraView, useCameraPermissions } from "expo-camera";
 
@@ -42,6 +42,7 @@ interface ImageData {
 
 const UserDetail = () => {
   const { visitId } = useLocalSearchParams<{ visitId: string }>();
+  const { data } = useLocalSearchParams<{ data: string }>();
   const router = useRouter();
   const [isUploading, setIsUploading] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
@@ -74,18 +75,17 @@ const UserDetail = () => {
 
   //CHECKIN DATA
   const [checkInData, setCheckInData] = useState<CheckInVer02>({
-    VisitDetailId: visitDetail ? visitDetail.visitDetailId : 0,
+    CredentialCard: null,
     SecurityInId: 0,
     GateInId: Number(selectedGateId) || 0,
     QrCardVerification: "",
     Images: [],
   });
   const [validCheckInData, setValidCheckInData] = useState<ValidCheckIn>({
-    VisitDetailId: visitDetail ? visitDetail.visitDetailId : 0,
+    CredentialCard: null,
     QrCardVerification: "",
     ImageShoe: [],
   });
-
 
   const handleImageCapture = (imageData: ImageData) => {
     setCapturedImage([imageData]);
@@ -106,10 +106,6 @@ const UserDetail = () => {
     useValidCheckInMutation();
   const [isCheckInEnabled, setIsCheckInEnabled] = useState(false);
 
-  const [shoeDetectResult, setShoeDetectResult] = useState<boolean | null>(
-    null
-  );
-  const [securityConfirmation, setSecurityConfirmation] = useState<string>("");
   const [autoCapture, setAutoCapture] = useState(false);
   useEffect(() => {
     const fetchUserId = async () => {
@@ -139,15 +135,24 @@ const UserDetail = () => {
   }, [userId, selectedGateId]);
 
   useEffect(() => {
-    if (visitDetail && visitDetail.length > 0) {
-      const { visitDetailId } = visitDetail[0];
+    if (visitDetail && Array.isArray(visitDetail) && visitDetail.length > 0) {
+      // Lấy credentialsCard từ phần tử đầu tiên của mảng
+      const credentialCard = visitDetail[0]?.visitor?.credentialsCard;
+
+  
+
+      console.log("Original Credential Card:", credentialCard);
+
+
       setCheckInData((prevData) => ({
         ...prevData,
-        VisitDetailId: visitDetailId,
+        CredentialCard: credentialCard,
       }));
-      setValidCheckInData((prevData) => ({
+
+      // Nếu bạn cần cập nhật validCheckInData
+      setValidCheckInData?.((prevData) => ({
         ...prevData,
-        VisitDetailId: visitDetailId,
+        CredentialCard: credentialCard,
       }));
     }
   }, [visitDetail]);
@@ -178,9 +183,9 @@ const UserDetail = () => {
     const validateCheckInData = async () => {
       const isQrValid = !!validCheckInData.QrCardVerification;
       const hasOneImage = validCheckInData.ImageShoe.length === 1;
-      const hasValidVisitId = validCheckInData.VisitDetailId > 0;
+      // const hasValidVisitId = validCheckInData.CredentialCard === null;
 
-      if (!isQrValid || !hasOneImage || !hasValidVisitId) {
+      if (!isQrValid || !hasOneImage) {
         setIsCheckInEnabled(false);
         return;
       }
@@ -188,6 +193,8 @@ const UserDetail = () => {
       try {
         const result = await validCheckIn(validCheckInData).unwrap();
         setIsCheckInEnabled(result);
+        console.log("VALIDE RES: ");
+        
       } catch (error) {
         console.error("Validation error:", error);
         setIsCheckInEnabled(false);
@@ -210,10 +217,13 @@ const UserDetail = () => {
     setIsUploading(true);
     try {
       const formData = new FormData();
-      formData.append("VisitDetailId", checkInData.VisitDetailId.toString());
-      formData.append("SecurityInId", checkInData.SecurityInId.toString());
-      formData.append("GateInId", checkInData.GateInId.toString());
-      formData.append("QrCardVerification", checkInData.QrCardVerification);
+      // formData.append("CredentialCard", checkInData.CredentialCard.toString());
+      // formData.append("SecurityInId", checkInData.SecurityInId.toString());
+      // formData.append("GateInId", checkInData.GateInId.toString());
+      // formData.append("QrCardVerification", checkInData.QrCardVerification);
+      // formData.append("SecurityInId", (checkInData.SecurityInId ?? 0).toString());
+      // formData.append("GateInId", (checkInData.GateInId ?? 0).toString());
+      // formData.append("QrCardVerification", checkInData.QrCardVerification || "");
 
       const image = capturedImage[0];
       const { downloadUrl } = await uploadToFirebase(
@@ -236,13 +246,13 @@ const UserDetail = () => {
       } as any);
 
       const response = await checkIn(formData).unwrap();
-      console.log("DATA PASS CHECKIN...: ", response.data);
+      // console.log("DATA PASS CHECKIN...: ", response.data);
 
       router.push({
         pathname: "/check-in/CheckInOverall",
         params: { data: JSON.stringify(response) },
       });
-      console.log("DATA PASS TO...: ", response);
+      // console.log("DATA PASS TO...: ", response);
       Alert.alert("Success", "Check-in completed successfully!");
     } catch (error) {
       console.error("Check-in error:", error);
@@ -252,11 +262,8 @@ const UserDetail = () => {
     }
   };
 
-
-
   // console.log("CApture image: ", capturedImage);
-  console.log("QR DATA: ", qrCardData);
-  
+  // console.log("Data passed: ", data);
 
   const resetQrScanning = () => {
     qrLock.current = false;
@@ -274,7 +281,51 @@ const UserDetail = () => {
     }
   }, [qrCardData]);
 
+  useEffect(() => {
+    if (data) {
+      setAutoCapture(true);
+      // Parse data nếu cần và cập nhật QrCardVerification
+      const parsedData = JSON.parse(data);
+      if (parsedData.cardVerification) {
+        setCheckInData((prevData) => ({
+          ...prevData,
+          QrCardVerification: parsedData.cardVerification,
+        }));
+        setValidCheckInData((prevData) => ({
+          ...prevData,
+          QrCardVerification: parsedData.cardVerification,
+        }));
+      } else {
+        setIsCameraActive(true);
+      }
+    } else {
+      setIsCameraActive(true);
+    }
+  }, [data]);
+
   //SCAN QR CERTIFICATION
+  // const handleBarCodeScanned = ({ data }: { data: string }) => {
+  //   if (data && !qrLock.current) {
+  //     qrLock.current = true;
+  //     console.log("Scanned QR Code Data:", data);
+
+  //     setCheckInData((prevData) => ({
+  //       ...prevData,
+  //       QrCardVerification: data,
+  //     }));
+  //     setValidCheckInData((prevData) => ({
+  //       ...prevData,
+  //       QrCardVerification: data,
+  //     }));
+  //     setIsCameraActive(false);
+  //     setAutoCapture(true);
+  //     Alert.alert(
+  //       "Đã quét QR Code",
+  //       "QR Code đã được quét thành công và sẽ hiển thị ảnh bên dưới"
+  //     );
+  //   }
+  // };
+
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (data && !qrLock.current) {
       qrLock.current = true;
@@ -289,7 +340,7 @@ const UserDetail = () => {
         QrCardVerification: data,
       }));
       setIsCameraActive(false);
-      setAutoCapture(true); 
+      setAutoCapture(true);
       Alert.alert(
         "Đã quét QR Code",
         "QR Code đã được quét thành công và sẽ hiển thị ảnh bên dưới"
@@ -298,6 +349,7 @@ const UserDetail = () => {
   };
 
   console.log("DATA CI: ", checkInData);
+  // console.log("DATA DTV: ", visitDetail);
 
   //PERMISSION VIEW
   if (!isPermissionGranted) {
@@ -319,15 +371,15 @@ const UserDetail = () => {
     );
   }
 
-  if (isError) {
-    return (
-      <View className="flex-1 justify-center items-center bg-gray-100">
-        <Text className="text-xl font-semibold text-red-500">
-          Error fetching visit details.
-        </Text>
-      </View>
-    );
-  }
+  // if (isError) {
+  //   return (
+  //     <View className="flex-1 justify-center items-center bg-gray-100">
+  //       <Text className="text-xl font-semibold text-red-500">
+  //         Error fetching visit details.
+  //       </Text>
+  //     </View>
+  //   );
+  // }
 
   console.log("Valid check data: ", validCheckInData);
 
@@ -352,7 +404,10 @@ const UserDetail = () => {
           <Text className="text-xl font-bold text-gray-800 mb-4">Chụp ảnh</Text>
           <View>
             {/* <VideoPlayer onCaptureImage={handleImageCapture} /> */}
-            <VideoPlayer onCaptureImage={handleImageCapture} autoCapture={autoCapture} />
+            <VideoPlayer
+              onCaptureImage={handleImageCapture}
+              autoCapture={autoCapture}
+            />
           </View>
 
           {/* MODAL VIEW IMAGE */}
@@ -403,7 +458,9 @@ const UserDetail = () => {
               <>
                 {qrImage ? (
                   <View className="mb-4">
-                    <Text className="text-center">Mã thẻ: {qrCardData.cardVerification}</Text>
+                    <Text className="text-center">
+                      Mã thẻ: {checkInData.QrCardVerification}
+                    </Text>
                     <Image
                       source={{ uri: qrImage }}
                       className="w-full h-48 rounded-lg"

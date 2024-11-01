@@ -25,7 +25,17 @@ export const checkinApi = createApi({
           formData = data;
         } else {
           formData = new FormData();
-          formData.append("VisitDetailId", data.VisitDetailId.toString());
+          if (
+            data.CredentialCard !== null &&
+            data.CredentialCard !== undefined
+          ) {
+            formData.append("CredentialCard", data.CredentialCard.toString());
+          } else {
+            console.error("CredentialCard is null or undefined.");
+            throw new Error("CredentialCard cannot be null or undefined.");
+          }
+
+          formData.append("QrCardVerification", data.QrCardVerification || "");
           formData.append("SecurityInId", data.SecurityInId.toString());
           formData.append("GateInId", data.GateInId.toString());
           formData.append("QrCardVerification", data.QrCardVerification);
@@ -48,18 +58,22 @@ export const checkinApi = createApi({
     validCheckIn: builder.mutation<any, FormData | ValidCheckIn>({
       query: (data) => {
         let formData: FormData;
-
+    
         if (data instanceof FormData) {
           formData = data;
         } else {
           formData = new FormData();
-          formData.append("VisitDetailId", data.VisitDetailId.toString());
-          formData.append("QrCardVerification", data.QrCardVerification);
-
+    
+     
+          formData.append("CredentialCard", data.CredentialCard?.toString() || "");
+    
+           
+          formData.append("QrCardVerification", data.QrCardVerification || "");
+    
           if (data.ImageShoe && data.ImageShoe.length === 1) {
-            const image = data.ImageShoe[0]; // Get the first image
+            const image = data.ImageShoe[0]; 
             const imageName = image.imageFile.split("/").pop() || "default.jpg";
-
+    
             formData.append("ImageShoe", {
               uri: image.imageFile,
               type: "image/jpeg",
@@ -70,7 +84,7 @@ export const checkinApi = createApi({
             throw new Error("ImageShoe must contain exactly one image.");
           }
         }
-
+    
         return {
           url: "/VisitorSession/ValidCheckIn",
           method: "POST",
@@ -78,6 +92,7 @@ export const checkinApi = createApi({
         };
       },
     }),
+    
   }),
 });
 

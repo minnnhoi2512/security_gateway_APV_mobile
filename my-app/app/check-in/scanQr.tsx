@@ -17,6 +17,7 @@ import {
 import { Overlay } from "./OverLay";
 import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service";
 import { useFocusEffect } from "@react-navigation/native";
+import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
 
 interface ScanData {
   id: string;
@@ -37,42 +38,44 @@ export default function Home() {
   const redirected = useRef(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [credentialCardId, setCredentialCardId] = useState<string | null>(null);
+  const [cardVerification, setCardVerification] = useState<string | null>(null);
 
   const {
     data: visitOfUser,
     isLoading: isLoadingVisit,
     error: isError,
     isFetching: isFetchingVisit,
-    refetch,
   } = useGetVisitByCredentialCardQuery(credentialCardId || "", {
     skip: !credentialCardId,
   });
-  const parseQRData = (qrData: string): ScanData => {
-    const [id, nationalId, name, dateOfBirth, gender, address, issueDate] =
-      qrData.split("|");
-    return { id, nationalId, name, dateOfBirth, gender, address, issueDate };
+
+  const {
+    data: qrCardData,
+    isLoading: isLoadingQr,
+    isError: isErrorQr,
+    isFetching: isFetchingQr,
+  } = useGetDataByCardVerificationQuery(cardVerification || "", {
+    skip: !cardVerification,
+  });
+
+  const parseQRData = (qrData: string): ScanData | null => {
+    const parts = qrData.split("|");
+    if (parts.length === 7) {
+      const [id, nationalId, name, dateOfBirth, gender, address, issueDate] = parts;
+      return { id, nationalId, name, dateOfBirth, gender, address, issueDate };
+    }
+    return null;
   };
-  // const parseQRData = (qrData: string): ScanData | null => {
-  //   const [id, nationalId, name, dateOfBirth, gender, address, issueDate] =
-  //     qrData.split("|");
-  //   if (
-  //     id &&
-  //     nationalId &&
-  //     name &&
-  //     dateOfBirth &&
-  //     gender &&
-  //     address &&
-  //     issueDate
-  //   ) {
-  //     return { id, nationalId, name, dateOfBirth, gender, address, issueDate };
-  //   }
-  //   return null;
-  // };
+
+  const isCredentialCard = (data: string): boolean => {
+    return data.includes("|");
+  };
 
   const resetState = () => {
     console.log("Resetting state...");
     setScannedData("");
     setCredentialCardId(null);
+    setCardVerification(null);
     setIsProcessing(false);
     qrLock.current = false;
     processingRef.current = false;
@@ -88,9 +91,20 @@ export default function Home() {
 
   useEffect(() => {
     if (scannedData) {
-      const parsedData = parseQRData(scannedData);
-      setCredentialCardId(parsedData.id);
-      setIsProcessing(true);
+      if (isCredentialCard(scannedData)) {
+        const parsedData = parseQRData(scannedData);
+        if (parsedData) {
+          setCredentialCardId(parsedData.id);
+          setIsProcessing(true);
+        } else {
+          Alert.alert("Lỗi", "Mã QR không hợp lệ");
+          resetState();
+        }
+      } else {
+        // Nếu không phải CCCD thì là mã verification
+        setCardVerification(scannedData);
+        setIsProcessing(true);
+      }
     }
   }, [scannedData]);
 
@@ -137,124 +151,55 @@ export default function Home() {
 
   useEffect(() => {
     const handleNavigation = async () => {
-      if (!credentialCardId || processingRef.current || redirected.current) return;
+      // Xử lý cho trường hợp quét mã QR verification
+      if (cardVerification && !processingRef.current && !redirected.current) {
+        processingRef.current = true;
+        qrLock.current = true;
 
-      if (credentialCardId && !isLoadingVisit && !isFetchingVisit) {
+        if (qrCardData && !isLoadingQr && !isFetchingQr && !isErrorQr) {
+          redirected.current = true;
+          await new Promise(resolve => setTimeout(resolve, 500));
+          router.push({
+            pathname: "/check-in/UserDetail",
+            params: { data: JSON.stringify(qrCardData) },
+          });
+          resetState();
+        } else if (!isLoadingQr && !isFetchingQr && (isErrorQr || !qrCardData)) {
+          Alert.alert("Lỗi", "Mã xác thực không hợp lệ");
+          resetState();
+        }
+      }
+      
+      // Xử lý cho trường hợp quét CCCD
+      else if (credentialCardId && !processingRef.current && !redirected.current) {
         processingRef.current = true;
         qrLock.current = true;
 
         if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
           redirected.current = true;
-       
           await new Promise(resolve => setTimeout(resolve, 500));
           router.push({
             pathname: "/check-in/ListVisit",
             params: { data: JSON.stringify(visitOfUser) },
           });
           resetState();
-        } else {
+        } else if (!isLoadingVisit && !isFetchingVisit) {
           handleVisitNotFound();
         }
       }
     };
 
     handleNavigation();
-  }, [visitOfUser, isLoadingVisit, isFetchingVisit, credentialCardId]);
-
-  // useEffect(() => {
-  //   if (!credentialCardId || processingRef.current || redirected.current)
-  //     return;
-
-  //   if (credentialCardId && !isLoadingVisit && !isFetchingVisit) {
-  //     processingRef.current = true;
-  //     qrLock.current = true;
-  //     if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
-  //       redirected.current = true;
-  //       router.push({
-  //         pathname: "/check-in/ListVisit",
-  //         params: { data: JSON.stringify(visitOfUser) },
-  //       });
-  //       // resetState();
-  //     } else {
-  //       handleVisitNotFound();
-  //     }
-  //   }
-  // }, [visitOfUser, isLoadingVisit, isFetchingVisit, credentialCardId]);
-
-  // const handleVisitData = () => {
-  //   if (visitOfUser && visitOfUser.length > 0 && scannedData) {
-  //     Alert.alert(
-  //       "Xác nhận thông tin",
-  //       `Bạn có muốn đi đến chi tiết của: ${scannedData.name}?`,
-  //       [
-  //         {
-  //           text: "OK",
-  //           onPress: () => {
-  //             router.push({
-  //               pathname: "/check-in/ListVisit",
-  //               params: { data: JSON.stringify(visitOfUser) },
-  //             });
-  //             resetState();
-  //             console.log("Navigating to UserDetail with data:", scannedData);
-  //           },
-  //         },
-  //         {
-  //           text: "Hủy",
-  //           onPress: () => {
-  //             router.push({
-  //               pathname: "/(tabs)/checkin",
-  //               params: { data: JSON.stringify(scannedData) },
-  //             });
-  //             resetState();
-  //             console.log("User cancelled, state reset.");
-  //           },
-  //           style: "cancel",
-  //         },
-  //       ],
-  //       { cancelable: false }
-  //     );
-  //   } else {
-  //     console.log("Không có dữ liệu visit hoặc dữ liệu quét không hợp lệ.");
-  //     resetState();
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   if (credentialCardId) {
-  //     setIsProcessing(true);
-  //     refetch();
-  //   }
-  // }, [credentialCardId, refetch]);
-
-  // useEffect(() => {
-  //   if (credentialCardId && !isLoadingVisit && !isFetchingVisit) {
-  //     setIsProcessing(false);
-  //     if (visitOfUser && Array.isArray(visitOfUser) && visitOfUser.length > 0) {
-  //       handleVisitData();
-  //     } else {
-  //       Alert.alert("Thông báo", "Không có dữ liệu visit cho người dùng này.", [
-  //         {
-  //           text: "Tạo mới lịch hẹn",
-  //           onPress: () => {
-  //             router.push({
-  //               pathname: "/(tabs)/createCustomer",
-  //             });
-  //             resetState();
-  //           },
-  //         },
-  //         {
-  //           text: "Trở về",
-  //           onPress: () => {
-  //             router.push({
-  //               pathname: "/(tabs)/checkin",
-  //             });
-  //             resetState();
-  //           },
-  //         },
-  //       ]);
-  //     }
-  //   }
-  // }, [isLoadingVisit, visitOfUser, isFetchingVisit, credentialCardId]);
+  }, [
+    visitOfUser,
+    isLoadingVisit,
+    isFetchingVisit,
+    credentialCardId,
+    qrCardData,
+    isLoadingQr,
+    isFetchingQr,
+    cardVerification,
+  ]);
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (data && !qrLock.current && !processingRef.current) {
@@ -262,26 +207,18 @@ export default function Home() {
       setScannedData(data);
       setIsProcessing(true);
       console.log("Scanned QR Code Data:", data);
-
-      // const parsedData = parseQRData(data);
-      // if (parsedData) {
-      //   setScannedData(parsedData);
-      //   setCredentialCardId(parsedData.id);
-      // } else {
-      //   Alert.alert("Lỗi", "Dữ liệu quét không hợp lệ.");
-      //   resetState();
-      // }
     }
   };
-
-  // console.log("visit data: ", visitOfUser);
-  console.log("CCCD ID: ", credentialCardId);
-  console.log("Current scanned data:", scannedData);
 
   const handleGoBack = () => {
     resetState();
     router.back();
   };
+
+  console.log("CCCD: ", credentialCardId);
+  console.log("Card id: ", cardVerification);
+
+  
 
   return (
     <SafeAreaView style={StyleSheet.absoluteFillObject}>
@@ -300,7 +237,7 @@ export default function Home() {
       />
 
       <Overlay />
-      {(isProcessing || isLoadingVisit || isFetchingVisit) && (
+      {(isProcessing || isLoadingVisit || isFetchingVisit || isLoadingQr || isFetchingQr) && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#ffffff" />
           <Text style={styles.loadingText}>Đang xử lý...</Text>
