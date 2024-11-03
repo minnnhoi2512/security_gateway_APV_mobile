@@ -34,7 +34,7 @@ export default function Home() {
   const appState = useRef(AppState.currentState);
   const router = useRouter();
   const [scannedData, setScannedData] = useState<string>("");
-  const processingRef = useRef(false);
+  const visitNotFoundShown = useRef(false);
   const redirected = useRef(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [credentialCardId, setCredentialCardId] = useState<string | null>(null);
@@ -78,7 +78,7 @@ export default function Home() {
     setCardVerification(null);
     setIsProcessing(false);
     qrLock.current = false;
-    processingRef.current = false;
+    
   };
 
   useFocusEffect(
@@ -137,12 +137,14 @@ export default function Home() {
               pathname: "/(tabs)/createCustomer",
             });
             resetState();
+            visitNotFoundShown.current = false;
           },
         },
         {
           text: "Hủy",
           onPress: () => {
             resetState();
+            visitNotFoundShown.current = false;
           },
         },
       ]
@@ -151,9 +153,10 @@ export default function Home() {
 
   useEffect(() => {
     const handleNavigation = async () => {
-      // Xử lý cho trường hợp quét mã QR verification
-      if (cardVerification && !processingRef.current && !redirected.current) {
-        processingRef.current = true;
+      if (isLoadingVisit || isFetchingVisit) return;
+      await new Promise(resolve => setTimeout(resolve, 200));
+      if (cardVerification  && !redirected.current) {
+      
         qrLock.current = true;
 
         if (qrCardData && !isLoadingQr && !isFetchingQr && !isErrorQr) {
@@ -170,9 +173,9 @@ export default function Home() {
         }
       }
       
-      // Xử lý cho trường hợp quét CCCD
-      else if (credentialCardId && !processingRef.current && !redirected.current) {
-        processingRef.current = true;
+ 
+      else if (credentialCardId  && !redirected.current) {
+      
         qrLock.current = true;
 
         if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
@@ -183,7 +186,8 @@ export default function Home() {
             params: { data: JSON.stringify(visitOfUser) },
           });
           resetState();
-        } else if (!isLoadingVisit && !isFetchingVisit) {
+        } else if (!isLoadingVisit && !isFetchingVisit && !visitNotFoundShown.current) {
+          visitNotFoundShown.current = true;  
           handleVisitNotFound();
         }
       }
@@ -202,7 +206,7 @@ export default function Home() {
   ]);
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
-    if (data && !qrLock.current && !processingRef.current) {
+    if (data && !qrLock.current) {
       qrLock.current = true;
       setScannedData(data);
       setIsProcessing(true);

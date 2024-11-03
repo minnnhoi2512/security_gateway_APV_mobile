@@ -27,15 +27,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 }) => {
   const videoRef = useRef<Video | null>(null);
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
-
   const [currentTime, setCurrentTime] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isVideoReady, setIsVideoReady] = useState(false);
   const [index, setIndex] = useState(0);
-  const [videoSource, setVideoSource] = useState(
-    `https://security-gateway-camera.tools.kozow.com/video/output_${index}.mp4`
-  );
-  const [shouldPlay, setShouldPlay] = useState(true);
+  const [videoSource, setVideoSource] = useState("");
+  const autoCaptureAttempted = useRef(false);
 
+  // Fetch initial file count
   const getFileCount = async () => {
     try {
       const response = await fetch(
@@ -51,31 +50,31 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setIndex(count);
     } catch (error) {
       console.error("Error fetching file count:", error);
+      // Set a default index if fetch fails
+      setIndex(0);
     }
   };
 
+  // Initial setup
   useEffect(() => {
     getFileCount();
   }, []);
 
+  // Update video source when index changes
   useEffect(() => {
     if (index >= 0) {
-      setVideoSource(
-        `https://security-gateway-camera.tools.kozow.com/video/output_${
-          index - 1
-        }.mp4`
-      );
-      if (videoRef.current) {
-        videoRef.current.replayAsync();
-      }
+      const newSource = `https://security-gateway-camera.tools.kozow.com/video/output_${index - 1}.mp4`;
+      setVideoSource(newSource);
+      setIsVideoReady(false); // Reset video ready state
+      autoCaptureAttempted.current = false; // Reset auto-capture attempt flag
     }
   }, [index]);
 
+  // Handle video playback status updates
   const onPlaybackStatusUpdate = useCallback(
     (status: AVPlaybackStatus) => {
       if (status.isLoaded) {
         setCurrentTime(status.positionMillis);
-
         if (status.didJustFinish) {
           setIndex((prevIndex) => Math.min(prevIndex + 1, 999999));
         }
@@ -84,6 +83,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     [index]
   );
 
+  // Generate thumbnail from video
   const generateThumbnail = async (videoUri: string, timeMillis: number) => {
     try {
       const { uri } = await VideoThumbnails.getThumbnailAsync(videoUri, {
@@ -97,37 +97,51 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   };
 
-  useEffect(() => {
-    if (autoCapture && !isLoading) {
-      handleCapture();
-    }
-  }, [autoCapture]);
+  // Process captured thumbnail
+  const processThumbnail = async (thumbnailUri: string) => {
+    try {
+      const base64 = await FileSystem.readAsStringAsync(thumbnailUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
 
+      const path = `${FileSystem.documentDirectory}captured_frame_${Date.now()}.jpg`;
+      await FileSystem.writeAsStringAsync(path, base64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      const imageData: ImageData = {
+        imageType: "Shoe",
+        imageFile: path,
+      };
+      
+      setCapturedImage([imageData]); // Replace existing images instead of adding
+      onCaptureImage(imageData);
+
+      return path;
+    } catch (error) {
+      console.error("Failed to process thumbnail:", error);
+      throw error;
+    }
+  };
+
+  // Handle capture functionality
   const handleCapture = async () => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || !videoSource || isLoading) return;
 
     setIsLoading(true);
     try {
-      const videoUrl = videoSource;
-      const asset = Asset.fromModule(videoUrl);
-      await asset.downloadAsync();
-      const thumbnailUri = await generateThumbnail(asset.uri, currentTime);
+      // Try with current video source first
+      const thumbnailUri = await generateThumbnail(videoSource, currentTime);
       await processThumbnail(thumbnailUri);
     } catch (error) {
-      console.error("Failed to capture frame:", error);
+      console.error("Failed to capture from primary source:", error);
       try {
-        const staticVideoUrl =
-          "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
-        const thumbnailUri = await generateThumbnail(
-          staticVideoUrl,
-          currentTime
-        );
+        // Fallback to static video if primary source fails
+        const staticVideoUrl = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+        const thumbnailUri = await generateThumbnail(staticVideoUrl, currentTime);
         await processThumbnail(thumbnailUri);
       } catch (fallbackError) {
-        console.error(
-          "Failed to generate thumbnail from static video:",
-          fallbackError
-        );
+        console.error("Failed to capture from fallback source:", fallbackError);
         alert("Failed to capture frame from both video sources.");
       }
     } finally {
@@ -135,30 +149,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   };
 
-  const processThumbnail = async (thumbnailUri: string) => {
-    const base64 = await FileSystem.readAsStringAsync(thumbnailUri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-
-    const base64Image = `data:image/jpeg;base64,${base64}`;
-
-    const path = `${FileSystem.documentDirectory}captured_frame.jpg`;
-    await FileSystem.writeAsStringAsync(path, base64, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-
-    const imageData: ImageData = {
-      imageType: "Shoe",
-      imageFile: path,
-    };
-    setCapturedImage((prevImages) => [...prevImages, imageData]);
-
-    if (onCaptureImage) {
-      onCaptureImage(imageData);
+  // Handle auto-capture when video is ready
+  useEffect(() => {
+    if (isVideoReady && autoCapture && !autoCaptureAttempted.current && !isLoading) {
+      autoCaptureAttempted.current = true;
+      handleCapture();
     }
-
-    console.log("Frame saved to:", path);
-  };
+  }, [isVideoReady, autoCapture, isLoading]);
 
   const handleNext = () => {
     setIndex((prevIndex) => Math.min(prevIndex + 1, 999999));
@@ -180,26 +177,20 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         isLooping
         shouldPlay={true}
         onReadyForDisplay={() => {
+          setIsVideoReady(true);
           if (videoRef.current) {
             videoRef.current.playAsync();
           }
         }}
       />
-      {/* <Text style={styles.text}>
-        Press Capture to take a screenshot of the current frame
-      </Text>
-      <Button
-        title={isLoading ? "Capturing..." : "Capture Frame"}
-        onPress={handleCapture}
-        disabled={isLoading}
-      /> */}
 
       <Text style={styles.text}>
         Hình ảnh chụp từ camera
       </Text>
+      
       {capturedImage.map((image, index) => (
         <Image
-          key={index} // Provide a unique key for each image
+          key={`${image.imageFile}-${index}`}
           source={{ uri: image.imageFile || undefined }}
           style={styles.capturedImage}
           resizeMode="contain"
@@ -207,8 +198,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       ))}
 
       <View style={styles.buttonContainer}>
-        <Button title="Trở lại" onPress={handlePrevious} />
-        <Button title="Tiếp theo" onPress={handleNext} />
+        <Button title="Trở lại" onPress={handlePrevious} disabled={isLoading} />
+        <Button title="Tiếp theo" onPress={handleNext} disabled={isLoading} />
       </View>
     </View>
   );

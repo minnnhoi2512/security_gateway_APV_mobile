@@ -111,6 +111,10 @@ export default function RootLayout() {
             name="check-in/CheckInOverall"
             options={{ headerShown: false }}
           />
+           {/* <Stack.Screen
+            name="check-in/ResponseCheckIn"
+            options={{ headerShown: false }}
+          /> */}
           <Stack.Screen name="PickGate" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>

@@ -57,9 +57,12 @@ const UserDetail = () => {
   const [qrImage, setQrImage] = useState<string | null>(null);
 
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
-  const [isAutoCapture, setIsAutoCapture] = useState(false);
-
+  const [resultValid, setResultValid] = useState();
+  const [isVisible, setIsVisible] = useState(false);
   console.log("GATE ID", selectedGateId);
+  const handleToggleView = () => {
+    setIsVisible((prev) => !prev); // Đảo ngược trạng thái hiển thị
+  };
 
   // RTK QUERY
   const [
@@ -90,7 +93,6 @@ const UserDetail = () => {
   const handleImageCapture = (imageData: ImageData) => {
     setCapturedImage([imageData]);
 
-    // Update valid check-in data with new image
     setValidCheckInData((prev) => ({
       ...prev,
       ImageShoe: [imageData],
@@ -101,7 +103,7 @@ const UserDetail = () => {
     isLoading: isLoadingQr,
     isError: isErrorQr,
   } = useGetDataByCardVerificationQuery(checkInData.QrCardVerification);
-  const [checkIn, { isLoading: isCheckingIn }] = useCheckInMutation();
+
   const [validCheckIn, { isLoading: isValidCheckingIn }] =
     useValidCheckInMutation();
   const [isCheckInEnabled, setIsCheckInEnabled] = useState(false);
@@ -139,10 +141,7 @@ const UserDetail = () => {
       // Lấy credentialsCard từ phần tử đầu tiên của mảng
       const credentialCard = visitDetail[0]?.visitor?.credentialsCard;
 
-  
-
       console.log("Original Credential Card:", credentialCard);
-
 
       setCheckInData((prevData) => ({
         ...prevData,
@@ -177,7 +176,13 @@ const UserDetail = () => {
     router.back();
   };
   const handleNext = () => {
-    router.push("/check-in/CheckInOverall");
+    router.push({
+      pathname: "/check-in/CheckInOverall",
+      params: {
+        resultData: JSON.stringify(resultValid),
+        validData: JSON.stringify(validCheckInData),
+      },
+    });
   };
   useEffect(() => {
     const validateCheckInData = async () => {
@@ -193,8 +198,8 @@ const UserDetail = () => {
       try {
         const result = await validCheckIn(validCheckInData).unwrap();
         setIsCheckInEnabled(result);
-        console.log("VALIDE RES: ");
-        
+        // console.log("VALIDE RES: ", result);
+        setResultValid(result);
       } catch (error) {
         console.error("Validation error:", error);
         setIsCheckInEnabled(false);
@@ -207,60 +212,6 @@ const UserDetail = () => {
 
     validateCheckInData();
   }, [validCheckInData]);
-
-  const handleCheckIn = async () => {
-    if (!isCheckInEnabled || capturedImage.length !== 1) {
-      Alert.alert("Error", "Please ensure exactly one shoe image is captured.");
-      return;
-    }
-
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      // formData.append("CredentialCard", checkInData.CredentialCard.toString());
-      // formData.append("SecurityInId", checkInData.SecurityInId.toString());
-      // formData.append("GateInId", checkInData.GateInId.toString());
-      // formData.append("QrCardVerification", checkInData.QrCardVerification);
-      // formData.append("SecurityInId", (checkInData.SecurityInId ?? 0).toString());
-      // formData.append("GateInId", (checkInData.GateInId ?? 0).toString());
-      // formData.append("QrCardVerification", checkInData.QrCardVerification || "");
-
-      const image = capturedImage[0];
-      const { downloadUrl } = await uploadToFirebase(
-        image.imageFile,
-        `${image.imageType}_${Date.now()}.jpg`
-      );
-
-      const localUri = image.imageFile;
-      const filename = localUri
-        ? localUri.split("/").pop() || "default.jpg"
-        : "default.jpg";
-      const type = "image/jpeg";
-
-      formData.append("Images[0].ImageType", image.imageType);
-      formData.append("Images[0].ImageURL", downloadUrl.replace(/"/g, ""));
-      formData.append("Images[0].Image", {
-        uri: localUri || "",
-        name: filename,
-        type,
-      } as any);
-
-      const response = await checkIn(formData).unwrap();
-      // console.log("DATA PASS CHECKIN...: ", response.data);
-
-      router.push({
-        pathname: "/check-in/CheckInOverall",
-        params: { data: JSON.stringify(response) },
-      });
-      // console.log("DATA PASS TO...: ", response);
-      Alert.alert("Success", "Check-in completed successfully!");
-    } catch (error) {
-      console.error("Check-in error:", error);
-      Alert.alert("Error", "Check-in failed. Please try again.");
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   // console.log("CApture image: ", capturedImage);
   // console.log("Data passed: ", data);
@@ -282,7 +233,8 @@ const UserDetail = () => {
   }, [qrCardData]);
 
   useEffect(() => {
-    if (data) {
+    
+    if (data || qrCardData) {
       setAutoCapture(true);
       // Parse data nếu cần và cập nhật QrCardVerification
       const parsedData = JSON.parse(data);
@@ -303,28 +255,25 @@ const UserDetail = () => {
     }
   }, [data]);
 
-  //SCAN QR CERTIFICATION
-  // const handleBarCodeScanned = ({ data }: { data: string }) => {
-  //   if (data && !qrLock.current) {
-  //     qrLock.current = true;
-  //     console.log("Scanned QR Code Data:", data);
+  useEffect(() => {
+    if (qrCardData) {
+      setAutoCapture(true);
+      if (qrCardData.cardImage) {
+        setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
+      }
 
-  //     setCheckInData((prevData) => ({
-  //       ...prevData,
-  //       QrCardVerification: data,
-  //     }));
-  //     setValidCheckInData((prevData) => ({
-  //       ...prevData,
-  //       QrCardVerification: data,
-  //     }));
-  //     setIsCameraActive(false);
-  //     setAutoCapture(true);
-  //     Alert.alert(
-  //       "Đã quét QR Code",
-  //       "QR Code đã được quét thành công và sẽ hiển thị ảnh bên dưới"
-  //     );
-  //   }
-  // };
+      if (qrCardData.cardVerification) {
+        setCheckInData((prevData) => ({
+          ...prevData,
+          QrCardVerification: qrCardData.cardVerification,
+        }));
+        setValidCheckInData((prevData) => ({
+          ...prevData,
+          QrCardVerification: qrCardData.cardVerification,
+        }));
+      }
+    }
+  }, [qrCardData]);
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (data && !qrLock.current) {
@@ -397,17 +346,25 @@ const UserDetail = () => {
 
       <ScrollView>
         <GestureHandlerRootView className="flex-1 p-5">
-          {/* <TouchableOpacity onPress={handleNext}>
-            <Text>Next</Text>
-          </TouchableOpacity> */}
           {/* Photo Section */}
           <Text className="text-xl font-bold text-gray-800 mb-4">Chụp ảnh</Text>
           <View>
-            {/* <VideoPlayer onCaptureImage={handleImageCapture} /> */}
-            <VideoPlayer
-              onCaptureImage={handleImageCapture}
-              autoCapture={autoCapture}
-            />
+            {/* <Button
+              title={isVisible ? "Hide Video Player" : "Show Video Player"}
+              onPress={handleToggleView}
+            /> */}
+
+            <View
+              style={{
+                opacity: isVisible ? 1 : 0,
+                height: isVisible ? "auto" : 0,
+              }}
+            >
+              <VideoPlayer
+                onCaptureImage={handleImageCapture}
+                autoCapture={autoCapture}
+              />
+            </View>
           </View>
 
           {/* MODAL VIEW IMAGE */}
@@ -490,31 +447,14 @@ const UserDetail = () => {
           </View>
 
           {/* Check In Button */}
-          {/* <TouchableOpacity
-            onPress={uploadPhotosAndCheckIn}
-            disabled={!isCheckInEnabled} // Disable button if not enabled
-            className={`p-4 rounded-lg bg-backgroundApp active:bg-backgroundApp/80`}
+
+          <TouchableOpacity
+            onPress={handleNext}
+            className="p-4 rounded-lg bg-backgroundApp"
           >
             <Text className="text-white text-center text-lg font-medium">
-              Check In
+              Tiếp theo
             </Text>
-          </TouchableOpacity> */}
-          <TouchableOpacity
-            onPress={handleCheckIn}
-            disabled={!isCheckInEnabled || isUploading}
-            className={`p-4 rounded-lg ${
-              isCheckInEnabled && !isUploading
-                ? "bg-backgroundApp"
-                : "bg-gray-400"
-            }`}
-          >
-            {isUploading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text className="text-white text-center text-lg font-medium">
-                {isCheckInEnabled ? "Check In" : "Capture Required Images"}
-              </Text>
-            )}
           </TouchableOpacity>
         </GestureHandlerRootView>
       </ScrollView>
