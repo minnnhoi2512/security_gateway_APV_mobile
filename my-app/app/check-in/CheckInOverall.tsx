@@ -181,14 +181,15 @@ const CheckInOverall = () => {
       // console.log("DATA PASS CHECKIN...: ", response.data);
 
       router.push({
-        pathname: "/check-in/ResponseCheckIn",
+        pathname: "/(tabs)/checkin",
         params: { data: JSON.stringify(response) },
       });
       console.log("DATA CI DONE...: ", response);
       Alert.alert("Thành công", "Bạn vừa check in thành công!");
-    } catch (error) {
-      console.error("Check-in error:", error);
-      Alert.alert("Error", "Check-in failed. Please try again.");
+    } catch (error: any) {
+      const errorMessage = error.data?.message || "Please ensure all requirements are met.";
+      // console.error("Check-in error:", error);
+      Alert.alert("Đã có lỗi xảy ra", "Check-in thất bại. Vui lòng thử lại.", errorMessage);
     } finally {
       // setIsUploading(false);
     }
@@ -196,7 +197,9 @@ const CheckInOverall = () => {
   const handleGoBack = () => {
     router.back();
   };
-  console.log("CHECKKK IINNNN DATA: ", checkInData);
+  // console.log("CHECKKK IINNNN DATA: ", checkInData);
+  // console.log("CHECKKK IINNNN DATA RES: ", resultData);
+  console.log("CHECKKK IINNNN DATA V: ", validData);
 
   const InfoRow = ({
     label,

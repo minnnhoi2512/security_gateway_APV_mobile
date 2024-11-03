@@ -44,7 +44,6 @@ const UserDetail = () => {
   const { visitId } = useLocalSearchParams<{ visitId: string }>();
   const { data } = useLocalSearchParams<{ data: string }>();
   const router = useRouter();
-  const [isUploading, setIsUploading] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -55,20 +54,16 @@ const UserDetail = () => {
   );
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [qrImage, setQrImage] = useState<string | null>(null);
-
+  const [isValidating, setIsValidating] = useState(false);
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
   const [resultValid, setResultValid] = useState();
   const [isVisible, setIsVisible] = useState(false);
   console.log("GATE ID", selectedGateId);
   const handleToggleView = () => {
-    setIsVisible((prev) => !prev); // Đảo ngược trạng thái hiển thị
+    setIsVisible((prev) => !prev);
   };
 
   // RTK QUERY
-  const [
-    shoeDetect,
-    { isLoading: isDetecting, isError: isDetectError, data: detectData },
-  ] = useShoeDetectMutation();
 
   const {
     data: visitDetail,
@@ -184,34 +179,34 @@ const UserDetail = () => {
       },
     });
   };
-  useEffect(() => {
-    const validateCheckInData = async () => {
-      const isQrValid = !!validCheckInData.QrCardVerification;
-      const hasOneImage = validCheckInData.ImageShoe.length === 1;
-      // const hasValidVisitId = validCheckInData.CredentialCard === null;
+  // useEffect(() => {
+  //   const validateCheckInData = async () => {
+  //     const isQrValid = !!validCheckInData.QrCardVerification;
+  //     const hasOneImage = validCheckInData.ImageShoe.length === 1;
 
-      if (!isQrValid || !hasOneImage) {
-        setIsCheckInEnabled(false);
-        return;
-      }
+  //     if (!isQrValid || !hasOneImage) {
+  //       setIsCheckInEnabled(false);
+  //       return;
+  //     }
 
-      try {
-        const result = await validCheckIn(validCheckInData).unwrap();
-        setIsCheckInEnabled(result);
-        // console.log("VALIDE RES: ", result);
-        setResultValid(result);
-      } catch (error) {
-        console.error("Validation error:", error);
-        setIsCheckInEnabled(false);
-        Alert.alert(
-          "Validation Error",
-          "Please ensure all requirements are met."
-        );
-      }
-    };
+  //     try {
+  //       const result = await validCheckIn(validCheckInData).unwrap();
+  //       setIsCheckInEnabled(result);
+  //       setResultValid(result);
+  //     } catch (error: any) {
+  //       // console.error("Validation error:", error);
 
-    validateCheckInData();
-  }, [validCheckInData]);
+  //       const errorMessage = error.data?.message || "Please ensure all requirements are met.";
+
+  //       Alert.alert("Đã xảy ra lỗi", errorMessage);
+
+  //       setIsCheckInEnabled(false);
+
+  //     }
+  //   };
+
+  //   validateCheckInData();
+  // }, [validCheckInData]);
 
   // console.log("CApture image: ", capturedImage);
   // console.log("Data passed: ", data);
@@ -233,7 +228,6 @@ const UserDetail = () => {
   }, [qrCardData]);
 
   useEffect(() => {
-    
     if (data || qrCardData) {
       setAutoCapture(true);
       // Parse data nếu cần và cập nhật QrCardVerification
@@ -275,11 +269,12 @@ const UserDetail = () => {
     }
   }, [qrCardData]);
 
-  const handleBarCodeScanned = ({ data }: { data: string }) => {
+  const handleBarCodeScanned = async ({ data }: { data: string }) => {
     if (data && !qrLock.current) {
       qrLock.current = true;
       console.log("Scanned QR Code Data:", data);
 
+      // Cập nhật state với QR code data
       setCheckInData((prevData) => ({
         ...prevData,
         QrCardVerification: data,
@@ -290,12 +285,50 @@ const UserDetail = () => {
       }));
       setIsCameraActive(false);
       setAutoCapture(true);
+
+      // Show thông báo quét thành công
       Alert.alert(
         "Đã quét QR Code",
         "QR Code đã được quét thành công và sẽ hiển thị ảnh bên dưới"
       );
     }
   };
+
+  useEffect(() => {
+    const validateAndNavigate = async () => {
+      // Kiểm tra điều kiện trước khi validate
+      const isQrValid = !!validCheckInData.QrCardVerification;
+      const hasOneImage = validCheckInData.ImageShoe.length === 1;
+
+      if (!isQrValid || !hasOneImage || isValidating) {
+        return;
+      }
+
+      try {
+        setIsValidating(true);
+        const result = await validCheckIn(validCheckInData).unwrap();
+
+        if (result) {
+          // Nếu validate thành công, tự động chuyển trang
+          router.push({
+            pathname: "/check-in/CheckInOverall",
+            params: {
+              resultData: JSON.stringify(result),
+              validData: JSON.stringify(validCheckInData),
+            },
+          });
+        }
+      } catch (error: any) {
+        const errorMessage =
+          error.data?.message || "Please ensure all requirements are met.";
+        Alert.alert("Đã xảy ra lỗi", errorMessage);
+      } finally {
+        setIsValidating(false);
+      }
+    };
+
+    validateAndNavigate();
+  }, [validCheckInData]);
 
   console.log("DATA CI: ", checkInData);
   // console.log("DATA DTV: ", visitDetail);
@@ -334,6 +367,12 @@ const UserDetail = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
+      {isValidating && (
+        <View className="absolute inset-0 bg-black/30 flex items-center justify-center">
+          <ActivityIndicator size="large" color="#0000ff" />
+          <Text className="text-white mt-2">Đang xử lý...</Text>
+        </View>
+      )}
       <View>
         <Pressable
           onPress={handleGoBack}
