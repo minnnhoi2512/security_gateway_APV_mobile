@@ -1,4 +1,4 @@
-import { UpdateUserProfile } from "@/Types/user.type";
+import { UpdateUserProfile, UserProfile } from "@/Types/user.type";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
@@ -23,8 +23,8 @@ export const userApi = createApi({
         return `User?pageNumber=1&pageSize=20&role=staff`;
       },
     }),
-    getUserProfile: builder.query({
-      query: (userId) => `User/${userId}`,
+    getUserProfile: builder.query<UserProfile, { userId: string }>({
+      query: ({ userId }) => `User/${userId}`,
     }),
     updateUserProfile: builder.mutation({
       query: ({ userId, data }: { userId: string; data: UpdateUserProfile }) => ({

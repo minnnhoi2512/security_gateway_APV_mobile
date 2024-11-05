@@ -55,6 +55,7 @@ const UserDetail = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [qrImage, setQrImage] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(false);
+  const [hasNavigated, setHasNavigated] = useState(false);
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
   const [resultValid, setResultValid] = useState();
   const [isVisible, setIsVisible] = useState(false);
@@ -226,20 +227,20 @@ const UserDetail = () => {
       setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
     }
   }, [qrCardData]);
+ 
 
   useEffect(() => {
-    if (data || qrCardData) {
+    if ( qrCardData) {
       setAutoCapture(true);
-      // Parse data nếu cần và cập nhật QrCardVerification
-      const parsedData = JSON.parse(data);
-      if (parsedData.cardVerification) {
+      
+      if (qrCardData.cardVerification) {
         setCheckInData((prevData) => ({
           ...prevData,
-          QrCardVerification: parsedData.cardVerification,
+          QrCardVerification: qrCardData.cardVerification,
         }));
         setValidCheckInData((prevData) => ({
           ...prevData,
-          QrCardVerification: parsedData.cardVerification,
+          QrCardVerification: qrCardData.cardVerification,
         }));
       } else {
         setIsCameraActive(true);
@@ -287,20 +288,21 @@ const UserDetail = () => {
       setAutoCapture(true);
 
       // Show thông báo quét thành công
-      Alert.alert(
-        "Đã quét QR Code",
-        "QR Code đã được quét thành công và sẽ hiển thị ảnh bên dưới"
-      );
+      // Alert.alert(
+      //   "Đã quét QR Code",
+      //   "QR Code đã được quét thành công và sẽ hiển thị ảnh bên dưới"
+      // );
     }
   };
 
   useEffect(() => {
     const validateAndNavigate = async () => {
-      // Kiểm tra điều kiện trước khi validate
-      const isQrValid = !!validCheckInData.QrCardVerification;
-      const hasOneImage = validCheckInData.ImageShoe.length === 1;
-
-      if (!isQrValid || !hasOneImage || isValidating) {
+      if (
+        !validCheckInData.QrCardVerification ||
+        validCheckInData.ImageShoe.length !== 1 ||
+        isValidating ||
+        hasNavigated
+      ) {
         return;
       }
 
@@ -308,8 +310,8 @@ const UserDetail = () => {
         setIsValidating(true);
         const result = await validCheckIn(validCheckInData).unwrap();
 
-        if (result) {
-          // Nếu validate thành công, tự động chuyển trang
+        if (result && !hasNavigated) {
+          setHasNavigated(true);
           router.push({
             pathname: "/check-in/CheckInOverall",
             params: {
@@ -328,7 +330,7 @@ const UserDetail = () => {
     };
 
     validateAndNavigate();
-  }, [validCheckInData]);
+  }, [validCheckInData, hasNavigated]);
 
   console.log("DATA CI: ", checkInData);
   // console.log("DATA DTV: ", visitDetail);
@@ -367,12 +369,6 @@ const UserDetail = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
-      {isValidating && (
-        <View className="absolute inset-0 bg-black/30 flex items-center justify-center">
-          <ActivityIndicator size="large" color="#0000ff" />
-          <Text className="text-white mt-2">Đang xử lý...</Text>
-        </View>
-      )}
       <View>
         <Pressable
           onPress={handleGoBack}
@@ -497,6 +493,17 @@ const UserDetail = () => {
           </TouchableOpacity>
         </GestureHandlerRootView>
       </ScrollView>
+      <View className="flex-1 justify-center">
+      {isValidating && (
+        <View className="absolute inset-0 bg-black/30 flex items-center justify-center z-50">
+          <ActivityIndicator size="large" color="#0000ff" />
+          <Text className="text-white mt-2">Đang xử lý...</Text>
+        </View>
+      )}
+      </View>
+     
+
+    
     </SafeAreaView>
   );
 };

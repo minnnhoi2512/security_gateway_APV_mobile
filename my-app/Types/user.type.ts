@@ -27,3 +27,32 @@ export interface UpdateUserProfile {
   phoneNumber: string;
   email: string;
 }
+
+// export interface UserProfile {
+//   id: string;
+//   name: string;
+//   image: string;
+//   email: string;
+// }
+
+ 
+ 
+export interface UserRole {
+  roleId: number;
+  roleName: string;
+}
+
+export interface UserProfile {
+  userId: number;  
+  userName: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  image: string;  
+  createdDate: string;  
+  updatedDate: string;  
+  status: string;
+  role: UserRole; 
+  department: string | null;  
+}
+

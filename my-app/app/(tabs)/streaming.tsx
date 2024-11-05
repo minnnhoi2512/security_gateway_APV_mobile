@@ -141,8 +141,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         const thumbnailUri = await generateThumbnail(staticVideoUrl, currentTime);
         await processThumbnail(thumbnailUri);
       } catch (fallbackError) {
-        console.error("Failed to capture from fallback source:", fallbackError);
-        alert("Failed to capture frame from both video sources.");
+        // console.error("Failed to capture from fallback source:", fallbackError);
+        alert("Lấy ảnh thất bại!");
       }
     } finally {
       setIsLoading(false);

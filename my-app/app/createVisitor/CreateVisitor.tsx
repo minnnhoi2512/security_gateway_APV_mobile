@@ -146,10 +146,10 @@ const CreateVisitor = () => {
         },
       ]);
     } catch (error: any) {
-      console.error(
-        "Failed to create visitor:",
-        JSON.stringify(error, null, 2)
-      );
+      // console.error(
+      //   "Failed to create visitor:",
+      //   JSON.stringify(error, null, 2)
+      // );
       const errors = error?.data?.errors;
       if (errors) {
         let errorMessage =

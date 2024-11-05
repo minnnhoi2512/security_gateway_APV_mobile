@@ -48,7 +48,7 @@ const ProfileDetail = () => {
     isLoading,
     error,
     refetch,
-  } = useGetUserProfileQuery(userId, {
+  } = useGetUserProfileQuery(userId ? { userId } : { userId: '' }, {
     skip: !userId,
   });
 
@@ -66,13 +66,13 @@ const ProfileDetail = () => {
     if (!userId) return;
 
     const updateDataPass = {
-      userName: profile.userName,
-      fullName: updatedData.fullName || profile.fullName,
-      email: updatedData.email || profile.email,
-      phoneNumber: updatedData.phoneNumber || profile.phoneNumber,
-      image: profile.image,
+      userName: profile?.userName || "",
+      fullName: updatedData.fullName || profile?.fullName || "",
+      email: updatedData.email || profile?.email || "",
+      phoneNumber: updatedData.phoneNumber || profile?.phoneNumber || "",
+      image: profile?.image || "",
       roleID: 5,
-      departmentId: profile.departmentId || null,
+      departmentId: profile?.department || null,
     };
 
     try {
