@@ -74,7 +74,7 @@ const FormCreate = () => {
       },
     ],
   });
-  console.log("VISITOR ID ne 3: ", visitorId);
+  // console.log("VISITOR ID ne 3: ", visitorId);
 
   const clearValidationError = (field: string) => {
     setValidationErrors((prev) => {
@@ -189,7 +189,7 @@ const FormCreate = () => {
         expectedStartTime: `${visitData.expectedStartTime}T${visitData.visitDetail[0].expectedStartHour}`,
         expectedEndTime: `${visitData.expectedEndTime}T${visitData.visitDetail[0].expectedEndHour}`,
       };
-      console.log("Submit Data:", submitData);
+      // console.log("Submit Data:", submitData);
       const result = await createVisit(submitData).unwrap();
       Alert.alert("Thành công", "Tạo lịch ghé thăm thành công!", [
         {
@@ -199,7 +199,7 @@ const FormCreate = () => {
           },
         },
       ]);
-      console.log("Visit created:", result);
+       console.log("Visit created:", result);
     } catch (error: any) {
       if (error?.status === 400) {
         showErrorAlert(error.data.errors);
@@ -231,7 +231,7 @@ const FormCreate = () => {
     return validationErrors[field];
   };
 
-  console.log("Data create visit: ", visitData);
+  // console.log("Data create visit: ", visitData);
 
   return (
     <ScrollView className="flex-1 bg-gradient-to-b from-blue-50 to-white">
