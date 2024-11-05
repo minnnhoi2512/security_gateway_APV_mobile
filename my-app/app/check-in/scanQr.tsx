@@ -235,12 +235,31 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const handleNavigation = async () => {
+    const handleVisitNavigation = async () => {
+      if (isLoadingVisit || isFetchingVisit) return;
+      if (visitOfUser && !redirected.current ) {
+        qrLock.current = true;
+        redirected.current = true;
+        router.push({
+          pathname: "/check-in/ListVisit",
+          params: { data: JSON.stringify(visitOfUser) },
+        });
+        resetState();
+      } else if (!isLoadingVisit && !isFetchingVisit && !visitNotFoundShown.current) {
+        visitNotFoundShown.current = true;
+        handleVisitNotFound();
+      }
+    };
+  
+    handleVisitNavigation();
+  }, [visitOfUser, isLoadingVisit, isFetchingVisit]);
+  
+  useEffect(() => {
+    const handleQRNavigation = async () => {
       if (isLoadingVisit || isFetchingVisit) return;
       await new Promise((resolve) => setTimeout(resolve, 200));
       if (cardVerification && !redirected.current) {
         qrLock.current = true;
-
         if (qrCardData && !isLoadingQr && !isFetchingQr && !isErrorQr && resultValid) {
           redirected.current = true;
           await new Promise((resolve) => setTimeout(resolve, 500));
@@ -252,49 +271,24 @@ export default function Home() {
             },
           });
           resetState();
-        } else if (
-          !isLoadingQr &&
-          !isFetchingQr &&
-          (isErrorQr || !qrCardData)
-        ) {
+        } else if (!isLoadingQr && !isFetchingQr && (isErrorQr || !qrCardData)) {
           Alert.alert("Lỗi", "Mã xác thực không hợp lệ");
           resetState();
         }
-      } else if (credentialCardId && !redirected.current) {
-        qrLock.current = true;
-
-        if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
-          redirected.current = true;
-          await new Promise((resolve) => setTimeout(resolve, 500));
-          router.push({
-            pathname: "/check-in/ListVisit",
-            params: { data: JSON.stringify(visitOfUser) },
-          });
-          resetState();
-        } else if (
-          !isLoadingVisit &&
-          !isFetchingVisit &&
-          !visitNotFoundShown.current
-        ) {
-          visitNotFoundShown.current = true;
-          handleVisitNotFound();
-        }
       }
     };
-
-    handleNavigation();
+  
+    handleQRNavigation();
   }, [
-    visitOfUser,
-    isLoadingVisit,
-    isFetchingVisit,
-    credentialCardId,
+    cardVerification,
     qrCardData,
-    resultValid, 
     isLoadingQr,
     isFetchingQr,
-    cardVerification,
+    isErrorQr,
+    resultValid,
+    validCheckInData,
   ]);
-
+  
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (data && !qrLock.current) {
       qrLock.current = true;
