@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   Pressable,
+  StyleSheet,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { CheckInVer02 } from "@/Types/checkIn.type";
@@ -16,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCheckInMutation } from "@/redux/services/checkin.service";
 import { uploadToFirebase } from "@/firebase-config";
 import { EvilIcons, MaterialIcons } from "@expo/vector-icons";
+import { ActivityIndicator } from "react-native";
 
 interface Visitor {
   visitorId: number;
@@ -366,8 +368,34 @@ const CheckInOverall = () => {
           </TouchableOpacity>
         </View>
       </View>
+      {( isCheckingIn) && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text style={styles.loadingText}>Đang xử lý...</Text>
+        </View>
+      )}
     </ScrollView>
   );
 };
 
 export default CheckInOverall;
+
+const styles = StyleSheet.create({
+ 
+  loadingContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  loadingText: {
+    color: "#ffffff",
+    marginTop: 10,
+    fontSize: 16,
+  },
+});

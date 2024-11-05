@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Modal,
   Pressable,
+  StyleSheet,
 } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -227,12 +228,11 @@ const UserDetail = () => {
       setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
     }
   }, [qrCardData]);
- 
 
   useEffect(() => {
-    if ( qrCardData) {
+    if (qrCardData) {
       setAutoCapture(true);
-      
+
       if (qrCardData.cardVerification) {
         setCheckInData((prevData) => ({
           ...prevData,
@@ -321,6 +321,8 @@ const UserDetail = () => {
           });
         }
       } catch (error: any) {
+        // console.log("ERR", error);
+        
         const errorMessage =
           error.data?.message || "Please ensure all requirements are met.";
         Alert.alert("Đã xảy ra lỗi", errorMessage);
@@ -355,15 +357,6 @@ const UserDetail = () => {
     );
   }
 
-  // if (isError) {
-  //   return (
-  //     <View className="flex-1 justify-center items-center bg-gray-100">
-  //       <Text className="text-xl font-semibold text-red-500">
-  //         Error fetching visit details.
-  //       </Text>
-  //     </View>
-  //   );
-  // }
 
   console.log("Valid check data: ", validCheckInData);
 
@@ -428,83 +421,71 @@ const UserDetail = () => {
 
           {/* QR Scanner */}
           <View className="mb-6">
-            <Text className="text-lg font-bold text-gray-800 mb-4">
-              Hình ảnh QR Code
-            </Text>
 
-            {isCameraActive ? (
-              <View className="w-full aspect-[3/4] relative mb-4">
-                <CameraView
-                  onBarcodeScanned={handleBarCodeScanned}
-                  className="flex-1"
-                />
-                <View className="absolute top-[30%] left-[30%] w-[40%] h-[30%] border-2 border-yellow-400 rounded-lg" />
-                <TouchableOpacity
-                  onPress={() => setIsCameraActive(false)}
-                  className="absolute top-2 right-2 bg-black/50 p-2 rounded"
-                >
-                  <Text className="text-white">Thoát Camera</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <>
-                {qrImage ? (
-                  <View className="mb-4">
-                    <Text className="text-center">
-                      Mã thẻ: {checkInData.QrCardVerification}
-                    </Text>
-                    <Image
-                      source={{ uri: qrImage }}
-                      className="w-full h-48 rounded-lg"
-                      resizeMode="contain"
-                    />
-                    <TouchableOpacity
-                      onPress={resetQrScanning}
-                      className="mt-2 bg-backgroundApp p-3 rounded-lg"
-                    >
-                      <Text className="text-white text-center">
-                        Quét lại QR Code
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <TouchableOpacity
-                    onPress={() => setIsCameraActive(true)}
-                    className="bg-backgroundApp p-4 rounded-lg active:bg-backgroundApp/80"
-                  >
-                    <Text className="text-white text-center text-lg font-medium">
-                      Quét QR Code
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </>
-            )}
+
+            <View className="w-full aspect-[3/4] relative mb-4">
+              <CameraView
+                onBarcodeScanned={handleBarCodeScanned}
+                className="flex-1"
+              />
+              <View className="absolute top-[30%] left-[30%] w-[40%] h-[30%] border-2 border-yellow-400 rounded-lg" />
+              <TouchableOpacity
+                onPress={() => setIsCameraActive(false)}
+                className="absolute top-2 right-2 bg-black/50 p-2 rounded"
+              >
+                <Text className="text-white">Thoát Camera</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-
-          {/* Check In Button */}
-
-          <TouchableOpacity
-            onPress={handleNext}
-            className="p-4 rounded-lg bg-backgroundApp"
-          >
-            <Text className="text-white text-center text-lg font-medium">
-              Tiếp theo
-            </Text>
-          </TouchableOpacity>
         </GestureHandlerRootView>
       </ScrollView>
-      <View className="flex-1 justify-center">
-      {isValidating && (
-        <View className="absolute inset-0 bg-black/30 flex items-center justify-center z-50">
-          <ActivityIndicator size="large" color="#0000ff" />
-          <Text className="text-white mt-2">Đang xử lý...</Text>
+      {/* <View className="flex-1 justify-center">
+        {isValidating && (
+          <View className="absolute inset-0 bg-black/30 flex items-center justify-center z-50">
+            <ActivityIndicator size="large" color="#0000ff" />
+            <Text className="text-white mt-2">Đang xử lý...</Text>
+          </View>
+        )}
+      </View> */}
+
+      {( isValidating) && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text style={styles.loadingText}>Đang xử lý...</Text>
         </View>
       )}
-      </View>
-     
-
-    
     </SafeAreaView>
   );
 };
 export default UserDetail;
+
+const styles = StyleSheet.create({
+  backButton: {
+    position: "absolute",
+    top: 60,
+    left: 20,
+    padding: 10,
+    backgroundColor: "black",
+    borderRadius: 5,
+  },
+  backButtonText: {
+    color: "white",
+    fontSize: 16,
+  },
+  loadingContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  loadingText: {
+    color: "#ffffff",
+    marginTop: 10,
+    fontSize: 16,
+  },
+});

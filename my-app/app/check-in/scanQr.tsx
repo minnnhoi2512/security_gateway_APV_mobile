@@ -311,7 +311,7 @@ export default function Home() {
 
   console.log("CCCD: ", credentialCardId);
   console.log("Card id: ", cardVerification);
-  console.log("VALID DATA BEN SCAN ", validCheckInData);
+
   
 
   return (
