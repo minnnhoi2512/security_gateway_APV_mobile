@@ -234,13 +234,15 @@ export default function Home() {
           resetState();
         }
       } else if (credentialCardId && !redirected.current) {
+        console.log("rêndere");
+        
         qrLock.current = true;
         if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
           redirected.current = true;
           await new Promise((resolve) => setTimeout(resolve, 500));
           router.push({
             pathname: "/check-in/ListVisit",
-            params: { data: JSON.stringify(visitOfUser) },
+            params: { credentialCardId: credentialCardId },
           });
           resetState();
         } else if (

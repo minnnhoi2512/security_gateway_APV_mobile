@@ -190,7 +190,7 @@ const CheckInOverall = () => {
       Alert.alert("Thành công", "Bạn vừa check in thành công!");
     } catch (error: any) {
       const errorMessage = error.data?.message || "Please ensure all requirements are met.";
-      // console.error("Check-in error:", error);
+      console.error("Check-in error:", error);
       Alert.alert("Đã có lỗi xảy ra", "Check-in thất bại. Vui lòng thử lại.", errorMessage);
     } finally {
       // setIsUploading(false);
