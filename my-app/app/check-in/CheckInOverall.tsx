@@ -10,11 +10,14 @@ import {
   StyleSheet,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { CheckInVer02 } from "@/Types/checkIn.type";
+import { CheckInVer02, ValidCheckIn } from "@/Types/checkIn.type";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useCheckInMutation } from "@/redux/services/checkin.service";
+import {
+  useCheckInMutation,
+  useValidCheckInMutation,
+} from "@/redux/services/checkin.service";
 import { uploadToFirebase } from "@/firebase-config";
 import { EvilIcons, MaterialIcons } from "@expo/vector-icons";
 import { ActivityIndicator } from "react-native";
@@ -49,7 +52,7 @@ interface ResultData {
   visitDetailId: number;
   expectedStartHour: string;
   expectedEndHour: string;
-  status: boolean;
+  status: string;
   visitor: Visitor;
   visit: Visit;
   cardRes: Card;
@@ -61,24 +64,63 @@ interface ImageData {
 }
 
 const CheckInOverall = () => {
-  const { resultData, validData } = useLocalSearchParams();
+  const { validData } = useLocalSearchParams();
+  const [resultData, setResultData] = useState<ResultData | null>(null);
+  const [isValidating, setIsValidating] = useState(true);
   const [checkIn, { isLoading: isCheckingIn }] = useCheckInMutation();
-  let data: ResultData | null = null;
+  const [validCheckIn, { isLoading: isValidCheckingIn }] =
+    useValidCheckInMutation();
   const router = useRouter();
-  try {
-    if (resultData) {
-      data = JSON.parse(resultData as string);
-    }
-  } catch (error) {
-    console.error("Error parsing resultData:", error);
-    // Handle error (e.g., show a message to the user)
-  }
+
+  useEffect(() => {
+    const validateCheckInData = async () => {
+      setIsValidating(true);
+      try {
+        let parsedValidData: ValidCheckIn;
+
+        if (typeof validData === "string") {
+          parsedValidData = JSON.parse(validData);
+        } else if (Array.isArray(validData)) {
+          parsedValidData = {
+            CredentialCard: null,
+            QrCardVerification: validData[0],
+            ImageShoe: validData.slice(1).map((img) => ({
+              imageType: "Shoe",
+              imageFile: img,
+            })),
+          };
+        } else {
+          throw new Error("Invalid validData format");
+        }
+
+        if (parsedValidData.ImageShoe.length !== 1) {
+          throw new Error("ImageShoe must contain exactly one image");
+        }
+
+        const result = await validCheckIn(parsedValidData).unwrap();
+        setResultData(result);
+      } catch (error: any) {
+        const errorMessage =
+          error.data?.message ||
+          error.message ||
+          "Please ensure all requirements are met.";
+        Alert.alert("Validation Error", errorMessage);
+      } finally {
+        setIsValidating(false);
+      }
+    };
+
+  
+    setTimeout(() => {
+      if (validData) validateCheckInData();
+    }, 300); 
+
+  }, [validData]);
+
   const [userId, setUserId] = useState<string | null>(null);
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
-
-  console.log("valid da: ", validData);
 
   const [checkInData, setCheckInData] = useState<CheckInVer02>({
     CredentialCard: null,
@@ -94,9 +136,6 @@ const CheckInOverall = () => {
         const storedUserId = await AsyncStorage.getItem("userId");
         if (storedUserId) {
           setUserId(storedUserId);
-          console.log("User ID from AsyncStorage:", storedUserId);
-        } else {
-          console.log("No userId found in AsyncStorage");
         }
       } catch (error) {
         console.error("Error fetching userId from AsyncStorage:", error);
@@ -120,7 +159,6 @@ const CheckInOverall = () => {
       try {
         const parsedValidData = JSON.parse(validData as string);
 
-        // Update checkInData with parsedValidData
         setCheckInData((prevState) => ({
           ...prevState,
           CredentialCard: parsedValidData.CredentialCard || null,
@@ -136,7 +174,6 @@ const CheckInOverall = () => {
         }));
       } catch (error) {
         console.error("Error parsing validData:", error);
-        // Handle error (e.g., set default values or show a message)
       }
     }
   }, [validData]);
@@ -189,19 +226,22 @@ const CheckInOverall = () => {
       console.log("DATA CI DONE...: ", response);
       Alert.alert("Thành công", "Bạn vừa check in thành công!");
     } catch (error: any) {
-      const errorMessage = error.data?.message || "Please ensure all requirements are met.";
+      const errorMessage =
+        error.data?.message || "Please ensure all requirements are met.";
       console.error("Check-in error:", error);
-      Alert.alert("Đã có lỗi xảy ra", "Check-in thất bại. Vui lòng thử lại.", errorMessage);
+      Alert.alert(
+        "Đã có lỗi xảy ra",
+        "Check-in thất bại. Vui lòng thử lại.",
+        error
+      );
     } finally {
       // setIsUploading(false);
     }
   };
+
   const handleGoBack = () => {
     router.back();
   };
-  // console.log("CHECKKK IINNNN DATA: ", checkInData);
-  // console.log("CHECKKK IINNNN DATA RES: ", resultData);
-  console.log("CHECKKK IINNNN DATA V: ", validData);
 
   const InfoRow = ({
     label,
@@ -263,13 +303,24 @@ const CheckInOverall = () => {
     );
   };
 
-  if (!data) {
+  if (isValidating || isValidCheckingIn) {
+    return (
+      <View className="flex-1 items-center justify-center bg-backgroundApp">
+        <ActivityIndicator size="large" color="#ffffff" />
+        <Text className="text-white mt-4">Đang kiểm tra thông tin...</Text>
+      </View>
+    );
+  }
+  if (!resultData) {
     return (
       <View className="flex-1 items-center justify-center">
         <Text>Không có dữ liệu</Text>
       </View>
     );
   }
+
+  console.log("Valid c dâta ben ovrr", validData);
+  
 
   return (
     <ScrollView className="flex-1 bg-backgroundApp">
@@ -287,53 +338,60 @@ const CheckInOverall = () => {
           <Section title="Thông tin cơ bản">
             <View className="flex-row items-center mb-4">
               <Text className="text-gray-600 text-lg">
-                Hôm nay, {data.expectedStartHour}
+                Hôm nay, {resultData.expectedStartHour}
               </Text>
             </View>
-            <InfoRow label="Mã chi tiết thăm" value={data.visitDetailId} />
-            <InfoRow label="Giờ bắt đầu" value={data.expectedStartHour} />
-            <InfoRow label="Giờ kết thúc" value={data.expectedEndHour} />
-            <InfoRow
-              label="Trạng thái"
-              value={data.status ? "Hoạt động" : "Không hoạt động"}
-            />
+            {/* <InfoRow label="Mã chi tiết thăm" value={data.visitDetailId} /> */}
+            <InfoRow label="Giờ bắt đầu" value={resultData.expectedStartHour} />
+            <InfoRow label="Giờ kết thúc" value={resultData.expectedEndHour} />
+            {/* <InfoRow
+            label="Trạng thái"
+            value={data.status  ? "Hoạt động" : "Không hoạt động"}
+          /> */}
           </Section>
           <SectionDropDown
             title="Thông tin thăm"
             icon={<View className="w-6 h-6 bg-purple-500 rounded-full" />}
           >
-            <InfoRow label="Tên cuộc thăm" value={data.visit.visitName} />
-            <InfoRow label="Số lượng" value={data.visit.visitQuantity} />
-            <InfoRow label="Loại lịch" value={data.visit.scheduleTypeName} />
+            <InfoRow label="Tên cuộc thăm" value={resultData.visit.visitName} />
+            <InfoRow label="Số lượng" value={resultData.visit.visitQuantity} />
+            <InfoRow label="Loại lịch" value={resultData.visit.scheduleTypeName} />
           </SectionDropDown>
           <SectionDropDown
             title="Thông tin khách"
             icon={<View className="w-6 h-6 bg-blue-500 rounded-full" />}
           >
-            <InfoRow label="Tên khách" value={data.visitor.visitorName} />
-            <InfoRow label="Công ty" value={data.visitor.companyName} />
-            <InfoRow label="Số điện thoại" value={data.visitor.phoneNumber} />
-            <InfoRow label="CMND/CCCD" value={data.visitor.credentialsCard} />
-            <InfoRow label="Trạng thái" value={data.visitor.status} />
+            <InfoRow label="Tên khách" value={resultData.visitor.visitorName} />
+            <InfoRow label="Công ty" value={resultData.visitor.companyName} />
+            <InfoRow label="Số điện thoại" value={resultData.visitor.phoneNumber} />
+            <InfoRow label="CMND/CCCD" value={resultData.visitor.credentialsCard} />
+            {/* <InfoRow
+            label="Trạng thái"
+            value={data.visitor.status === "Active" ? "Hoạt động" : "Không hoạt động"}
+          /> */}
           </SectionDropDown>
 
           <SectionDropDown
             title="Thông tin thẻ"
             icon={<View className="w-6 h-6 bg-green-500 rounded-full" />}
           >
-            <InfoRow label="Mã thẻ" value={data.cardRes.cardId} />
+            {/* <InfoRow label="Mã thẻ" value={data.cardRes.cardId} /> */}
             <InfoRow
               label="Mã xác thực"
-              value={data.cardRes.cardVerification}
+              value={resultData.cardRes.cardVerification}
             />
-            <InfoRow label="Trạng thái thẻ" value={data.cardRes.cardStatus} />
+            {/* <InfoRow label="Trạng thái thẻ" value={data.cardRes.cardStatus} /> */}
+            {/* <InfoRow
+            label="Trạng thái"
+            value={data.cardRes.cardStatus === "Active" ? "Hoạt động" : "Không hoạt động"}
+          /> */}
 
-            {data.cardRes.cardImage && (
+            {resultData.cardRes.cardImage && (
               <View className="mt-4 items-center">
                 <Text className="text-gray-500 text-sm mb-2">QR Code</Text>
                 <Image
                   source={{
-                    uri: `data:image/png;base64,${data.cardRes.cardImage}`,
+                    uri: `data:image/png;base64,${resultData.cardRes.cardImage}`,
                   }}
                   className="w-32 h-32"
                   resizeMode="contain"
@@ -363,12 +421,12 @@ const CheckInOverall = () => {
             className="p-4 mb-4 bg-white rounded-full flex-row items-center justify-center"
           >
             <Text className="text-lg mr-2">Check In</Text>
-            <EvilIcons name="arrow-right" size={30} color="black" /> 
+            <EvilIcons name="arrow-right" size={30} color="black" />
             {/* Change 'black' to your desired color */}
           </TouchableOpacity>
         </View>
       </View>
-      {( isCheckingIn) && (
+      {isCheckingIn && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#ffffff" />
           <Text style={styles.loadingText}>Đang xử lý...</Text>
@@ -381,7 +439,6 @@ const CheckInOverall = () => {
 export default CheckInOverall;
 
 const styles = StyleSheet.create({
- 
   loadingContainer: {
     position: "absolute",
     top: 0,

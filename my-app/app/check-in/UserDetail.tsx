@@ -176,7 +176,7 @@ const UserDetail = () => {
     router.push({
       pathname: "/check-in/CheckInOverall",
       params: {
-        resultData: JSON.stringify(resultValid),
+        // resultData: JSON.stringify(resultValid),
         validData: JSON.stringify(validCheckInData),
       },
     });
@@ -315,7 +315,7 @@ const UserDetail = () => {
           router.push({
             pathname: "/check-in/CheckInOverall",
             params: {
-              resultData: JSON.stringify(result),
+              // resultData: JSON.stringify(result),
               validData: JSON.stringify(validCheckInData),
             },
           });

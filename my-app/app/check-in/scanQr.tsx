@@ -18,7 +18,6 @@ import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service
 import { useFocusEffect } from "@react-navigation/native";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
 import { ValidCheckIn } from "@/Types/checkIn.type";
-import { useValidCheckInMutation } from "@/redux/services/checkin.service";
 import VideoPlayer from "../(tabs)/streaming";
 interface ScanData {
   id: string;
@@ -58,13 +57,6 @@ export default function Home() {
     QrCardVerification: "",
     ImageShoe: [],
   });
-  const handleImageCapture = (imageData: ImageData) => {
-    setCapturedImage([imageData]);
-    setValidCheckInData((prev) => ({
-      ...prev,
-      ImageShoe: [imageData],
-    }));
-  };
   const {
     data: qrCardData,
     isLoading: isLoadingQr,
@@ -74,43 +66,21 @@ export default function Home() {
     skip: !cardVerification,
   });
   const [resultValid, setResultValid] = useState();
-  const [validCheckIn, { isLoading: isValidCheckingIn }] =
-    useValidCheckInMutation();
+ 
   const [autoCapture, setAutoCapture] = useState(false);
-  const [isCheckInEnabled, setIsCheckInEnabled] = useState(false);
-  const [isReadyToNavigate, setIsReadyToNavigate] = useState(false);
-  useEffect(() => {
-    const validateCheckInData = async () => {
-      const isQrValid = !!validCheckInData.QrCardVerification;
-      const hasOneImage = validCheckInData.ImageShoe.length === 1;
-      if (!isQrValid || !hasOneImage) {
-        setIsCheckInEnabled(false);
-        return;
-      }
-      try {
-        const result = await validCheckIn(validCheckInData).unwrap();
-        setIsCheckInEnabled(result);
-        setResultValid(result);
-        console.log("REsult valid", result);
-        if (result && validCheckInData) {
-          setIsReadyToNavigate(true);
-        }
-      } catch (error: any) {
-        // console.error("Validation error:", error);
-        const errorMessage =
-          error.data?.message || "Please ensure all requirements are met.";
-        Alert.alert("Đã xảy ra lỗi", errorMessage);
-        setIsCheckInEnabled(false);
-      }
-    };
-    validateCheckInData();
-  }, [validCheckInData]);
+ 
+  const handleImageCapture = (imageData: ImageData) => {
+    setCapturedImage([imageData]);
+    setValidCheckInData((prev) => ({
+      ...prev,
+      ImageShoe: [imageData],
+    }));
+  };
+  
+
   useEffect(() => {
     if (qrCardData) {
       setAutoCapture(true);
-      // if (qrCardData.cardImage) {
-      //   setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
-      // }
       if (qrCardData.cardVerification) {
         setValidCheckInData((prevData) => ({
           ...prevData,
@@ -158,12 +128,12 @@ export default function Home() {
           resetState();
         }
       } else {
-        // Nếu không phải CCCD thì là mã verification
+     
         setCardVerification(scannedData);
-        setValidCheckInData((prevData) =>({
+        setValidCheckInData((prevData) => ({
           ...prevData,
-          QrCardVerification: scannedData
-        }))
+          QrCardVerification: scannedData,
+        }));
         setIsProcessing(true);
       }
     }
@@ -211,31 +181,31 @@ export default function Home() {
   useEffect(() => {
     const handleNavigation = async () => {
       if (isLoadingVisit || isFetchingVisit) return;
+  
+      
       await new Promise((resolve) => setTimeout(resolve, 200));
+  
+       
+      const hasRequiredData = validCheckInData.QrCardVerification && validCheckInData.ImageShoe.length > 0;
+  
       if (cardVerification && !redirected.current) {
         qrLock.current = true;
-        if (qrCardData && !isLoadingQr && !isFetchingQr && !isErrorQr && resultValid) {
+  
+        if (qrCardData && !isLoadingQr && !isFetchingQr && !isErrorQr && hasRequiredData) {
           redirected.current = true;
           await new Promise((resolve) => setTimeout(resolve, 500));
           router.push({
             pathname: "/check-in/CheckInOverall",
             params: {
-              resultData: JSON.stringify(resultValid),
               validData: JSON.stringify(validCheckInData),
             },
           });
           resetState();
-        } else if (
-          !isLoadingQr &&
-          !isFetchingQr &&
-          (isErrorQr || !qrCardData)
-        ) {
+        } else if (!isLoadingQr && !isFetchingQr && (isErrorQr || !qrCardData)) {
           Alert.alert("Lỗi", "Mã xác thực không hợp lệ");
           resetState();
         }
       } else if (credentialCardId && !redirected.current) {
-        console.log("rêndere");
-        
         qrLock.current = true;
         if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
           redirected.current = true;
@@ -245,16 +215,13 @@ export default function Home() {
             params: { credentialCardId: credentialCardId },
           });
           resetState();
-        } else if (
-          !isLoadingVisit &&
-          !isFetchingVisit &&
-          !visitNotFoundShown.current
-        ) {
+        } else if (!isLoadingVisit && !isFetchingVisit && !visitNotFoundShown.current) {
           visitNotFoundShown.current = true;
           handleVisitNotFound();
         }
       }
     };
+  
     handleNavigation();
   }, [
     visitOfUser,
@@ -262,11 +229,12 @@ export default function Home() {
     isFetchingVisit,
     credentialCardId,
     qrCardData,
-    resultValid, 
     isLoadingQr,
     isFetchingQr,
     cardVerification,
+    validCheckInData, 
   ]);
+  
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (data && !qrLock.current) {
       qrLock.current = true;
@@ -281,6 +249,7 @@ export default function Home() {
   };
   console.log("CCCD: ", credentialCardId);
   console.log("Card id: ", cardVerification);
+  console.log("Log lay anh ben scan: ", validCheckInData);
   return (
     <SafeAreaView style={StyleSheet.absoluteFillObject}>
       <View
