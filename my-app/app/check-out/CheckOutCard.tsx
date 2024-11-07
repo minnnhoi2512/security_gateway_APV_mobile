@@ -13,9 +13,11 @@ import {
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Camera, CameraView, useCameraPermissions } from "expo-camera";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  useCheckOutMutation,
+  useCheckOutWithCardMutation,
+  useCheckOutWithCredentialCardMutation,
+  useGetVisitorImageByVisitorSessionIdQuery,
   useGetVissitorSessionQuery,
 } from "@/redux/services/checkout.service";
 import { useSelector } from "react-redux";
@@ -23,35 +25,29 @@ import { Ionicons } from "@expo/vector-icons";
 
 import Header from "@/components/UI/Header";
 import { RootState } from "@/redux/store/store";
+import { useGetVisitorByIdQuery } from "@/redux/services/visitor.service";
 
 const CheckoutCard = () => {
+  const { data, qrCardVerifiedProps } = useLocalSearchParams();
+  const visitData = data ? JSON.parse(data.toString()) : null;
+  // console.log("visitData: ", JSON.stringify(visitData, null, 2));
+  // console.log("qrCardVerifiedProps: ", qrCardVerifiedProps);
   const [permission, requestPermission] = useCameraPermissions();
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
-  const [isCameraActive, setIsCameraActive] = useState(false);
-  const [showVisitorInfo, setShowVisitorInfo] = useState(false);
-  const qrLock = useRef(false);
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
-  const [qrCardVerified, setQrCardVerified] = useState<string | null>(null);
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
-  const [checkOut, { isLoading }] = useCheckOutMutation();
-  const {
-    data: visitorSession,
-    isError,
-    refetch,
-    isFetching,
-  } = useGetVissitorSessionQuery(qrCardVerified as string);
 
-  // if(visitorSession == undefined) {
-  //   return <View><Text>FUCK</Text></View>
-
-  // }
-
+  //Query
+  const [checkOutWithCard, { isLoading: isloadingWithCard }] = useCheckOutWithCardMutation();
+  const [checkOutWithCredentialCard, { isLoading: isLoadingWithCredentialcard }] = useCheckOutWithCredentialCardMutation();
+  const { data: dataVisitorSessionImage, error: errorVisitorSessionImage, refetch, isFetching: isFetchingVisitorSessionImage, isLoading: isLoadingVisitorSessionImage, } = useGetVisitorImageByVisitorSessionIdQuery(visitData.visitorSessionId, {});
+  const { data: dataVisitor, error: errorVisitor, refetch: refetchVisitor, isFetching: isFetchingVisitor, isLoading: isLoadingVisitor, } = useGetVisitorByIdQuery(visitData.visitDetail.visitorId, {});
+  // console.log(dataVisitor);
   const [refreshing, setRefreshing] = useState(false);
   const [checkOutData, setCheckOutData] = useState({
-    checkoutTime: "",
     securityOutId: 0,
     gateOutId: Number(selectedGateId) || 0,
   });
@@ -60,7 +56,6 @@ const CheckoutCard = () => {
     const date = new Date(dateString);
     return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
   };
-
   useEffect(() => {
     if (permission?.granted) {
       setIsPermissionGranted(true);
@@ -81,7 +76,7 @@ const CheckoutCard = () => {
         const storedUserId = await AsyncStorage.getItem("userId");
         if (storedUserId) {
           setUserId(storedUserId);
-          console.log("User ID from AsyncStorage:", storedUserId);
+          // console.log("User ID from AsyncStorage:", storedUserId);
         } else {
           console.log("No userId found in AsyncStorage");
         }
@@ -102,87 +97,69 @@ const CheckoutCard = () => {
     }
   }, [userId, selectedGateId]);
 
-  // useEffect(() => {
-  //   if (visitorSession == undefined) {
-  //     return    Alert.alert("Thành công", "k co data!");
+
+
+  // const handleCheckout1 = useCallback(() => {
+
+  //   onPress: async () => {
+  //     try {
+  //       const response = await checkOut({
+  //         qrCardVerifi: qrCardVerifiedProps,
+  //         checkoutData: checkOutData,
+  //       }).unwrap();
+  //       Alert.alert("Thành công", "Checkout thành công!");
+
+  //       setCheckOutData({
+  //         securityOutId: 0,
+  //         gateOutId: Number(selectedGateId) || 0,
+  //       });
+  //       //refetch();
+  //       //console.log("QR VER: ", qrCardVerified);
+
+  //       //setIsCameraActive(false);
+
+  //       // Remove session data from AsyncStorage
+  //       await AsyncStorage.removeItem("visitorSession");
+
+  //       // Navigate back to the main screen
+  //       router.push("/(tabs)/");
+  //     } catch (error) {
+  //       console.error("Checkout error:", error);
+  //       Alert.alert("Lỗi", "Checkout thất bại.");
+  //     }
+
+  //     // console.log("QR VER2: ", qrCardVerified);
   //   }
-  // }, [isLoading]);
+  // }, [checkOut, checkOutData, selectedGateId, router]);
 
-  const handleBarCodeScanned = useCallback(
-    async ({ data }: { data: string }) => {
-      if (data && !qrLock.current) {
-        qrLock.current = true;
-        setIsCameraActive(false);
-
-        const currentTime = new Date().toISOString();
-
-        setQrCardVerified(data);
-        setShowVisitorInfo(true);
-
-        setCheckOutData((prevState) => ({
-          ...prevState,
-          checkoutTime: currentTime,
-        }));
-
-        qrLock.current = false;
+  const handleCheckout = async () => {
+    try {
+      if (qrCardVerifiedProps === null || qrCardVerifiedProps === undefined) {
+        const response = await checkOutWithCredentialCard({
+          credentialCard: dataVisitor?.credentialsCard,
+          checkoutData: checkOutData,
+        }).unwrap();
+      } else {
+        const response = await checkOutWithCard({
+          qrCardVerifi: qrCardVerifiedProps,
+          checkoutData: checkOutData,
+        }).unwrap();
       }
-    },
-    [setIsCameraActive, setQrCardVerified, setShowVisitorInfo, setCheckOutData]
-  );
-
-  const handleCheckout = useCallback(() => {
-    Alert.alert("Xác nhận Checkout", "Bạn có chắc chắn muốn checkout không?", [
-      {
-        text: "Hủy",
-        style: "cancel",
-      },
-      {
-        text: "OK",
-        onPress: async () => {
-          try {
-            const response = await checkOut({
-              qrCardVerifi: qrCardVerified,
-              checkoutData: checkOutData,
-            }).unwrap();
-            Alert.alert("Thành công", "Checkout thành công!");
-
-            // Clear visitor session state and related data
-            setQrCardVerified(null);
-
-            setShowVisitorInfo(false);
-            setCheckOutData({
-              checkoutTime: "",
-              securityOutId: 0,
-              gateOutId: Number(selectedGateId) || 0,
-            });
-            refetch();
-            console.log("QR VER: ", qrCardVerified);
-
-            setIsCameraActive(false);
-
-            // Remove session data from AsyncStorage
-            await AsyncStorage.removeItem("visitorSession");
-
-            // Navigate back to the main screen
-            router.push("/(tabs)/");
-          } catch (error) {
-            console.error("Checkout error:", error);
-            Alert.alert("Lỗi", "Checkout thất bại.");
-          }
-
-          // console.log("QR VER2: ", qrCardVerified);
-        },
-      },
-    ]);
-  }, [checkOut, qrCardVerified, checkOutData, selectedGateId, router]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    if (qrCardVerified) {
-      await refetch();
+      Alert.alert("Thành công", "Checkout thành công!");
+      router.push("/(tabs)/");
+    } catch (error) {
+      console.error("Checkout error:", error);
+      Alert.alert("Lỗi", "Checkout thất bại.");
     }
-    setRefreshing(false);
-  }, [qrCardVerified, refetch]);
+  };
+
+  // const onRefresh = useCallback(async () => {
+  //   setRefreshing(true);
+  //   if (qrCardVerified) {
+  //     await refetch();
+  //   }
+  //   setRefreshing(false);
+  // }, [qrCardVerified, refetch]);
   if (!isPermissionGranted) {
     return (
       <View>
@@ -192,149 +169,112 @@ const CheckoutCard = () => {
     );
   }
 
-  const renderContent = () => {
-    if (showVisitorInfo && visitorSession && visitorSession.length > 0) {
-      return (
-        <View style={styles.visitorInfoContainer}>
-          {/* ... (keep the existing visitor info display logic) */}
-          <TouchableOpacity
-            style={styles.checkoutButton}
-            onPress={handleCheckout}
-            disabled={isLoading}
-          >
-            <Text style={styles.buttonText}>
-              {isLoading ? "Đang tiến hành..." : "Xác nhận Checkout"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      );
-    } else {
-      return (
-        <View className="flex-1 justify-center mt-[125px] items-center px-4">
-          <TouchableOpacity
-            onPress={() => setIsCameraActive(true)}
-            className="bg-[#34495e] rounded-2xl p-6 items-center justify-center w-64 h-64 shadow-lg"
-          >
-            <Ionicons name="qr-code-outline" size={100} color="white" />
-            <Text className="text-white font-bold text-lg mt-4">
-              Quét mã QR
-            </Text>
-          </TouchableOpacity>
-          <View className="p-4 ">
-            <Text className="text-2xl font-bold text-[#34495e]">
-              Tiến hành check out
-            </Text>
-          </View>
-        </View>
-      );
-    }
-  };
-
-  console.log("visitor session data: ", visitorSession);
-
   return (
     <SafeAreaView style={styles.container}>
       <Header name="Đặng Dương" />
       <ScrollView
         contentContainerStyle={styles.scrollViewContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing}
+          // onRefresh={onRefresh} 
+          />
         }
       >
-        {visitorSession && visitorSession.length > 0 ? (
+        {data && data.length > 0 ? (
           <View style={styles.visitorInfoContainer}>
-            <Text style={styles.title}>Thông tin khách hàng</Text>
-            {/* <View style={styles.infoRow}>
-                <Text style={styles.label}>Session ID:</Text>
-                <Text style={styles.value}>{visitorSession[0].visitorSessionId}</Text>
-              </View> */}
-
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Mã thẻ:</Text>
-              <Text style={styles.value}>{visitorSession[0].qrCardId}</Text>
-            </View>
+            <Text style={styles.title}>Thông tin checkin của khách</Text>
             <View style={styles.infoRow}>
               <Text style={styles.label}>Thời gian vào:</Text>
               <Text style={styles.value}>
-                {formatDate(visitorSession[0].checkinTime)}
+                {formatDate(visitData.checkinTime)}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.label}>Cổng vào:</Text>
               <Text style={styles.value}>
-                {visitorSession[0].gateIn.gateName}
+                {visitData.gateIn.gateName}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.label}>Bảo vệ:</Text>
               <Text style={styles.value}>
-                {visitorSession[0].securityIn.fullName}
+                {visitData.securityIn.fullName}
               </Text>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Trạng thái:</Text>
-              <Text style={[styles.value, styles.statusText]}>
-                {visitorSession[0].status}
-              </Text>
-            </View>
-
-            <Text style={styles.subTitle}>Hình ảnh</Text>
+            <Text style={styles.subTitle}>Hình ảnh vào</Text>
             <View style={styles.imagesContainer}>
-              {visitorSession[0].images.map(
+              {dataVisitorSessionImage && dataVisitorSessionImage.map(
                 (
                   image: { imageURL: string; imageType: string },
                   index: number
                 ) => (
                   <View key={index} style={styles.imageWrapper}>
                     <Image
-                      source={{ uri: image.imageURL }}
+                      source={{ uri: "https://img.freepik.com/premium-psd/blue-sport-sneakers-shoes-isolated-transparent-background-png-psd_888962-1190.jpg" }}
                       style={styles.image}
                     />
                     <Text style={styles.imageType}>
-                      {image.imageType === "shoe" ? "Giày" : "Ảnh khách hàng"}
+                      {image.imageType === "Shoe" ? "Giày" : "Ảnh khách hàng"}
                     </Text>
                   </View>
                 )
               )}
             </View>
-
+            <Text style={styles.subTitle}>Thông tin thẻ</Text>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Ngày cấp:</Text>
+              <Text style={styles.value}>{visitData.visitCard.issueDate}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Ngày hết hạn:</Text>
+              <Text style={styles.value}>{visitData.visitCard.expiryDate}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Trạng thái thẻ:</Text>
+              <Text style={styles.value}>{visitData.visitCard.card.cardStatus}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Hình ảnh thẻ:</Text>
+              <Image
+                style={styles.cardImage}
+                source={{ uri: `data:image/png;base64,${visitData.visitCard.card.cardImage}` }}
+              />
+            </View>
+            <Text style={styles.subTitle}>Thông tin chi tiết chuyến thăm</Text>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Giờ dự kiến vào:</Text>
+              <Text style={styles.value}>{visitData.visitDetail.expectedStartHour}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Giờ dự kiến ra:</Text>
+              <Text style={styles.value}>{visitData.visitDetail.expectedEndHour}</Text>
+            </View>
+            <Text style={styles.subTitle}>Thông tin chi tiết khách</Text>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Tên đầy đủ:</Text>
+              <Text style={styles.value}>{dataVisitor?.visitorName}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Hình ảnh:</Text>
+              <Image
+                style={styles.cardImage}
+                source={{ uri: `data:image/png;base64,${dataVisitor?.visitorCredentialImage}` }}
+              />
+            </View>
             <TouchableOpacity
               style={styles.checkoutButton}
               onPress={handleCheckout}
-              disabled={isLoading}
+              disabled={isLoadingWithCredentialcard || isloadingWithCard}
             >
               <Text style={styles.buttonText}>
-                {isLoading ? "Đang tiến hành..." : "Xác nhận Checkout"}
+                Xác nhận Checkout
               </Text>
             </TouchableOpacity>
           </View>
         ) : (
-          <View style={styles.scannerContainer}>
-            {isCameraActive ? (
-              <View style={styles.cameraContainer}>
-                <CameraView
-                  style={styles.cameraView}
-                  onBarcodeScanned={handleBarCodeScanned}
-                />
-                <View style={styles.scanningFrame} />
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setIsCameraActive(false)}
-                >
-                  <Text style={styles.closeButtonText}>Thoát Camera</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              renderContent()
-            )}
-          </View>
+          ""
         )}
       </ScrollView>
-      {isFetching && (
-        <View style={styles.loadingContainer}>
-          <Text>Đang tải thông tin khách hàng...</Text>
-        </View>
-      )}
     </SafeAreaView>
   );
 };
@@ -475,5 +415,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.7)",
+  },
+  cardImage: {
+    width: 100,
+    height: 100,
+    resizeMode: 'contain',
   },
 });

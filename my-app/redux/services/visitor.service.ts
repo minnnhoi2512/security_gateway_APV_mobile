@@ -32,6 +32,11 @@ export const visitorApi = createApi({
             query: (credentialCard: string) => {
                 return `Visitor/CredentialCard/${credentialCard}`
             },
+          }),
+          getVisitorById: builder.query({
+            query: (visitorId: string) => {
+                return `Visitor/${visitorId}`
+            },
           })
     }),
 
@@ -39,5 +44,6 @@ export const visitorApi = createApi({
 
 export const {
     useCreateVisitorMutation,
-    useGetVisitorByCreadentialCardQuery
+    useGetVisitorByCreadentialCardQuery,
+    useGetVisitorByIdQuery
 } = visitorApi
