@@ -6,7 +6,7 @@ import { useGetAllGateQuery } from "@/redux/services/gate.service";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { setSelectedGate } from "@/redux/slices/gate.slice";
-import { LinearGradient } from 'expo-linear-gradient';
+
 
 interface Gate {
   gateId: number;

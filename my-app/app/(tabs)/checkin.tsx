@@ -54,22 +54,26 @@ const Checkin = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <StatusBar barStyle="dark-content" />
-      <Header name="Đặng Dương" />
+    <SafeAreaView className="flex-1 bg-backgroundApp">
+      <View className="flex-1 bg-white">
+        <StatusBar barStyle="dark-content" />
+        <Header name="Đặng Dương" />
 
-      <View className="flex-1 justify-center items-center px-4">
-        <TouchableOpacity
-          onPress={handleScanPress}
-          className="bg-[#34495e] rounded-2xl p-6 items-center justify-center w-64 h-64 shadow-lg"
-        >
-          <Ionicons name="qr-code-outline" size={100} color="white" />
-          <Text className="text-white font-bold text-lg mt-4">Quét mã QR</Text>
-        </TouchableOpacity>
-        <View className="p-4 ">
-          <Text className="text-2xl font-bold text-[#34495e]">
-            Tiến hành check in
-          </Text>
+        <View className="flex-1 justify-center items-center px-4">
+          <TouchableOpacity
+            onPress={handleScanPress}
+            className="bg-[#34495e] rounded-2xl p-6 items-center justify-center w-64 h-64 shadow-lg"
+          >
+            <Ionicons name="qr-code-outline" size={100} color="white" />
+            <Text className="text-white font-bold text-lg mt-4">
+              Quét mã QR
+            </Text>
+          </TouchableOpacity>
+          <View className="p-4 ">
+            <Text className="text-2xl font-bold text-[#34495e]">
+              Tiến hành check in
+            </Text>
+          </View>
         </View>
       </View>
     </SafeAreaView>

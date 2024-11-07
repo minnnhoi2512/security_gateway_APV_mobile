@@ -91,6 +91,16 @@ export default function TabLayout() {
             ),
           }}
         />
+
+        <Tabs.Screen
+          name="streaming"
+          options={{
+            title: "Trực tiếp",
+            tabBarIcon: ({ color, focused }) => (
+              <FontAwesome name="user-circle-o" size={24} color={color} />
+            ),
+          }}
+        />
       </Tabs>
     </View>
   );

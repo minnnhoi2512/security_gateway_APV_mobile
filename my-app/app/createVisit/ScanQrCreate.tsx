@@ -1,172 +1,193 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Camera, CameraView } from "expo-camera";
-import { Stack, useRouter } from "expo-router";
-import {
-  Alert,
-  AppState,
-  Linking,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+  import React, { useEffect, useRef, useState } from "react";
+  import { Camera, CameraView } from "expo-camera";
+  import { Stack, useRouter } from "expo-router";
+  import { useFocusEffect } from "@react-navigation/native";
+  import {
+    Alert,
+    AppState,
+    Platform,
+    Pressable,
+    SafeAreaView,
+    StatusBar,
+    StyleSheet,
+    Text,
+  } from "react-native";
+  import { Overlay } from "../check-in/OverLay";
+  import { useGetVisitorByCreadentialCardQuery } from "@/redux/services/visitor.service";
 
-import { Overlay } from "../check-in/OverLay";
-import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service";
-interface ScanData {
-  id: string;
-  nationalId: string;
-  name: string;
-  dateOfBirth: string;
-  gender: string;
-  address: string;
-  issueDate: string;
-}
-export default function ScanQrCreate() {
-  const qrLock = useRef(false);
-  const appState = useRef(AppState.currentState);
-  const router = useRouter();
+  interface ScanData {
+    id: string;
+    nationalId: string;
+    name: string;
+    dateOfBirth: string;
+    gender: string;
+    address: string;
+    issueDate: string;
+  }
 
-  const [scannedData, setScannedData] = useState<string>("");
-  const [credentialCardId, setCredentialCardId] = useState<string | null>(null);
-  const [alertDisplayed, setAlertDisplayed] = useState(false);
+  export default function ScanQrCreate() {
+    const qrLock = useRef(false);
+    const appState = useRef(AppState.currentState);
+    const router = useRouter();
+    const [scannedData, setScannedData] = useState<string>("");
+    const [credentialCardId, setCredentialCardId] = useState<string | null>(null);
+    const processingRef = useRef(false);
+    const redirected = useRef(false);
+    const [visitorCreated, setVisitorCreated] = useState(false);
+    const parseQRData = (qrData: string): ScanData => {
+      const [id, nationalId, name, dateOfBirth, gender, address, issueDate] =
+        qrData.split("|");
+      return { id, nationalId, name, dateOfBirth, gender, address, issueDate };
+    };
 
-  const parseQRData = (qrData: string): ScanData => {
-    const [id, nationalId, name, dateOfBirth, gender, address, issueDate] =
-      qrData.split("|");
-    return { id, nationalId, name, dateOfBirth, gender, address, issueDate };
-  };
-
-  const {
-    data: visitData,
-    error,
-    isLoading,
-  } = useGetVisitByCredentialCardQuery(credentialCardId || "", {
-    skip: !credentialCardId,
-  });
-
-  useEffect(() => {
-    if (scannedData) {
-      const parsedData = parseQRData(scannedData);
-      setCredentialCardId(parsedData.id);
-    }
-  }, [scannedData]);
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextAppState) => {
-      if (
-        appState.current.match(/inactive|background/) &&
-        nextAppState === "active"
-      ) {
-        qrLock.current = false;
-      }
-      appState.current = nextAppState;
+    const {
+      data: visitData,
+      error,
+      isLoading,
+      isFetching,
+    } = useGetVisitorByCreadentialCardQuery(credentialCardId || "", {
+      skip: !credentialCardId,
     });
 
-    return () => {
-      subscription.remove();
+    const resetStates = () => {
+      setScannedData("");
+      setCredentialCardId(null);
+      qrLock.current = false;
+      processingRef.current = false;
     };
-  }, []);
 
-  useEffect(() => {
-    if (credentialCardId && !isLoading && !alertDisplayed) {
-      qrLock.current = true;
+    useFocusEffect(
+      React.useCallback(() => {
+        resetStates();
+        redirected.current = false;
+        return () => {
+        
+        };
+      }, [])
+    );
 
-      if (visitData) {
-        router.push("/createVisit/FormCreate");
-        console.log("Visit search:", visitData);
-      } else {
-        Alert.alert(
-          "Không tìm thấy dữ liệu",
-          "Không tìm thấy dữ liệu cho ID này. Bạn sẽ được chuyển hướng đến tạo khách mới.",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                router.push({
-                  pathname: "/createVisitor/CreateVisitor",
-                  params: { data: scannedData },
-                });
-                qrLock.current = false;
-                setAlertDisplayed(false);
-              },
-            },
-          ]
-        );
-        setAlertDisplayed(true);
+
+
+    useEffect(() => {
+      if (scannedData) {
+        const parsedData = parseQRData(scannedData);
+        setCredentialCardId(parsedData.id);
       }
-    }
-  }, [credentialCardId, visitData, error, isLoading]);
+     
+    }, [scannedData]);
 
-  const handleBarCodeScanned = ({ data }: { data: string }) => {
-    if (data && !qrLock.current) {
-      qrLock.current = true;
-      // console.log("Dữ liệu quét mã:", data);
-      setScannedData(data);
-    }
-  };
+    useEffect(() => {
+      const subscription = AppState.addEventListener("change", (nextAppState) => {
+        if (
+          appState.current.match(/inactive|background/) &&
+          nextAppState === "active"
+        ) {
+          resetStates();
+        }
+        appState.current = nextAppState;
+      });
+      return () => {
+        subscription.remove();
+      };
+    }, []);
 
-  // console.log("scannedData: ", scannedData);
-  // console.log("credentialCardId: ", credentialCardId);
-  const handleGoBack = () => {
-    router.back();
-  };
-  return (
-    <SafeAreaView style={StyleSheet.absoluteFillObject}>
-      <Stack.Screen
-        options={{
-          title: "Overview",
-          headerShown: false,
-        }}
-      />
-      {Platform.OS === "android" ? <StatusBar hidden /> : null}
-      <CameraView
-        style={StyleSheet.absoluteFillObject}
-        facing="back"
-        onBarcodeScanned={handleBarCodeScanned}
-      />
-      <Overlay />
+    const handleVisitorNotFound = () => {
+      Alert.alert(
+        "Không tìm thấy dữ liệu",
+        "Không tìm thấy dữ liệu cho ID này. Bạn sẽ được chuyển hướng đến tạo khách mới.",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              router.push({
+                pathname: "/createVisitor/CreateVisitor",
+                params: { data: scannedData },
+              });
+              resetStates();
+            },
+          },
+          {
+            text: "Hủy",
+            onPress: () => {
+              resetStates();
+            },
+          },
+        ]
+      );
+    };
 
-      <Pressable style={styles.backButton} onPress={handleGoBack}>
-        <Text style={styles.backButtonText}>Quay về</Text>
-      </Pressable>
-      {/* {scannedData ? (
-        <View style={styles.dataContainer}>
-          <Text style={styles.dataText}>Dữ liệu quét: {scannedData}</Text>
-        </View>
-      ) : null} */}
-    </SafeAreaView>
-  );
-}
 
-const styles = StyleSheet.create({
-  dataContainer: {
-    position: "absolute",
-    bottom: 20,
-    left: 20,
-    right: 20,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    padding: 10,
-    borderRadius: 5,
-  },
-  dataText: {
-    color: "white",
-    fontSize: 16,
-  },
+    useEffect(() => {
+      if (!credentialCardId || processingRef.current || redirected.current) return;
 
-  backButton: {
-    position: "absolute",
-    top: 60,
-    left: 20,
-    padding: 10,
-    backgroundColor: "black",
-    borderRadius: 5,
-  },
-  backButtonText: {
-    color: "white",
-    fontSize: 16,
-  },
-});
+      if (credentialCardId && !isLoading && !isFetching) {
+        processingRef.current = true;
+        qrLock.current = true;
+        if (visitData?.visitorId && !isFetching && !isLoading && !error) {
+          redirected.current = true;  
+          router.push({
+            pathname: "/createVisit/FormCreate",
+            params: {
+              visitorId: visitData.visitorId,
+            },
+            
+          });
+          resetStates();
+          
+        } else if(!visitData?.visitorId) {
+          handleVisitorNotFound();
+        }
+      }
+      
+    }, [visitData, isLoading, isFetching, credentialCardId]);
+
+    const handleBarCodeScanned = ({ data }: { data: string }) => {
+      if (data && !qrLock.current && !processingRef.current) {
+        qrLock.current = true;
+        setScannedData(data);
+        console.log("QR SS QUET MOI", data);
+        
+      }
+    };
+
+    const handleGoBack = () => {
+      resetStates();
+      router.back();
+    };
+
+    return (
+      <SafeAreaView style={StyleSheet.absoluteFillObject}>
+        <Stack.Screen
+          options={{
+            title: "Overview",
+            headerShown: false,
+          }}
+        />
+        {Platform.OS === "android" ? <StatusBar hidden /> : null}
+        <CameraView
+          style={StyleSheet.absoluteFillObject}
+          facing="back"
+          onBarcodeScanned={handleBarCodeScanned}
+        />
+        <Overlay />
+        <Pressable style={styles.backButton} onPress={handleGoBack}>
+          <Text style={styles.backButtonText}>Quay về</Text>
+        </Pressable>
+      </SafeAreaView>
+    );
+  }
+
+  const styles = StyleSheet.create({
+    backButton: {
+      position: "absolute",
+      top: 60,
+      left: 20,
+      padding: 10,
+      backgroundColor: "black",
+      borderRadius: 5,
+    },
+    backButtonText: {
+      color: "white",
+      fontSize: 16,
+    },
+  });

@@ -22,7 +22,7 @@ export const visitorSessionApi = createApi({
       query: (qrCardVerified: string) => `VisitorSession/StatusCheckIn/Card/${qrCardVerified}`,
     }),
     getVissitorSessionByCredentialId: builder.query({
-      query: (credentialId: string) => `VisitorSession/CheckIn/CredentialId/${credentialId}`,
+      query: (credentialId: string) => `VisitorSession/StatusCheckIn/CredentialId/${credentialId}`,
     }),
   }),
 });

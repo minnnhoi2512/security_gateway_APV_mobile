@@ -4,14 +4,15 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Provider } from "react-redux";
 import { store } from "@/redux/store/store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -21,6 +22,23 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);  
+  const router = useRouter();
+
+
+
+  useEffect(() => {
+    const checkAuthToken = async () => {
+      try {
+        const token = await AsyncStorage.getItem("userToken");
+        setIsAuthenticated(!!token);
+      } catch (error) {
+        console.log("Error checking auth token:", error);
+      }
+    };
+    checkAuthToken();
+  }, []);
+
 
   useEffect(() => {
     if (loaded) {
@@ -28,12 +46,31 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
+
+
+  useEffect(() => {
+    if (isAuthenticated !== null && loaded) {
+      if (isAuthenticated) {
+        router.replace("/PickGate");  
+      } else {
+        router.replace("/login");   
+      }
+    }
+  }, [isAuthenticated, loaded]);
+
+  if (!loaded || isAuthenticated === null) {
+    return null; 
+  }
+
+
+
   if (!loaded) {
     return null;
   }
 
   return (
     <Provider store={store}>
+      
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <Stack>
           <Stack.Screen name="login" options={{ headerShown: false }} />
@@ -44,7 +81,7 @@ export default function RootLayout() {
           />
            <Stack.Screen
             name="createVisit/ScanQrCreate"
-            options={{ headerShown: true }}
+            options={{ headerShown: false }}
           />
           <Stack.Screen
             name="check-in/ListVisit"
@@ -58,10 +95,26 @@ export default function RootLayout() {
             name="createVisit/FormCreate"
             options={{ headerShown: false }}
           />
+          <Stack.Screen
+            name="createVisitor/CreateVisitor"
+            options={{ headerShown: false }}
+          />
            <Stack.Screen
             name="check-out/CheckOutCard"
             options={{ headerShown: true }}
           />
+           <Stack.Screen
+            name="profile/ProfileDetail"
+            options={{ headerShown: false }}
+          />
+           <Stack.Screen
+            name="check-in/CheckInOverall"
+            options={{ headerShown: false }}
+          />
+           {/* <Stack.Screen
+            name="check-in/ResponseCheckIn"
+            options={{ headerShown: false }}
+          /> */}
           <Stack.Screen name="PickGate" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>

@@ -44,11 +44,6 @@ const CheckoutCard = () => {
   //   isFetching,
   // } = useGetVissitorSessionQuery(qrCardVerified as string);
 
-  // if(visitorSession == undefined) {
-  //   return <View><Text>FUCK</Text></View>
-
-  // }
-
   const [refreshing, setRefreshing] = useState(false);
   const [checkOutData, setCheckOutData] = useState({
     securityOutId: 0,
@@ -100,29 +95,7 @@ const CheckoutCard = () => {
     }
   }, [userId, selectedGateId]);
 
-  // useEffect(() => {
-  //   if (visitorSession == undefined) {
-  //     return    Alert.alert("Thành công", "k co data!");
-  //   }
-  // }, [isLoading]);
 
-  // const handleBarCodeScanned = useCallback(
-  //   async ({ data }: { data: string }) => {
-  //     if (data && !qrLock.current) {
-  //       qrLock.current = true;
-  //       setIsCameraActive(false);
-  //       const currentTime = new Date().toISOString();
-  //       setQrCardVerified(data);
-  //       setShowVisitorInfo(true);
-  //       setCheckOutData((prevState) => ({
-  //         ...prevState,
-  //         checkoutTime: currentTime,
-  //       }));
-  //       qrLock.current = false;
-  //     }
-  //   },
-  //   [setIsCameraActive, setQrCardVerified, setShowVisitorInfo, setCheckOutData]
-  // );
 
   const handleCheckout1 = useCallback(() => {
 
@@ -134,12 +107,7 @@ const CheckoutCard = () => {
         }).unwrap();
         Alert.alert("Thành công", "Checkout thành công!");
 
-        // Clear visitor session state and related data
-        //setQrCardVerified(null);
-
-        //setShowVisitorInfo(false);
         setCheckOutData({
-          //checkoutTime: "",
           securityOutId: 0,
           gateOutId: Number(selectedGateId) || 0,
         });
@@ -162,38 +130,38 @@ const CheckoutCard = () => {
     }
   }, [checkOut, checkOutData, selectedGateId, router]);
 
-const  handleCheckout = async () => {
-  try {
-    const response = await  checkOut({
-      qrCardVerifi: qrCardVerifiedProps,
-      checkoutData: checkOutData,
-    }).unwrap();
-    Alert.alert("Thành công", "Checkout thành công!");
+  const handleCheckout = async () => {
+    try {
+      const response = await checkOut({
+        qrCardVerifi: qrCardVerifiedProps,
+        checkoutData: checkOutData,
+      }).unwrap();
+      Alert.alert("Thành công", "Checkout thành công!");
 
-    // Clear visitor session state and related data
-    //setQrCardVerified(null);
+      // Clear visitor session state and related data
+      //setQrCardVerified(null);
 
-    //setShowVisitorInfo(false);
-    // setCheckOutData({
-    //   checkoutTime: "",
-    //   securityOutId: 0,
-    //   gateOutId: Number(selectedGateId) || 0,
-    // });
-    //refetch();
-    //console.log("QR VER: ", qrCardVerified);
+      //setShowVisitorInfo(false);
+      // setCheckOutData({
+      //   checkoutTime: "",
+      //   securityOutId: 0,
+      //   gateOutId: Number(selectedGateId) || 0,
+      // });
+      //refetch();
+      //console.log("QR VER: ", qrCardVerified);
 
-    //setIsCameraActive(false);
+      //setIsCameraActive(false);
 
-    // Remove session data from AsyncStorage
-     //AsyncStorage.removeItem("visitorSession");
+      // Remove session data from AsyncStorage
+      //AsyncStorage.removeItem("visitorSession");
 
-    // Navigate back to the main screen
-    router.push("/(tabs)/");
-  } catch (error) {
-    console.error("Checkout error:", error);
-    Alert.alert("Lỗi", "Checkout thất bại.");
-  }
-};
+      // Navigate back to the main screen
+      router.push("/(tabs)/");
+    } catch (error) {
+      console.error("Checkout error:", error);
+      Alert.alert("Lỗi", "Checkout thất bại.");
+    }
+  };
 
   // const onRefresh = useCallback(async () => {
   //   setRefreshing(true);
@@ -211,46 +179,6 @@ const  handleCheckout = async () => {
     );
   }
 
-  // const renderContent = () => {
-  //   if (showVisitorInfo && visitorSession && visitorSession.length > 0) {
-  //     return (
-  //       <View style={styles.visitorInfoContainer}>
-  //         {/* ... (keep the existing visitor info display logic) */}
-  //         <TouchableOpacity
-  //           style={styles.checkoutButton}
-  //           onPress={handleCheckout}
-  //           disabled={isLoading}
-  //         >
-  //           <Text style={styles.buttonText}>
-  //             {isLoading ? "Đang tiến hành..." : "Xác nhận Checkout"}
-  //           </Text>
-  //         </TouchableOpacity>
-  //       </View>
-  //     );
-  //   } else {
-  //     return (
-  //       <View className="flex-1 justify-center mt-[125px] items-center px-4">
-  //         <TouchableOpacity
-  //           onPress={() => setIsCameraActive(true)}
-  //           className="bg-[#34495e] rounded-2xl p-6 items-center justify-center w-64 h-64 shadow-lg"
-  //         >
-  //           <Ionicons name="qr-code-outline" size={100} color="white" />
-  //           <Text className="text-white font-bold text-lg mt-4">
-  //             Quét mã QR
-  //           </Text>
-  //         </TouchableOpacity>
-  //         <View className="p-4 ">
-  //           <Text className="text-2xl font-bold text-[#34495e]">
-  //             Tiến hành check out
-  //           </Text>
-  //         </View>
-  //       </View>
-  //     );
-  //   }
-  // };
-
-  //console.log("visitor session data: ", visitorSession);
-
   return (
     <SafeAreaView style={styles.container}>
       <Header name="Đặng Dương" />
@@ -267,41 +195,41 @@ const  handleCheckout = async () => {
             <Text style={styles.title}>Thông tin khách hàng</Text>
             <View style={styles.infoRow}>
               <Text style={styles.label}>Session ID:</Text>
-              <Text style={styles.value}>{visitData[0].visitorSessionId}</Text>
+              <Text style={styles.value}>{visitData.visitorSessionId}</Text>
             </View>
 
             <View style={styles.infoRow}>
               <Text style={styles.label}>Mã thẻ:</Text>
-              <Text style={styles.value}>{visitData[0].qrCardId}</Text>
+              <Text style={styles.value}>{visitData.qrCardId}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.label}>Thời gian vào:</Text>
               <Text style={styles.value}>
-                {formatDate(visitData[0].checkinTime)}
+                {formatDate(visitData.checkinTime)}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.label}>Cổng vào:</Text>
               <Text style={styles.value}>
-                {visitData[0].gateIn.gateName}
+                {visitData.gateIn.gateName}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.label}>Bảo vệ:</Text>
               <Text style={styles.value}>
-                {visitData[0].securityIn.fullName}
+                {visitData.securityIn.fullName}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.label}>Trạng thái:</Text>
               <Text style={[styles.value, styles.statusText]}>
-                {visitData[0].status}
+                {visitData.status}
               </Text>
             </View>
 
             <Text style={styles.subTitle}>Hình ảnh</Text>
             <View style={styles.imagesContainer}>
-              {visitData[0].images.map(
+              {/* {visitData[0].images.map(
                 (
                   image: { imageURL: string; imageType: string },
                   index: number
@@ -316,7 +244,7 @@ const  handleCheckout = async () => {
                     </Text>
                   </View>
                 )
-              )}
+              )} */}
             </View>
 
             <TouchableOpacity
@@ -333,11 +261,6 @@ const  handleCheckout = async () => {
           ""
         )}
       </ScrollView>
-      {/* {isFetching && (
-        <View style={styles.loadingContainer}>
-          <Text>Đang tải thông tin khách hàng...</Text>
-        </View>
-      )} */}
     </SafeAreaView>
   );
 };
