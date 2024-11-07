@@ -116,7 +116,7 @@ const Checkout = () => {
       if (dataByCredentialCard && !errorByCredentialCard) {
         router.push({
           pathname: '/check-out/CheckOutCard',
-          params: { data: JSON.stringify(dataByCredentialCard), qrCardVerifiedProps: qrCardVerified },
+          params: { data: JSON.stringify(dataByCredentialCard), qrCardVerifiedProps: null },
         });
         console.log("Oke")
       } else if (errorByCredentialCard) {

@@ -15,7 +15,9 @@ import { Camera, CameraView, useCameraPermissions } from "expo-camera";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  useCheckOutMutation,
+  useCheckOutWithCardMutation,
+  useCheckOutWithCredentialCardMutation,
+  useGetVisitorImageByVisitorSessionIdQuery,
   useGetVissitorSessionQuery,
 } from "@/redux/services/checkout.service";
 import { useSelector } from "react-redux";
@@ -23,12 +25,13 @@ import { Ionicons } from "@expo/vector-icons";
 
 import Header from "@/components/UI/Header";
 import { RootState } from "@/redux/store/store";
+import { useGetVisitorByIdQuery } from "@/redux/services/visitor.service";
 
 const CheckoutCard = () => {
   const { data, qrCardVerifiedProps } = useLocalSearchParams();
   const visitData = data ? JSON.parse(data.toString()) : null;
-  console.log("visitData: ", visitData);
-  console.log("qrCardVerifiedProps: ", qrCardVerifiedProps);
+  // console.log("visitData: ", JSON.stringify(visitData, null, 2));
+  // console.log("qrCardVerifiedProps: ", qrCardVerifiedProps);
   const [permission, requestPermission] = useCameraPermissions();
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
   const router = useRouter();
@@ -36,14 +39,13 @@ const CheckoutCard = () => {
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
-  const [checkOut, { isLoading }] = useCheckOutMutation();
-  // const {
-  //   data: visitorSession,
-  //   isError,
-  //   refetch,
-  //   isFetching,
-  // } = useGetVissitorSessionQuery(qrCardVerified as string);
 
+  //Query
+  const [checkOutWithCard, { isLoading: isloadingWithCard }] = useCheckOutWithCardMutation();
+  const [checkOutWithCredentialCard, { isLoading: isLoadingWithCredentialcard }] = useCheckOutWithCredentialCardMutation();
+  const { data: dataVisitorSessionImage, error: errorVisitorSessionImage, refetch, isFetching: isFetchingVisitorSessionImage, isLoading: isLoadingVisitorSessionImage, } = useGetVisitorImageByVisitorSessionIdQuery(visitData.visitorSessionId, {});
+  const { data: dataVisitor, error: errorVisitor, refetch: refetchVisitor, isFetching: isFetchingVisitor, isLoading: isLoadingVisitor, } = useGetVisitorByIdQuery(visitData.visitDetail.visitorId, {});
+  // console.log(dataVisitor);
   const [refreshing, setRefreshing] = useState(false);
   const [checkOutData, setCheckOutData] = useState({
     securityOutId: 0,
@@ -74,7 +76,7 @@ const CheckoutCard = () => {
         const storedUserId = await AsyncStorage.getItem("userId");
         if (storedUserId) {
           setUserId(storedUserId);
-          console.log("User ID from AsyncStorage:", storedUserId);
+          // console.log("User ID from AsyncStorage:", storedUserId);
         } else {
           console.log("No userId found in AsyncStorage");
         }
@@ -97,65 +99,53 @@ const CheckoutCard = () => {
 
 
 
-  const handleCheckout1 = useCallback(() => {
+  // const handleCheckout1 = useCallback(() => {
 
-    onPress: async () => {
-      try {
-        const response = await checkOut({
-          qrCardVerifi: qrCardVerifiedProps,
-          checkoutData: checkOutData,
-        }).unwrap();
-        Alert.alert("Thành công", "Checkout thành công!");
+  //   onPress: async () => {
+  //     try {
+  //       const response = await checkOut({
+  //         qrCardVerifi: qrCardVerifiedProps,
+  //         checkoutData: checkOutData,
+  //       }).unwrap();
+  //       Alert.alert("Thành công", "Checkout thành công!");
 
-        setCheckOutData({
-          securityOutId: 0,
-          gateOutId: Number(selectedGateId) || 0,
-        });
-        //refetch();
-        //console.log("QR VER: ", qrCardVerified);
+  //       setCheckOutData({
+  //         securityOutId: 0,
+  //         gateOutId: Number(selectedGateId) || 0,
+  //       });
+  //       //refetch();
+  //       //console.log("QR VER: ", qrCardVerified);
 
-        //setIsCameraActive(false);
+  //       //setIsCameraActive(false);
 
-        // Remove session data from AsyncStorage
-        await AsyncStorage.removeItem("visitorSession");
+  //       // Remove session data from AsyncStorage
+  //       await AsyncStorage.removeItem("visitorSession");
 
-        // Navigate back to the main screen
-        router.push("/(tabs)/");
-      } catch (error) {
-        console.error("Checkout error:", error);
-        Alert.alert("Lỗi", "Checkout thất bại.");
-      }
+  //       // Navigate back to the main screen
+  //       router.push("/(tabs)/");
+  //     } catch (error) {
+  //       console.error("Checkout error:", error);
+  //       Alert.alert("Lỗi", "Checkout thất bại.");
+  //     }
 
-      // console.log("QR VER2: ", qrCardVerified);
-    }
-  }, [checkOut, checkOutData, selectedGateId, router]);
+  //     // console.log("QR VER2: ", qrCardVerified);
+  //   }
+  // }, [checkOut, checkOutData, selectedGateId, router]);
 
   const handleCheckout = async () => {
     try {
-      const response = await checkOut({
-        qrCardVerifi: qrCardVerifiedProps,
-        checkoutData: checkOutData,
-      }).unwrap();
+      if (qrCardVerifiedProps === null || qrCardVerifiedProps === undefined) {
+        const response = await checkOutWithCredentialCard({
+          credentialCard: dataVisitor?.credentialsCard,
+          checkoutData: checkOutData,
+        }).unwrap();
+      } else {
+        const response = await checkOutWithCard({
+          qrCardVerifi: qrCardVerifiedProps,
+          checkoutData: checkOutData,
+        }).unwrap();
+      }
       Alert.alert("Thành công", "Checkout thành công!");
-
-      // Clear visitor session state and related data
-      //setQrCardVerified(null);
-
-      //setShowVisitorInfo(false);
-      // setCheckOutData({
-      //   checkoutTime: "",
-      //   securityOutId: 0,
-      //   gateOutId: Number(selectedGateId) || 0,
-      // });
-      //refetch();
-      //console.log("QR VER: ", qrCardVerified);
-
-      //setIsCameraActive(false);
-
-      // Remove session data from AsyncStorage
-      //AsyncStorage.removeItem("visitorSession");
-
-      // Navigate back to the main screen
       router.push("/(tabs)/");
     } catch (error) {
       console.error("Checkout error:", error);
@@ -192,16 +182,7 @@ const CheckoutCard = () => {
       >
         {data && data.length > 0 ? (
           <View style={styles.visitorInfoContainer}>
-            <Text style={styles.title}>Thông tin khách hàng</Text>
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Session ID:</Text>
-              <Text style={styles.value}>{visitData.visitorSessionId}</Text>
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Mã thẻ:</Text>
-              <Text style={styles.value}>{visitData.qrCardId}</Text>
-            </View>
+            <Text style={styles.title}>Thông tin checkin của khách</Text>
             <View style={styles.infoRow}>
               <Text style={styles.label}>Thời gian vào:</Text>
               <Text style={styles.value}>
@@ -220,16 +201,9 @@ const CheckoutCard = () => {
                 {visitData.securityIn.fullName}
               </Text>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Trạng thái:</Text>
-              <Text style={[styles.value, styles.statusText]}>
-                {visitData.status}
-              </Text>
-            </View>
-
-            <Text style={styles.subTitle}>Hình ảnh</Text>
+            <Text style={styles.subTitle}>Hình ảnh vào</Text>
             <View style={styles.imagesContainer}>
-              {/* {visitData[0].images.map(
+              {dataVisitorSessionImage && dataVisitorSessionImage.map(
                 (
                   image: { imageURL: string; imageType: string },
                   index: number
@@ -244,13 +218,53 @@ const CheckoutCard = () => {
                     </Text>
                   </View>
                 )
-              )} */}
+              )}
             </View>
-
+            <Text style={styles.subTitle}>Thông tin thẻ</Text>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Ngày cấp:</Text>
+              <Text style={styles.value}>{visitData.visitCard.issueDate}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Ngày hết hạn:</Text>
+              <Text style={styles.value}>{visitData.visitCard.expiryDate}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Trạng thái thẻ:</Text>
+              <Text style={styles.value}>{visitData.visitCard.card.cardStatus}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Hình ảnh thẻ:</Text>
+              <Image
+                style={styles.cardImage}
+                source={{ uri: `data:image/png;base64,${visitData.visitCard.card.cardImage}` }}
+              />
+            </View>
+            <Text style={styles.subTitle}>Thông tin chi tiết chuyến thăm</Text>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Giờ dự kiến vào:</Text>
+              <Text style={styles.value}>{visitData.visitDetail.expectedStartHour}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Giờ dự kiến ra:</Text>
+              <Text style={styles.value}>{visitData.visitDetail.expectedEndHour}</Text>
+            </View>
+            <Text style={styles.subTitle}>Thông tin chi tiết khách</Text>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Tên đầy đủ:</Text>
+              <Text style={styles.value}>{dataVisitor?.visitorName}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Hình ảnh:</Text>
+              <Image
+                style={styles.cardImage}
+                source={{ uri: `data:image/png;base64,${dataVisitor?.visitorCredentialImage}` }}
+              />
+            </View>
             <TouchableOpacity
               style={styles.checkoutButton}
               onPress={handleCheckout}
-              disabled={isLoading}
+              disabled={isLoadingWithCredentialcard || isloadingWithCard}
             >
               <Text style={styles.buttonText}>
                 Xác nhận Checkout
@@ -401,5 +415,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.7)",
+  },
+  cardImage: {
+    width: 100,
+    height: 100,
+    resizeMode: 'contain',
   },
 });

@@ -8,9 +8,16 @@ export const visitorSessionApi = createApi({
   reducerPath: "visitorSessionApi",
   baseQuery: fetchBaseQuery({ baseUrl: BASE_URL }),
   endpoints: (builder) => ({
-    checkOut: builder.mutation({
+    checkOutWithCard: builder.mutation({
       query: ({ qrCardVerifi, checkoutData }) => ({
-        url: `VisitorSession/CheckOut?qrCardVerifi=${qrCardVerifi}`,
+        url: `VisitorSession/CheckOutWithCard?qrCardVerifi=${qrCardVerifi}`,
+        method: "PUT",
+        body: checkoutData,
+      }),
+    }),
+    checkOutWithCredentialCard: builder.mutation({
+      query: ({ credentialCard, checkoutData }) => ({
+        url: `VisitorSession/CheckOutWithCredentialCard?credentialCard=${credentialCard}`,
         method: "PUT",
         body: checkoutData,
       }),
@@ -24,7 +31,10 @@ export const visitorSessionApi = createApi({
     getVissitorSessionByCredentialId: builder.query({
       query: (credentialId: string) => `VisitorSession/StatusCheckIn/CredentialId/${credentialId}`,
     }),
+    getVisitorImageByVisitorSessionId: builder.query({
+      query: (visitorSessionId : number) => `VisitorSession/Images/${visitorSessionId}`,
+    }),
   }),
 });
 
-export const { useCheckOutMutation, useGetVissitorSessionQuery, useGetVissitorSessionByCredentialIdQuery, useGetVissitorSessionByCardverifiedQuery } = visitorSessionApi;
+export const { useCheckOutWithCardMutation,useCheckOutWithCredentialCardMutation, useGetVissitorSessionQuery, useGetVissitorSessionByCredentialIdQuery, useGetVissitorSessionByCardverifiedQuery, useGetVisitorImageByVisitorSessionIdQuery } = visitorSessionApi;
