@@ -201,17 +201,18 @@ const FormCreate = () => {
       ]);
        console.log("Visit created:", result);
     } catch (error: any) {
-      if (error?.status === 400) {
-        showErrorAlert(error.data.errors);
-      } else {
-        Alert.alert(
-          "Lỗi",
-          "Đã có lỗi xảy ra khi tạo lịch ghé thăm. Vui lòng thử lại",
-          [{ text: "OK" }]
-        );
-      }
-
-      // console.error("Failed to create visit:", error);
+      // if (error?.status === 400) {
+      //   showErrorAlert(error.data.errors);
+      // } else {
+      //   Alert.alert(
+      //     "Lỗi",
+      //     "Đã có lỗi xảy ra khi tạo lịch ghé thăm. Vui lòng thử lại",
+      //     [{ text: "OK" }]
+      //   );
+      // }
+      const errorMessage = error.data?.message || "Please ensure all requirements are met.";
+      // console.error("Check-in error:", error);
+      Alert.alert("Đã có lỗi xảy ra", "Tạo visit thất bại. Vui lòng thử lại.", errorMessage);
     }
   };
 
