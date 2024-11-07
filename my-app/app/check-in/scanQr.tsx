@@ -13,7 +13,6 @@ import {
   Text,
   View,
 } from "react-native";
-
 import { Overlay } from "./OverLay";
 import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service";
 import { useFocusEffect } from "@react-navigation/native";
@@ -21,7 +20,6 @@ import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.servi
 import { ValidCheckIn } from "@/Types/checkIn.type";
 import { useValidCheckInMutation } from "@/redux/services/checkin.service";
 import VideoPlayer from "../(tabs)/streaming";
-
 interface ScanData {
   id: string;
   nationalId: string;
@@ -31,12 +29,10 @@ interface ScanData {
   address: string;
   issueDate: string;
 }
-
 interface ImageData {
   imageType: "Shoe";
   imageFile: string | null;
 }
-
 export default function Home() {
   const qrLock = useRef(false);
   const appState = useRef(AppState.currentState);
@@ -57,22 +53,18 @@ export default function Home() {
   } = useGetVisitByCredentialCardQuery(credentialCardId || "", {
     skip: !credentialCardId,
   });
-
   const [validCheckInData, setValidCheckInData] = useState<ValidCheckIn>({
     CredentialCard: null,
     QrCardVerification: "",
     ImageShoe: [],
   });
-
   const handleImageCapture = (imageData: ImageData) => {
     setCapturedImage([imageData]);
-
     setValidCheckInData((prev) => ({
       ...prev,
       ImageShoe: [imageData],
     }));
   };
-
   const {
     data: qrCardData,
     isLoading: isLoadingQr,
@@ -91,44 +83,34 @@ export default function Home() {
     const validateCheckInData = async () => {
       const isQrValid = !!validCheckInData.QrCardVerification;
       const hasOneImage = validCheckInData.ImageShoe.length === 1;
-
       if (!isQrValid || !hasOneImage) {
         setIsCheckInEnabled(false);
         return;
       }
-
       try {
         const result = await validCheckIn(validCheckInData).unwrap();
         setIsCheckInEnabled(result);
         setResultValid(result);
         console.log("REsult valid", result);
-
         if (result && validCheckInData) {
           setIsReadyToNavigate(true);
         }
-        
       } catch (error: any) {
         // console.error("Validation error:", error);
-
         const errorMessage =
           error.data?.message || "Please ensure all requirements are met.";
-
         Alert.alert("Đã xảy ra lỗi", errorMessage);
-
         setIsCheckInEnabled(false);
       }
     };
-
     validateCheckInData();
   }, [validCheckInData]);
-
   useEffect(() => {
     if (qrCardData) {
       setAutoCapture(true);
       // if (qrCardData.cardImage) {
       //   setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
       // }
-
       if (qrCardData.cardVerification) {
         setValidCheckInData((prevData) => ({
           ...prevData,
@@ -146,11 +128,9 @@ export default function Home() {
     }
     return null;
   };
-
   const isCredentialCard = (data: string): boolean => {
     return data.includes("|");
   };
-
   const resetState = () => {
     console.log("Resetting state...");
     setScannedData("");
@@ -159,7 +139,6 @@ export default function Home() {
     setIsProcessing(false);
     qrLock.current = false;
   };
-
   useFocusEffect(
     React.useCallback(() => {
       resetState();
@@ -167,7 +146,6 @@ export default function Home() {
       return () => {};
     }, [])
   );
-
   useEffect(() => {
     if (scannedData) {
       if (isCredentialCard(scannedData)) {
@@ -190,7 +168,6 @@ export default function Home() {
       }
     }
   }, [scannedData]);
-
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
       if (
@@ -201,12 +178,10 @@ export default function Home() {
       }
       appState.current = nextAppState;
     });
-
     return () => {
       subscription.remove();
     };
   }, []);
-
   const handleVisitNotFound = () => {
     setIsProcessing(false);
     Alert.alert(
@@ -233,14 +208,12 @@ export default function Home() {
       ]
     );
   };
-
   useEffect(() => {
     const handleNavigation = async () => {
       if (isLoadingVisit || isFetchingVisit) return;
       await new Promise((resolve) => setTimeout(resolve, 200));
       if (cardVerification && !redirected.current) {
         qrLock.current = true;
-
         if (qrCardData && !isLoadingQr && !isFetchingQr && !isErrorQr && resultValid) {
           redirected.current = true;
           await new Promise((resolve) => setTimeout(resolve, 500));
@@ -261,14 +234,15 @@ export default function Home() {
           resetState();
         }
       } else if (credentialCardId && !redirected.current) {
+        console.log("rêndere");
+        
         qrLock.current = true;
-
         if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
           redirected.current = true;
           await new Promise((resolve) => setTimeout(resolve, 500));
           router.push({
             pathname: "/check-in/ListVisit",
-            params: { data: JSON.stringify(visitOfUser) },
+            params: { credentialCardId: credentialCardId },
           });
           resetState();
         } else if (
@@ -281,7 +255,6 @@ export default function Home() {
         }
       }
     };
-
     handleNavigation();
   }, [
     visitOfUser,
@@ -294,7 +267,6 @@ export default function Home() {
     isFetchingQr,
     cardVerification,
   ]);
-
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (data && !qrLock.current) {
       qrLock.current = true;
@@ -303,17 +275,12 @@ export default function Home() {
       console.log("Scanned QR Code Data:", data);
     }
   };
-
   const handleGoBack = () => {
     resetState();
     router.back();
   };
-
   console.log("CCCD: ", credentialCardId);
   console.log("Card id: ", cardVerification);
-  console.log("VALID DATA BEN SCAN ", validCheckInData);
-  
-
   return (
     <SafeAreaView style={StyleSheet.absoluteFillObject}>
       <View
@@ -334,13 +301,11 @@ export default function Home() {
         }}
       />
       {Platform.OS === "android" ? <StatusBar hidden /> : null}
-
       <CameraView
         style={StyleSheet.absoluteFillObject}
         facing="back"
         onBarcodeScanned={handleBarCodeScanned}
       />
-
       <Overlay />
       {(isProcessing ||
         isLoadingVisit ||
@@ -352,14 +317,12 @@ export default function Home() {
           <Text style={styles.loadingText}>Đang xử lý...</Text>
         </View>
       )}
-
       <Pressable style={styles.backButton} onPress={handleGoBack}>
         <Text style={styles.backButtonText}>Quay về</Text>
       </Pressable>
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   backButton: {
     position: "absolute",

@@ -46,7 +46,7 @@
       isLoading,
       isFetching,
     } = useGetVisitorByCreadentialCardQuery(credentialCardId || "", {
-      skip: !credentialCardId,
+      skip: !credentialCardId, refetchOnMountOrArgChange: 2, refetchOnFocus: true
     });
 
     const resetStates = () => {
