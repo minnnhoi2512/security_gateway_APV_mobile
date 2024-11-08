@@ -37,10 +37,10 @@ import { RootState } from "@/redux/store/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import VideoPlayer from "../(tabs)/streaming";
 interface ImageData {
-  imageType: "Shoe";
-  imageFile: string | null;
+  ImageType: "Shoe";
+  ImageURL: string | null;
+  ImageFile: string | null;
 }
-
 const UserDetail = () => {
   const { visitId } = useLocalSearchParams<{ visitId: string }>();
   const { data } = useLocalSearchParams<{ data: string }>();
@@ -87,13 +87,31 @@ const UserDetail = () => {
     ImageShoe: [],
   });
 
-  const handleImageCapture = (imageData: ImageData) => {
-    setCapturedImage([imageData]);
+  const handleImageCapture = async (imageData: ImageData) => {
+    try {
+      setCapturedImage([imageData]);
+      const formattedImageData = {
+        ImageType: imageData.ImageType,
+        ImageURL: "",
+        Image: imageData.ImageFile || "",
+      };
 
-    setValidCheckInData((prev) => ({
-      ...prev,
-      ImageShoe: [imageData],
-    }));
+      setCheckInData((prev) => ({
+        ...prev,
+        Images: [formattedImageData],
+      }));
+  
+      // const downloadUrl = await uploadToFirebase(
+      //   imageData.imageFile,
+      //   `${imageData.imageType}_${Date.now()}.jpg`
+      // );
+  
+      // console.log("Image uploaded successfully:", downloadUrl);
+  
+      // Update state or pass the URL as needed
+    } catch (error) {
+      Alert.alert("Upload Error", "Failed to upload image to Firebase");
+    }
   };
   const {
     data: qrCardData,
@@ -145,11 +163,7 @@ const UserDetail = () => {
         CredentialCard: credentialCard,
       }));
 
-      // Nếu bạn cần cập nhật validCheckInData
-      setValidCheckInData?.((prevData) => ({
-        ...prevData,
-        CredentialCard: credentialCard,
-      }));
+ 
     }
   }, [visitDetail]);
 
@@ -172,15 +186,7 @@ const UserDetail = () => {
   const handleGoBack = () => {
     router.back();
   };
-  const handleNext = () => {
-    router.push({
-      pathname: "/check-in/CheckInOverall",
-      params: {
-        // resultData: JSON.stringify(resultValid),
-        validData: JSON.stringify(validCheckInData),
-      },
-    });
-  };
+ 
   // useEffect(() => {
   //   const validateCheckInData = async () => {
   //     const isQrValid = !!validCheckInData.QrCardVerification;
@@ -213,15 +219,7 @@ const UserDetail = () => {
   // console.log("CApture image: ", capturedImage);
   // console.log("Data passed: ", data);
 
-  const resetQrScanning = () => {
-    qrLock.current = false;
-    setIsCameraActive(false);
-    setQrImage(null);
-    setCheckInData((prev) => ({
-      ...prev,
-      QrCardVerification: "",
-    }));
-  };
+ 
 
   useEffect(() => {
     if (qrCardData?.cardImage) {
@@ -238,10 +236,7 @@ const UserDetail = () => {
           ...prevData,
           QrCardVerification: qrCardData.cardVerification,
         }));
-        setValidCheckInData((prevData) => ({
-          ...prevData,
-          QrCardVerification: qrCardData.cardVerification,
-        }));
+ 
       } else {
         setIsCameraActive(true);
       }
@@ -262,10 +257,7 @@ const UserDetail = () => {
           ...prevData,
           QrCardVerification: qrCardData.cardVerification,
         }));
-        setValidCheckInData((prevData) => ({
-          ...prevData,
-          QrCardVerification: qrCardData.cardVerification,
-        }));
+ 
       }
     }
   }, [qrCardData]);
@@ -275,15 +267,12 @@ const UserDetail = () => {
       qrLock.current = true;
       console.log("Scanned QR Code Data:", data);
 
-      // Cập nhật state với QR code data
+ 
       setCheckInData((prevData) => ({
         ...prevData,
         QrCardVerification: data,
       }));
-      setValidCheckInData((prevData) => ({
-        ...prevData,
-        QrCardVerification: data,
-      }));
+ 
       setIsCameraActive(false);
       setAutoCapture(true);
 
@@ -298,41 +287,38 @@ const UserDetail = () => {
   useEffect(() => {
     const validateAndNavigate = async () => {
       if (
-        !validCheckInData.QrCardVerification ||
-        validCheckInData.ImageShoe.length !== 1 ||
-        isValidating ||
+        !checkInData.QrCardVerification ||
+        checkInData.Images.length !== 1 ||
         hasNavigated
       ) {
         return;
       }
 
       try {
-        setIsValidating(true);
-        const result = await validCheckIn(validCheckInData).unwrap();
+        // setIsValidating(true);
+        // const result = await validCheckIn(validCheckInData).unwrap();
 
-        if (result && !hasNavigated) {
+        if (!hasNavigated) {
           setHasNavigated(true);
           router.push({
             pathname: "/check-in/CheckInOverall",
             params: {
               // resultData: JSON.stringify(result),
-              validData: JSON.stringify(validCheckInData),
+              dataCheckIn: JSON.stringify(checkInData),
             },
           });
         }
       } catch (error: any) {
-        // console.log("ERR", error);
+        console.log("ERR", error);
         
         const errorMessage =
           error.data?.message || "Please ensure all requirements are met.";
         Alert.alert("Đã xảy ra lỗi", errorMessage);
-      } finally {
-        setIsValidating(false);
-      }
+      } 
     };
 
     validateAndNavigate();
-  }, [validCheckInData, hasNavigated]);
+  }, [checkInData, hasNavigated]);
 
   console.log("DATA CI: ", checkInData);
   // console.log("DATA DTV: ", visitDetail);

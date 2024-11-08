@@ -46,7 +46,7 @@ const CreateVisitor = () => {
     CompanyName: "",
     PhoneNumber: "",
     CredentialsCard: userData?.id || "",
-    CredentialCardTypeId: 2,
+    CredentialCardTypeId: 1,
     VisitorCredentialImageFromRequest: null,
   });
   useEffect(() => {

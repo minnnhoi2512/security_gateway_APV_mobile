@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Alert,
   AppState,
+  Image,
   Platform,
   Pressable,
   SafeAreaView,
@@ -17,8 +18,12 @@ import { Overlay } from "./OverLay";
 import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service";
 import { useFocusEffect } from "@react-navigation/native";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
-import { ValidCheckIn } from "@/Types/checkIn.type";
+import { CheckInVer02, ValidCheckIn } from "@/Types/checkIn.type";
 import VideoPlayer from "../(tabs)/streaming";
+import { uploadToFirebase } from "@/firebase-config";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store/store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 interface ScanData {
   id: string;
   nationalId: string;
@@ -29,8 +34,9 @@ interface ScanData {
   issueDate: string;
 }
 interface ImageData {
-  imageType: "Shoe";
-  imageFile: string | null;
+  ImageType: "Shoe";
+  ImageURL: string | null;
+  ImageFile: string | null;
 }
 export default function Home() {
   const qrLock = useRef(false);
@@ -44,6 +50,10 @@ export default function Home() {
   const [cardVerification, setCardVerification] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+  const selectedGateId = useSelector(
+    (state: RootState) => state.gate.selectedGateId
+  );
   const {
     data: visitOfUser,
     isLoading: isLoadingVisit,
@@ -57,6 +67,13 @@ export default function Home() {
     QrCardVerification: "",
     ImageShoe: [],
   });
+  const [checkInData, setCheckInData] = useState<CheckInVer02>({
+    CredentialCard: null,
+    SecurityInId: 0,
+    GateInId: Number(selectedGateId) || 0,
+    QrCardVerification: "",
+    Images: [],
+  });
   const {
     data: qrCardData,
     isLoading: isLoadingQr,
@@ -65,16 +82,60 @@ export default function Home() {
   } = useGetDataByCardVerificationQuery(cardVerification || "", {
     skip: !cardVerification,
   });
-  const [resultValid, setResultValid] = useState();
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      try {
+        const storedUserId = await AsyncStorage.getItem("userId");
+        if (storedUserId) {
+          setUserId(storedUserId);
+        }
+      } catch (error) {
+        console.error("Error fetching userId from AsyncStorage:", error);
+      }
+    };
+
+    fetchUserId();
+  }, []);
+
+  useEffect(() => {
+    if (userId) {
+      setCheckInData((prevState) => ({
+        ...prevState,
+        SecurityInId: Number(userId) || 0,
+      }));
+    }
+  }, [userId, selectedGateId]);
+
+ 
  
   const [autoCapture, setAutoCapture] = useState(false);
  
-  const handleImageCapture = (imageData: ImageData) => {
-    setCapturedImage([imageData]);
-    setValidCheckInData((prev) => ({
-      ...prev,
-      ImageShoe: [imageData],
-    }));
+  const handleImageCapture = async (imageData: ImageData) => {
+    try {
+      setCapturedImage([imageData]);
+      const formattedImageData = {
+        ImageType: imageData.ImageType,
+        ImageURL: "",
+        Image: imageData.ImageFile || "",
+      };
+
+      setCheckInData((prev) => ({
+        ...prev,
+        Images: [formattedImageData],
+      }));
+  
+      // const downloadUrl = await uploadToFirebase(
+      //   imageData.imageFile,
+      //   `${imageData.imageType}_${Date.now()}.jpg`
+      // );
+  
+      // console.log("Image uploaded successfully:", downloadUrl);
+  
+      // Update state or pass the URL as needed
+    } catch (error) {
+      Alert.alert("Upload Error", "Failed to upload image to Firebase");
+    }
   };
   
 
@@ -82,7 +143,7 @@ export default function Home() {
     if (qrCardData) {
       setAutoCapture(true);
       if (qrCardData.cardVerification) {
-        setValidCheckInData((prevData) => ({
+        setCheckInData((prevData) => ({
           ...prevData,
           QrCardVerification: qrCardData.cardVerification,
         }));
@@ -130,7 +191,7 @@ export default function Home() {
       } else {
      
         setCardVerification(scannedData);
-        setValidCheckInData((prevData) => ({
+        setCheckInData((prevData) => ({
           ...prevData,
           QrCardVerification: scannedData,
         }));
@@ -186,7 +247,7 @@ export default function Home() {
       await new Promise((resolve) => setTimeout(resolve, 200));
   
        
-      const hasRequiredData = validCheckInData.QrCardVerification && validCheckInData.ImageShoe.length > 0;
+      const hasRequiredData = checkInData.QrCardVerification && checkInData.Images.length > 0;
   
       if (cardVerification && !redirected.current) {
         qrLock.current = true;
@@ -197,7 +258,7 @@ export default function Home() {
           router.push({
             pathname: "/check-in/CheckInOverall",
             params: {
-              validData: JSON.stringify(validCheckInData),
+              dataCheckIn: JSON.stringify(checkInData),
             },
           });
           resetState();
@@ -232,7 +293,7 @@ export default function Home() {
     isLoadingQr,
     isFetchingQr,
     cardVerification,
-    validCheckInData, 
+    checkInData, 
   ]);
   
   const handleBarCodeScanned = ({ data }: { data: string }) => {
@@ -247,9 +308,9 @@ export default function Home() {
     resetState();
     router.back();
   };
-  console.log("CCCD: ", credentialCardId);
-  console.log("Card id: ", cardVerification);
-  console.log("Log lay anh ben scan: ", validCheckInData);
+  // console.log("CCCD: ", credentialCardId);
+  // console.log("Card id: ", cardVerification);
+  console.log("Log lay anh ben scan: ", checkInData);
   return (
     <SafeAreaView style={StyleSheet.absoluteFillObject}>
       <View
@@ -262,6 +323,7 @@ export default function Home() {
           onCaptureImage={handleImageCapture}
           autoCapture={autoCapture}
         />
+
       </View>
       <Stack.Screen
         options={{

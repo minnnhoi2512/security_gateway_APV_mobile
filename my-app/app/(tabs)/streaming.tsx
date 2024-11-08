@@ -12,10 +12,10 @@ export enum ResizeMode {
 }
 
 interface ImageData {
-  imageType: "Shoe";
-  imageFile: string | null;
+  ImageType: "Shoe";
+  ImageURL: string | null;
+  ImageFile: string | null;
 }
-
 interface VideoPlayerProps {
   onCaptureImage: (imageData: ImageData) => void;
   autoCapture: boolean;
@@ -110,8 +110,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       });
 
       const imageData: ImageData = {
-        imageType: "Shoe",
-        imageFile: path,
+        ImageType: "Shoe",
+        ImageURL:"",
+        ImageFile: path,
       };
       
       setCapturedImage([imageData]); // Replace existing images instead of adding
@@ -184,14 +185,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         }}
       />
 
-      <Text style={styles.text}>
-        Hình ảnh chụp từ camera
-      </Text>
+    
       
       {capturedImage.map((image, index) => (
         <Image
-          key={`${image.imageFile}-${index}`}
-          source={{ uri: image.imageFile || undefined }}
+          key={`${image.ImageFile}-${index}`}
+          source={{ uri: image.ImageFile || undefined }}
           style={styles.capturedImage}
           resizeMode="contain"
         />
@@ -237,3 +236,4 @@ const styles = StyleSheet.create({
 });
 
 export default VideoPlayer;
+

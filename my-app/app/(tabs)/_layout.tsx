@@ -6,6 +6,7 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import Entypo from '@expo/vector-icons/Entypo';
 import { View } from "react-native";
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -75,7 +76,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="createCustomer"
           options={{
-            title: "Tạo mới lịch hẹn",
+            title: "Tạo mới",
             tabBarIcon: ({ color, focused }) => (
               <Ionicons name="create-outline" size={24} color={color} />
             ),
@@ -97,7 +98,7 @@ export default function TabLayout() {
           options={{
             title: "Trực tiếp",
             tabBarIcon: ({ color, focused }) => (
-              <FontAwesome name="user-circle-o" size={24} color={color} />
+              <Entypo name="video-camera" size={24} color={color} />
             ),
           }}
         />

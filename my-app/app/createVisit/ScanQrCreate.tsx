@@ -134,7 +134,7 @@
           });
           resetStates();
           
-        } else if(!visitData?.visitorId) {
+        } else if(!visitData  || error ) {
           handleVisitorNotFound();
         }
       }

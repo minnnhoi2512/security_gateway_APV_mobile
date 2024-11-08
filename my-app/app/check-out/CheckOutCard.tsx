@@ -210,7 +210,7 @@ const CheckoutCard = () => {
                 ) => (
                   <View key={index} style={styles.imageWrapper}>
                     <Image
-                      source={{ uri: "https://img.freepik.com/premium-psd/blue-sport-sneakers-shoes-isolated-transparent-background-png-psd_888962-1190.jpg" }}
+                      source={{ uri: image.imageURL }}
                       style={styles.image}
                     />
                     <Text style={styles.imageType}>

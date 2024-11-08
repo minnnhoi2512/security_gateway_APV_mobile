@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -64,71 +64,46 @@ interface ImageData {
 }
 
 const CheckInOverall = () => {
-  const { validData } = useLocalSearchParams();
+  const { validData, dataCheckIn } = useLocalSearchParams();
   const [resultData, setResultData] = useState<ResultData | null>(null);
+  const [checkInStatus, setCheckInStatus] = useState<'pending' | 'success' | 'error'>('pending');
   const [isValidating, setIsValidating] = useState(true);
   const [checkIn, { isLoading: isCheckingIn }] = useCheckInMutation();
   const [validCheckIn, { isLoading: isValidCheckingIn }] =
     useValidCheckInMutation();
   const router = useRouter();
 
-  useEffect(() => {
-    const validateCheckInData = async () => {
-      setIsValidating(true);
-      try {
-        let parsedValidData: ValidCheckIn;
-
-        if (typeof validData === "string") {
-          parsedValidData = JSON.parse(validData);
-        } else if (Array.isArray(validData)) {
-          parsedValidData = {
-            CredentialCard: null,
-            QrCardVerification: validData[0],
-            ImageShoe: validData.slice(1).map((img) => ({
-              imageType: "Shoe",
-              imageFile: img,
-            })),
-          };
-        } else {
-          throw new Error("Invalid validData format");
-        }
-
-        if (parsedValidData.ImageShoe.length !== 1) {
-          throw new Error("ImageShoe must contain exactly one image");
-        }
-
-        const result = await validCheckIn(parsedValidData).unwrap();
-        setResultData(result);
-      } catch (error: any) {
-        const errorMessage =
-          error.data?.message ||
-          error.message ||
-          "Please ensure all requirements are met.";
-        Alert.alert("Validation Error", errorMessage);
-      } finally {
-        setIsValidating(false);
-      }
-    };
-
-  
-    setTimeout(() => {
-      if (validData) validateCheckInData();
-    }, 300); 
-
-  }, [validData]);
-
   const [userId, setUserId] = useState<string | null>(null);
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
 
-  const [checkInData, setCheckInData] = useState<CheckInVer02>({
-    CredentialCard: null,
-    SecurityInId: 0,
-    GateInId: Number(selectedGateId) || 0,
-    QrCardVerification: "",
-    Images: [],
-  });
+  // const [checkInData, setCheckInData] = useState<CheckInVer02>({
+  //   CredentialCard: null,
+  //   SecurityInId: 0,
+  //   GateInId: Number(selectedGateId) || 0,
+  //   QrCardVerification: "",
+  //   Images: [],
+  // });
+  const parsedDataCheckIn = useMemo(() => {
+    try {
+      return typeof dataCheckIn === "string" ? JSON.parse(dataCheckIn) : dataCheckIn;
+    } catch (error) {
+      console.error("Error parsing dataCheckIn:", error);
+      // console.error("Error parsing dataCheckIn:", error);
+      return null;
+    }
+  }, [dataCheckIn]);
+  
+
+    const [checkInData, setCheckInData] = useState<CheckInVer02>({
+      CredentialCard: parsedDataCheckIn?.CredentialCard || null,
+      SecurityInId: parsedDataCheckIn?.SecurityInId || 0,
+      GateInId: parsedDataCheckIn?.GateInId || Number(selectedGateId) || 0,
+      QrCardVerification: parsedDataCheckIn?.QrCardVerification || "",
+      Images: parsedDataCheckIn?.Images || [],
+    });
+    
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -155,93 +130,75 @@ const CheckInOverall = () => {
   }, [userId, selectedGateId]);
 
   useEffect(() => {
-    if (validData) {
+    const performCheckIn = async () => {
+      setCheckInStatus('pending');
+  
       try {
-        const parsedValidData = JSON.parse(validData as string);
-
-        setCheckInData((prevState) => ({
-          ...prevState,
-          CredentialCard: parsedValidData.CredentialCard || null,
-          QrCardVerification: parsedValidData.QrCardVerification || "",
-          Images: [
-            ...prevState.Images,
-            ...parsedValidData.ImageShoe.map((image: ImageData) => ({
-              ImageType: image.imageType,
-              ImageURL: "",
-              Image: image.imageFile,
-            })),
-          ],
-        }));
-      } catch (error) {
-        console.error("Error parsing validData:", error);
+        if (!checkInData || !checkInData.Images || checkInData.Images.length === 0 || !checkInData.Images[0]) {
+          throw new Error("Missing image data for check-in.");
+        }
+  
+        const formData = new FormData();
+        formData.append(
+          "CredentialCard",
+          checkInData.CredentialCard ? checkInData.CredentialCard.toString() : ""
+        );
+        formData.append("SecurityInId", checkInData.SecurityInId.toString());
+        formData.append("GateInId", checkInData.GateInId.toString());
+        formData.append("QrCardVerification", checkInData.QrCardVerification);
+  
+        const image = checkInData.Images[0];
+        const { downloadUrl } = await uploadToFirebase(
+          image.Image,
+          `${image.ImageType}_${Date.now()}.jpg`
+        );
+  
+        formData.append("Images[0].ImageType", image.ImageType);
+        formData.append("Images[0].ImageURL", downloadUrl.replace(/"/g, ""));
+        formData.append("Images[0].Image", {
+          uri: image.Image,
+          name: image.Image.split("/").pop() || "default.jpg",
+          type: "image/jpeg",
+        } as any);
+  
+        const response = await checkIn(formData).unwrap();
+        setResultData(response);
+        setCheckInStatus('success');
+        Alert.alert("Thành công", "Bạn vừa check in thành công!");
+      } catch (error: any) {
+        setCheckInStatus('error');
+        console.log("ER: ", error);
+  
+        // Lấy thông báo lỗi từ response của server nếu có
+        const errorMessage = error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
+        Alert.alert("Đã có lỗi xảy ra", errorMessage);
       }
-    }
-  }, [validData]);
-
-  const handleCheckIn = async () => {
-    // if (!isCheckInEnabled || capturedImage.length !== 1) {
-    //   Alert.alert("Error", "Please ensure exactly one shoe image is captured.");
-    //   return;
-    // }
-
-    // setIsUploading(true);
-    try {
-      const formData = new FormData();
-      // formData.append("CredentialCard", checkInData.CredentialCard.toString());
-      formData.append(
-        "CredentialCard",
-        checkInData.CredentialCard ? checkInData.CredentialCard.toString() : ""
-      );
-      formData.append("SecurityInId", checkInData.SecurityInId.toString());
-      formData.append("GateInId", checkInData.GateInId.toString());
-      formData.append("QrCardVerification", checkInData.QrCardVerification);
-
-      const image = checkInData.Images[0];
-      const { downloadUrl } = await uploadToFirebase(
-        image.Image,
-        `${image.ImageType}_${Date.now()}.jpg`
-      );
-
-      const localUri = image.Image;
-      const filename = localUri
-        ? localUri.split("/").pop() || "default.jpg"
-        : "default.jpg";
-      const type = "image/jpeg";
-
-      formData.append("Images[0].ImageType", image.ImageType);
-      formData.append("Images[0].ImageURL", downloadUrl.replace(/"/g, ""));
-      formData.append("Images[0].Image", {
-        uri: localUri || "",
-        name: filename,
-        type,
-      } as any);
-
-      const response = await checkIn(formData).unwrap();
-      // console.log("DATA PASS CHECKIN...: ", response.data);
-
-      router.push({
-        pathname: "/(tabs)/checkin",
-        params: { data: JSON.stringify(response) },
-      });
-      console.log("DATA CI DONE...: ", response);
-      Alert.alert("Thành công", "Bạn vừa check in thành công!");
-    } catch (error: any) {
-      const errorMessage =
-        error.data?.message || "Please ensure all requirements are met.";
-      console.error("Check-in error:", error);
-      Alert.alert(
-        "Đã có lỗi xảy ra",
-        "Check-in thất bại. Vui lòng thử lại.",
-        error
-      );
-    } finally {
-      // setIsUploading(false);
-    }
-  };
+    };
+  
+    performCheckIn();
+  }, []);
+  
+  
 
   const handleGoBack = () => {
     router.back();
   };
+
+  const handleNext = () => {
+    router.push({
+      pathname: "/(tabs)/checkin",
+    });
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      handleNext();
+    }, 10000); 
+
+    
+    return () => clearTimeout(timer);
+  }, []);
+
 
   const InfoRow = ({
     label,
@@ -303,14 +260,23 @@ const CheckInOverall = () => {
     );
   };
 
-  if (isValidating || isValidCheckingIn) {
+  if (checkInStatus === 'pending') {
     return (
       <View className="flex-1 items-center justify-center bg-backgroundApp">
         <ActivityIndicator size="large" color="#ffffff" />
-        <Text className="text-white mt-4">Đang kiểm tra thông tin...</Text>
+        <Text className="text-white mt-4">Đang xử lý...</Text>
       </View>
     );
   }
+
+  if (checkInStatus === 'error') {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <Text>Đã có lỗi xảy ra. Vui lòng thử lại.</Text>
+      </View>
+    );
+  }
+
   if (!resultData) {
     return (
       <View className="flex-1 items-center justify-center">
@@ -319,8 +285,9 @@ const CheckInOverall = () => {
     );
   }
 
-  console.log("Valid c dâta ben ovrr", validData);
-  
+
+  console.log("Valid c dâta ben ovrr", dataCheckIn);
+  // console.log("RS DATA", resultData);
 
   return (
     <ScrollView className="flex-1 bg-backgroundApp">
@@ -344,27 +311,42 @@ const CheckInOverall = () => {
             {/* <InfoRow label="Mã chi tiết thăm" value={data.visitDetailId} /> */}
             <InfoRow label="Giờ bắt đầu" value={resultData.expectedStartHour} />
             <InfoRow label="Giờ kết thúc" value={resultData.expectedEndHour} />
+            <InfoRow label="Tên cuộc thăm" value={resultData.visit.visitName} />
+            <InfoRow label="Số lượng" value={resultData.visit.visitQuantity} />
+            <InfoRow
+              label="Loại lịch"
+              value={resultData.visit.scheduleTypeName}
+            />
             {/* <InfoRow
             label="Trạng thái"
             value={data.status  ? "Hoạt động" : "Không hoạt động"}
           /> */}
           </Section>
-          <SectionDropDown
+          {/* <SectionDropDown
             title="Thông tin thăm"
             icon={<View className="w-6 h-6 bg-purple-500 rounded-full" />}
           >
             <InfoRow label="Tên cuộc thăm" value={resultData.visit.visitName} />
             <InfoRow label="Số lượng" value={resultData.visit.visitQuantity} />
-            <InfoRow label="Loại lịch" value={resultData.visit.scheduleTypeName} />
-          </SectionDropDown>
+            <InfoRow
+              label="Loại lịch"
+              value={resultData.visit.scheduleTypeName}
+            />
+          </SectionDropDown> */}
           <SectionDropDown
             title="Thông tin khách"
             icon={<View className="w-6 h-6 bg-blue-500 rounded-full" />}
           >
             <InfoRow label="Tên khách" value={resultData.visitor.visitorName} />
             <InfoRow label="Công ty" value={resultData.visitor.companyName} />
-            <InfoRow label="Số điện thoại" value={resultData.visitor.phoneNumber} />
-            <InfoRow label="CMND/CCCD" value={resultData.visitor.credentialsCard} />
+            <InfoRow
+              label="Số điện thoại"
+              value={resultData.visitor.phoneNumber}
+            />
+            <InfoRow
+              label="CMND/CCCD"
+              value={resultData.visitor.credentialsCard}
+            />
             {/* <InfoRow
             label="Trạng thái"
             value={data.visitor.status === "Active" ? "Hoạt động" : "Không hoạt động"}
@@ -417,10 +399,10 @@ const CheckInOverall = () => {
             )}
           </SectionDropDown>
           <TouchableOpacity
-            onPress={handleCheckIn}
+            onPress={handleNext}
             className="p-4 mb-4 bg-white rounded-full flex-row items-center justify-center"
           >
-            <Text className="text-lg mr-2">Check In</Text>
+            <Text className="text-lg mr-2">Xong</Text>
             <EvilIcons name="arrow-right" size={30} color="black" />
             {/* Change 'black' to your desired color */}
           </TouchableOpacity>
