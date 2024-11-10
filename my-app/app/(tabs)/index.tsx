@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import Header from "@/components/UI/Header";
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGetAllVisitsByCurrentDateQuery } from "@/redux/services/visit.service";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,14 +19,33 @@ import VisitItem from "../home/VisitItem";
 export default function HomeScreen() {
   const { selectedGate } = useLocalSearchParams();
   const router = useRouter();
-  const {
-    data: visits,
-    isLoading,
-    isError,
-  } = useGetAllVisitsByCurrentDateQuery({
-    pageSize: 10,
-    pageNumber: 1,
-  });
+    const {
+      data: visits,
+      isLoading,
+      isError,
+    } = useGetAllVisitsByCurrentDateQuery({
+      pageSize: 10,
+      pageNumber: 1,
+    }
+  );
+
+  // const {
+  //   data: visits,
+  //   isLoading,
+  //   isError,
+  //   refetch,
+  // } = useGetAllVisitsByCurrentDateQuery(
+  //   { pageSize: 10, pageNumber: 1 },
+  //   {
+  //     refetchOnMountOrArgChange: true,
+  //   }
+  // );
+
+  // useEffect(() => {
+  //   if (visits && visits.length === 0) {
+  //     refetch();
+  //   }
+  // }, [refetch, visits]);
 
   if (isLoading) {
     return (
@@ -50,7 +69,7 @@ export default function HomeScreen() {
         <Header name="Đặng Dương" />
         <ScrollView className="flex-1">
           <View className="bg-white py-6">
-            {selectedGate && (
+            {/* {selectedGate && (
               <View className="items-center mb-6">
                 <View className="bg-backgroundApp px-6 py-4 rounded-lg shadow-md w-[89%]">
                   <Text className="text-xl text-center text-white font-bold">
@@ -58,21 +77,21 @@ export default function HomeScreen() {
                   </Text>
                 </View>
               </View>
-            )}
+            )} */}
 
             <View className="px-4">
               <View className="flex-row justify-between items-center mb-6">
                 <Text className="text-xl font-bold text-[#3d5a99]">
                   Lịch hẹn hôm nay
                 </Text>
-                <TouchableOpacity className="bg-buttonGreen px-4 py-2 rounded-full">
+                {/* <TouchableOpacity className="bg-buttonGreen px-4 py-2 rounded-full">
                   <Text className="text-white font-semibold">Xem tất cả</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
               </View>
 
               {visits && visits.length > 0 ? (
                 visits.map((visit: Visit2) => (
-                  <View className="py-1" key={visit.visitId} >
+                  <View className="py-1" key={visit.visitId}>
                     <VisitItem visit={visit} />
                   </View>
                 ))

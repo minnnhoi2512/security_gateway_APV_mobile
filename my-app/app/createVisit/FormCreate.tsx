@@ -210,9 +210,18 @@ const FormCreate = () => {
       //     [{ text: "OK" }]
       //   );
       // }
-      const errorMessage = error.data?.message || "Please ensure all requirements are met.";
+      const errorMessage =
+          error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
       // console.error("Check-in error:", error);
-      Alert.alert("Đã có lỗi xảy ra", "Tạo visit thất bại. Vui lòng thử lại.", errorMessage);
+      // Alert.alert("Đã có lỗi xảy ra", errorMessage, [
+      //   {
+      //     text: "OK",
+      //     onPress: () => {
+      //       router.push("/(tabs)/createCustomer");
+      //     },
+      //   },
+      // ]);
+      Alert.alert("Đã có lỗi xảy ra", errorMessage);
     }
   };
 

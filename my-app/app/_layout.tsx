@@ -79,6 +79,10 @@ export default function RootLayout() {
             name="check-in/scanQr"
             options={{ headerShown: true }}
           />
+          <Stack.Screen
+            name="home/VisitDetail"
+            options={{ headerShown: false }}
+          />
            <Stack.Screen
             name="createVisit/ScanQrCreate"
             options={{ headerShown: false }}
@@ -101,7 +105,7 @@ export default function RootLayout() {
           />
            <Stack.Screen
             name="check-out/CheckOutCard"
-            options={{ headerShown: true }}
+            options={{ headerShown: false }}
           />
            <Stack.Screen
             name="profile/ProfileDetail"

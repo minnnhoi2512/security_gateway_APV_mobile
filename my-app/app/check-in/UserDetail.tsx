@@ -35,7 +35,7 @@ import {
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import VideoPlayer from "../(tabs)/streaming";
+import VideoPlayer from "./streaming";
 interface ImageData {
   ImageType: "Shoe";
   ImageURL: string | null;

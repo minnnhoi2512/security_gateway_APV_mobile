@@ -19,7 +19,7 @@ import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service
 import { useFocusEffect } from "@react-navigation/native";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
 import { CheckInVer02, ValidCheckIn } from "@/Types/checkIn.type";
-import VideoPlayer from "../(tabs)/streaming";
+import VideoPlayer from "./streaming";
 import { uploadToFirebase } from "@/firebase-config";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";

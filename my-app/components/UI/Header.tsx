@@ -7,9 +7,11 @@ import {
   SafeAreaView,
 } from "react-native";
 import Fontisto from "@expo/vector-icons/Fontisto";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useGetUserProfileQuery } from "@/redux/services/user.service";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store/store";
 interface HeaderProps {
   name: string;
 }
@@ -22,12 +24,15 @@ const Header: React.FC<HeaderProps> = ({ name }) => {
     isLoading,
     error,
     refetch,
-  } = useGetUserProfileQuery(userId ? { userId } : { userId: '' }, {
+  } = useGetUserProfileQuery(userId ? { userId } : { userId: "" }, {
     skip: !userId,
   });
+  const selectedGate = useSelector(
+    (state: RootState) => state.gate.selectedGateId
+  );
 
   // console.log("HEADER BAO VE: ", profile);
-  
+
   useEffect(() => {
     const fetchUserId = async () => {
       try {
@@ -44,18 +49,22 @@ const Header: React.FC<HeaderProps> = ({ name }) => {
 
   return (
     <SafeAreaView className="bg-[#34495e]">
-      <View className="p-4  h-[100px]">
+      <View className="p-4  h-[100px] mb-3">
         <View className="flex-row justify-between items-center mt-4">
           <View className="flex-row items-center">
             <Image
               className="mr-2"
               source={{
-                uri: profile?.image || "https://cdn-icons-png.flaticon.com/512/147/147144.png",
+                uri:
+                  profile?.image ||
+                  "https://cdn-icons-png.flaticon.com/512/147/147144.png",
               }}
               style={{ width: 45, height: 45, borderRadius: 25 }}
             />
             <View>
-              <Text className="text-white font-semibold mb-[1px]">{profile?.fullName}</Text>
+              <Text className="text-white font-semibold mb-[1px]">
+                {profile?.fullName}
+              </Text>
               <Text className="text-[#D9D9D9]">{profile?.role.roleName}</Text>
             </View>
           </View>
@@ -63,6 +72,18 @@ const Header: React.FC<HeaderProps> = ({ name }) => {
           <TouchableOpacity onPress={() => router.push("/Notification")}>
             <Fontisto name="bell-alt" size={24} color={"#F7DC6F"} />
           </TouchableOpacity>
+        </View>
+        <View>
+       
+          {selectedGate && (
+            <View className="items-center mb-6">
+              <View >
+                <Text className="text-xl text-center text-white font-bold">
+                  Cổng {selectedGate}
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
       </View>
     </SafeAreaView>

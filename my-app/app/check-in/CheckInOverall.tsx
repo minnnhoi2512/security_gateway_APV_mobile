@@ -66,8 +66,11 @@ interface ImageData {
 const CheckInOverall = () => {
   const { validData, dataCheckIn } = useLocalSearchParams();
   const [resultData, setResultData] = useState<ResultData | null>(null);
-  const [checkInStatus, setCheckInStatus] = useState<'pending' | 'success' | 'error'>('pending');
+  const [checkInStatus, setCheckInStatus] = useState<
+    "pending" | "success" | "error"
+  >("pending");
   const [isValidating, setIsValidating] = useState(true);
+  const [checkInMessage, setCheckInMessage] = useState<string>("");
   const [checkIn, { isLoading: isCheckingIn }] = useCheckInMutation();
   const [validCheckIn, { isLoading: isValidCheckingIn }] =
     useValidCheckInMutation();
@@ -87,23 +90,23 @@ const CheckInOverall = () => {
   // });
   const parsedDataCheckIn = useMemo(() => {
     try {
-      return typeof dataCheckIn === "string" ? JSON.parse(dataCheckIn) : dataCheckIn;
+      return typeof dataCheckIn === "string"
+        ? JSON.parse(dataCheckIn)
+        : dataCheckIn;
     } catch (error) {
       console.error("Error parsing dataCheckIn:", error);
       // console.error("Error parsing dataCheckIn:", error);
       return null;
     }
   }, [dataCheckIn]);
-  
 
-    const [checkInData, setCheckInData] = useState<CheckInVer02>({
-      CredentialCard: parsedDataCheckIn?.CredentialCard || null,
-      SecurityInId: parsedDataCheckIn?.SecurityInId || 0,
-      GateInId: parsedDataCheckIn?.GateInId || Number(selectedGateId) || 0,
-      QrCardVerification: parsedDataCheckIn?.QrCardVerification || "",
-      Images: parsedDataCheckIn?.Images || [],
-    });
-    
+  const [checkInData, setCheckInData] = useState<CheckInVer02>({
+    CredentialCard: parsedDataCheckIn?.CredentialCard || null,
+    SecurityInId: parsedDataCheckIn?.SecurityInId || 0,
+    GateInId: parsedDataCheckIn?.GateInId || Number(selectedGateId) || 0,
+    QrCardVerification: parsedDataCheckIn?.QrCardVerification || "",
+    Images: parsedDataCheckIn?.Images || [],
+  });
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -131,28 +134,36 @@ const CheckInOverall = () => {
 
   useEffect(() => {
     const performCheckIn = async () => {
-      setCheckInStatus('pending');
-  
+      setCheckInMessage("");
+      setCheckInStatus("pending");
+
       try {
-        if (!checkInData || !checkInData.Images || checkInData.Images.length === 0 || !checkInData.Images[0]) {
+        if (
+          !checkInData ||
+          !checkInData.Images ||
+          checkInData.Images.length === 0 ||
+          !checkInData.Images[0]
+        ) {
           throw new Error("Missing image data for check-in.");
         }
-  
+
         const formData = new FormData();
         formData.append(
           "CredentialCard",
-          checkInData.CredentialCard ? checkInData.CredentialCard.toString() : ""
+          checkInData.CredentialCard
+            ? checkInData.CredentialCard.toString()
+            : ""
         );
         formData.append("SecurityInId", checkInData.SecurityInId.toString());
         formData.append("GateInId", checkInData.GateInId.toString());
         formData.append("QrCardVerification", checkInData.QrCardVerification);
-  
+
         const image = checkInData.Images[0];
         const { downloadUrl } = await uploadToFirebase(
           image.Image,
           `${image.ImageType}_${Date.now()}.jpg`
         );
-  
+
         formData.append("Images[0].ImageType", image.ImageType);
         formData.append("Images[0].ImageURL", downloadUrl.replace(/"/g, ""));
         formData.append("Images[0].Image", {
@@ -160,25 +171,31 @@ const CheckInOverall = () => {
           name: image.Image.split("/").pop() || "default.jpg",
           type: "image/jpeg",
         } as any);
-  
+
         const response = await checkIn(formData).unwrap();
         setResultData(response);
-        setCheckInStatus('success');
-        Alert.alert("Thành công", "Bạn vừa check in thành công!");
+        setCheckInStatus("success");
+        setCheckInMessage("Bạn vừa check in thành công!");
       } catch (error: any) {
-        setCheckInStatus('error');
-        console.log("ER: ", error);
-  
-        // Lấy thông báo lỗi từ response của server nếu có
-        const errorMessage = error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
-        Alert.alert("Đã có lỗi xảy ra", errorMessage);
+        setCheckInStatus("error");
+        // console.log("ER: ", error);
+
+        const errorMessage =
+          error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
+        // Alert.alert("Đã có lỗi xảy ra", errorMessage);
+        Alert.alert("Đã có lỗi xảy ra", errorMessage, [
+          {
+            text: "OK",
+            onPress: () => {
+              router.push("/(tabs)/checkin");
+            },
+          },
+        ]);
       }
     };
-  
+
     performCheckIn();
   }, []);
-  
-  
 
   const handleGoBack = () => {
     router.back();
@@ -190,15 +207,13 @@ const CheckInOverall = () => {
     });
   };
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      handleNext();
-    }, 10000); 
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     handleNext();
+  //   }, 30000);
 
-    
-    return () => clearTimeout(timer);
-  }, []);
-
+  //   return () => clearTimeout(timer);
+  // }, []);
 
   const InfoRow = ({
     label,
@@ -260,7 +275,7 @@ const CheckInOverall = () => {
     );
   };
 
-  if (checkInStatus === 'pending') {
+  if (checkInStatus === "pending") {
     return (
       <View className="flex-1 items-center justify-center bg-backgroundApp">
         <ActivityIndicator size="large" color="#ffffff" />
@@ -269,7 +284,7 @@ const CheckInOverall = () => {
     );
   }
 
-  if (checkInStatus === 'error') {
+  if (checkInStatus === "error") {
     return (
       <View className="flex-1 items-center justify-center">
         <Text>Đã có lỗi xảy ra. Vui lòng thử lại.</Text>
@@ -284,7 +299,6 @@ const CheckInOverall = () => {
       </View>
     );
   }
-
 
   console.log("Valid c dâta ben ovrr", dataCheckIn);
   // console.log("RS DATA", resultData);
@@ -302,6 +316,15 @@ const CheckInOverall = () => {
       </View>
       <View className="flex-1 mt-[5%]">
         <View className="p-4">
+          <View className="align-middle justify-center">
+            {checkInStatus === "success" && (
+              <>
+                <Text style={{ color: "green", fontSize: 30 }}>
+                  {checkInMessage}
+                </Text>
+              </>
+            )}
+          </View>
           <Section title="Thông tin cơ bản">
             <View className="flex-row items-center mb-4">
               <Text className="text-gray-600 text-lg">
@@ -316,6 +339,17 @@ const CheckInOverall = () => {
             <InfoRow
               label="Loại lịch"
               value={resultData.visit.scheduleTypeName}
+            />
+            <Text>Thông tin khách hàng</Text>
+            <InfoRow label="Tên khách" value={resultData.visitor.visitorName} />
+            <InfoRow label="Công ty" value={resultData.visitor.companyName} />
+            <InfoRow
+              label="Số điện thoại"
+              value={resultData.visitor.phoneNumber}
+            />
+            <InfoRow
+              label="CMND/CCCD"
+              value={resultData.visitor.credentialsCard}
             />
             {/* <InfoRow
             label="Trạng thái"
@@ -333,7 +367,7 @@ const CheckInOverall = () => {
               value={resultData.visit.scheduleTypeName}
             />
           </SectionDropDown> */}
-          <SectionDropDown
+          {/* <SectionDropDown
             title="Thông tin khách"
             icon={<View className="w-6 h-6 bg-blue-500 rounded-full" />}
           >
@@ -347,11 +381,11 @@ const CheckInOverall = () => {
               label="CMND/CCCD"
               value={resultData.visitor.credentialsCard}
             />
-            {/* <InfoRow
+            <InfoRow
             label="Trạng thái"
-            value={data.visitor.status === "Active" ? "Hoạt động" : "Không hoạt động"}
-          /> */}
-          </SectionDropDown>
+            value={resultData.visitor.status === "Active" ? "Hoạt động" : "Không hoạt động"}
+          />
+          </SectionDropDown> */}
 
           <SectionDropDown
             title="Thông tin thẻ"

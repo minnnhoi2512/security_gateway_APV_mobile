@@ -32,7 +32,7 @@ const ModalSearch: React.FC<ModalSearchProps> = ({
         <Modal visible={isVisible} animationType="slide" transparent={true}>
             <View className="flex-1 justify-center items-center bg-[rgba(0,0,0,0.5)]">
                 <View className="w-72 bg-white rounded-lg p-5 items-center shadow-lg">
-                    <TouchableOpacity className="absolute top-3 right-3" onPress={() => { onClose(); setValue('') }}>
+                    <TouchableOpacity className="absolute top-3 right-3" onPress={() => { onClose();}}>
                         <Ionicons name="close" size={24} color="black" />
                     </TouchableOpacity>
                     <Text className="text-xl font-bold mb-4">Tìm kiếm</Text>
