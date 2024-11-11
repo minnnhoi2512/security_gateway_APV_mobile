@@ -1,15 +1,31 @@
 import { Tabs } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import Entypo from '@expo/vector-icons/Entypo';
+import Entypo from "@expo/vector-icons/Entypo";
 import { View } from "react-native";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+
+import { useSelector } from "react-redux";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function TabLayout() {
+  const [role, setRole] = useState<string | null>(null);
   const colorScheme = useColorScheme();
+  // const role = useSelector((state: any) => state.auth.role);
+  // console.log("ROLE NE: ", role);
+
+  useEffect(() => {
+    const fetchRole = async () => {
+      const storedRole = await AsyncStorage.getItem("userRole");
+      setRole(storedRole);
+      console.log("ROLE FROM ASYNC STORAGE: ", storedRole);
+    };
+    fetchRole();
+  }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: "white" }}>
@@ -30,6 +46,7 @@ export default function TabLayout() {
           name="checkin"
           options={{
             title: "Check in",
+            href: role === "Staff" ? null : "/(tabs)/checkin",
             tabBarIcon: ({ color, focused }) => (
               <MaterialCommunityIcons
                 name="account-check"
@@ -44,6 +61,7 @@ export default function TabLayout() {
           name="checkout"
           options={{
             title: "Check out",
+            href: role === "Staff" ? null : "/(tabs)/checkout",
             // tabBarIcon: ({ color, focused }) => (
             //   <MaterialCommunityIcons
             //     name={focused ? "exit-run" : "exit-to-app"}
@@ -64,6 +82,7 @@ export default function TabLayout() {
           name="index"
           options={{
             title: "Trang chủ",
+            href: role === "Staff" ? null : "/(tabs)/",
             tabBarIcon: ({ color, focused }) => (
               <MaterialCommunityIcons
                 name="home-circle"
@@ -73,12 +92,56 @@ export default function TabLayout() {
             ),
           }}
         />
-        <Tabs.Screen
+        {/* <Tabs.Screen
           name="createCustomer"
           options={{
+            href: true ? "/(tabs)/createCustomer" : null,
             title: "Tạo mới",
             tabBarIcon: ({ color, focused }) => (
               <Ionicons name="create-outline" size={24} color={color} />
+            ),
+          }}
+        /> */}
+        <Tabs.Screen
+          name="createCustomer"
+          options={{
+            href: role === "Staff" ? null : "/(tabs)/createCustomer",
+            title: "Tạo mới",
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons name="create-outline" size={24} color={color} />
+            ),
+          }}
+        />
+
+        <Tabs.Screen
+          name="VisitForStaff"
+          options={{
+            title: "Chuyến thăm",
+            href: role === "Security" ? null : "/(tabs)/VisitForStaff",
+            tabBarIcon: ({ color, focused }) => (
+              <FontAwesome5 name="calendar-alt" size={24} color={color} />
+            ),
+          }}
+        />
+
+        <Tabs.Screen
+          name="History"
+          options={{
+            title: "Lịch sử",
+            href: role === "Security" ? null : "/(tabs)/History",
+            tabBarIcon: ({ color, focused }) => (
+              <FontAwesome5 name="history" size={24} color={color} />
+            ),
+          }}
+        />
+
+        <Tabs.Screen
+          name="ChatForStaff"
+          options={{
+            title: "Trò chuyện",
+            href: role === "Security" ? null : "/(tabs)/ChatForStaff",
+            tabBarIcon: ({ color, focused }) => (
+              <Entypo name="chat" size={24} color={color} />
             ),
           }}
         />

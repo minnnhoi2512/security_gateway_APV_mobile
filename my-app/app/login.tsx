@@ -15,6 +15,9 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useRouter } from "expo-router";
 import { useLoginUserMutation } from "@/redux/services/authApi.service";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useDispatch } from "react-redux";
+import { jwtDecode } from "jwt-decode";
+import { setAuth } from "@/redux/slices/auth.slice";
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
@@ -27,6 +30,27 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState("");
   const [loginUser, { isLoading }] = useLoginUserMutation();
   const router = useRouter();
+  const dispatch = useDispatch();
+
+  // const handleLogin = async () => {
+  //   try {
+  //     const result = await loginUser({ username, password }).unwrap();
+  //     console.log("Login successful, response:", result);
+
+  //     if (result && result.jwtToken) {
+  //       await AsyncStorage.setItem("userToken", result.jwtToken);
+  //       await AsyncStorage.setItem("userId", result.userId.toString());
+  //       console.log("Token saved to AsyncStorage");
+
+  //       router.push("/PickGate");
+  //     }
+  //   } catch (error) {
+  //     Alert.alert(
+  //       "Đăng nhập thất bại",
+  //       "Thông tin không hợp lệ. Vui lòng thử lại."
+  //     );
+  //   }
+  // };
 
   const handleLogin = async () => {
     try {
@@ -38,9 +62,19 @@ const Login: React.FC = () => {
         await AsyncStorage.setItem("userId", result.userId.toString());
         console.log("Token saved to AsyncStorage");
 
+        const decodedToken = jwtDecode<{ role: string }>(result.jwtToken);
+        const role = decodedToken.role;
+        await AsyncStorage.setItem("userRole", role);
+        dispatch(setAuth({
+          token: result.jwtToken,
+          userId: result.userId.toString(),
+          role: role,
+        }));
+
         router.push("/PickGate");
       }
     } catch (error) {
+      console.error("Login failed with error:", error);
       Alert.alert(
         "Đăng nhập thất bại",
         "Thông tin không hợp lệ. Vui lòng thử lại."

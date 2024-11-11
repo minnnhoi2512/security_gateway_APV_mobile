@@ -4,6 +4,7 @@ import { setupListeners } from "@reduxjs/toolkit/query";
 import { visitApi } from "../services/visit.service";
 import { gateApi } from "../services/gate.service";
 import gateSlice from "../slices/gate.slice";
+import authSlice from "../slices/auth.slice";
 import { qrcodeApi } from "../services/qrcode.service";
 import { checkinApi } from "../services/checkin.service";
 import { visitorSessionApi } from "../services/checkout.service";
@@ -21,7 +22,7 @@ export const store = configureStore({
     [visitorSessionApi.reducerPath]: visitorSessionApi.reducer,
     [visitorApi.reducerPath]: visitorApi.reducer,
     [userApi.reducerPath]: userApi.reducer,
-
+    auth: authSlice,
   },
 
   middleware: (getDefaultMiddleware) =>

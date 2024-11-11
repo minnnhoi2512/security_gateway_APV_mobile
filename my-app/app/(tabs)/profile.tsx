@@ -96,6 +96,7 @@ const Profile: React.FC = () => {
               
               await AsyncStorage.removeItem("userToken");
               await AsyncStorage.removeItem("userId");
+              await AsyncStorage.removeItem("userRole");
 
               console.log("Logout successful");
               router.push("/login");
