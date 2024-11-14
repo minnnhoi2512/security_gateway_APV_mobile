@@ -70,7 +70,7 @@ const Profile: React.FC = () => {
           <View className="bg-blue-200 rounded-full p-1">
             <Image
               source={{
-                uri:  "https://cdn-icons-png.flaticon.com/512/5301/5301945.png",
+                uri: profile?.image || "https://cdn-icons-png.flaticon.com/512/5301/5301945.png",
               }}
               className="w-24 h-24 rounded-full"
             />

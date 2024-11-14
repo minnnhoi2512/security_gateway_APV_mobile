@@ -28,71 +28,84 @@ export default function TabLayout() {
   }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "white" }}>
-      <Tabs
-        screenOptions={{
-          tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
-          headerShown: false,
-          tabBarStyle: {
-            paddingTop: 5,
-            paddingBottom: 5,
-            margin: 22,
-            borderRadius: 16,
-            backgroundColor: "#34495e",
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+        headerShown: false,
+        tabBarStyle: {
+          paddingTop: 2,
+          paddingBottom: 10,
+          position: "absolute",
+          width: 360,
+          marginLeft:16,
+          borderRadius:12,
+          bottom: 20,
+          height: 70,
+          
+          backgroundColor: "#34495e",
+          shadowColor: "#000",
+          shadowOffset: {
+            width: 0,
+            height: 4,
           },
+          shadowOpacity: 0.25,
+          shadowRadius: 10,
+          elevation: 5,
+          borderTopWidth: 0,
+        },
+      }}
+    >
+      <Tabs.Screen
+        name="checkin"
+        options={{
+          title: "Check in",
+          href: role === "Staff" ? null : "/(tabs)/checkin",
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons
+              name="account-check"
+              size={24}
+              color={color}
+            />
+          ),
         }}
-      >
-        <Tabs.Screen
-          name="checkin"
-          options={{
-            title: "Check in",
-            href: role === "Staff" ? null : "/(tabs)/checkin",
-            tabBarIcon: ({ color, focused }) => (
-              <MaterialCommunityIcons
-                name="account-check"
-                size={24}
-                color={color}
-              />
-            ),
-          }}
-        />
+      />
 
-        <Tabs.Screen
-          name="checkout"
-          options={{
-            title: "Check out",
-            href: role === "Staff" ? null : "/(tabs)/checkout",
-            // tabBarIcon: ({ color, focused }) => (
-            //   <MaterialCommunityIcons
-            //     name={focused ? "exit-run" : "exit-to-app"}
-            //     size={24}
-            //     color={color}
-            //   />
-            // ),
-            tabBarIcon: ({ color, focused }) => (
-              <MaterialCommunityIcons
-                name="exit-to-app"
-                size={24}
-                color={color}
-              />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: "Trang chủ",
-            href: role === "Staff" ? null : "/(tabs)/",
-            tabBarIcon: ({ color, focused }) => (
-              <MaterialCommunityIcons
-                name="home-circle"
-                size={30}
-                color={color}
-              />
-            ),
-          }}
-        />
-        {/* <Tabs.Screen
+      <Tabs.Screen
+        name="checkout"
+        options={{
+          title: "Check out",
+          href: role === "Staff" ? null : "/(tabs)/checkout",
+          // tabBarIcon: ({ color, focused }) => (
+          //   <MaterialCommunityIcons
+          //     name={focused ? "exit-run" : "exit-to-app"}
+          //     size={24}
+          //     color={color}
+          //   />
+          // ),
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons
+              name="exit-to-app"
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Trang chủ",
+          href: role === "Staff" ? null : "/(tabs)",
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons
+              name="home-circle"
+              size={30}
+              color={color}
+            />
+          ),
+        }}
+      />
+      {/* <Tabs.Screen
           name="createCustomer"
           options={{
             href: true ? "/(tabs)/createCustomer" : null,
@@ -102,61 +115,61 @@ export default function TabLayout() {
             ),
           }}
         /> */}
-        <Tabs.Screen
-          name="createCustomer"
-          options={{
-            href: role === "Staff" ? null : "/(tabs)/createCustomer",
-            title: "Tạo mới",
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name="create-outline" size={24} color={color} />
-            ),
-          }}
-        />
+      <Tabs.Screen
+        name="createCustomer"
+        options={{
+          href: role === "Staff" ? null : "/(tabs)/createCustomer",
+          title: "Tạo mới",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name="create-outline" size={24} color={color} />
+          ),
+        }}
+      />
 
-        <Tabs.Screen
-          name="VisitForStaff"
-          options={{
-            title: "Chuyến thăm",
-            href: role === "Security" ? null : "/(tabs)/VisitForStaff",
-            tabBarIcon: ({ color, focused }) => (
-              <FontAwesome5 name="calendar-alt" size={24} color={color} />
-            ),
-          }}
-        />
+      <Tabs.Screen
+        name="VisitForStaff"
+        options={{
+          title: "Chuyến thăm",
+          href: role === "Security" ? null : "/(tabs)/VisitForStaff",
+          tabBarIcon: ({ color, focused }) => (
+            <FontAwesome5 name="calendar-alt" size={24} color={color} />
+          ),
+        }}
+      />
 
-        <Tabs.Screen
-          name="History"
-          options={{
-            title: "Lịch sử",
-            href: role === "Security" ? null : "/(tabs)/History",
-            tabBarIcon: ({ color, focused }) => (
-              <FontAwesome5 name="history" size={24} color={color} />
-            ),
-          }}
-        />
+      <Tabs.Screen
+        name="History"
+        options={{
+          title: "Lịch sử",
+          href: role === "Security" ? null : "/(tabs)/History",
+          tabBarIcon: ({ color, focused }) => (
+            <FontAwesome5 name="history" size={24} color={color} />
+          ),
+        }}
+      />
 
-        <Tabs.Screen
-          name="ChatForStaff"
-          options={{
-            title: "Trò chuyện",
-            href: role === "Security" ? null : "/(tabs)/ChatForStaff",
-            tabBarIcon: ({ color, focused }) => (
-              <Entypo name="chat" size={24} color={color} />
-            ),
-          }}
-        />
+      <Tabs.Screen
+        name="ChatForStaff"
+        options={{
+          title: "Trò chuyện",
+          href: role === "Security" ? null : "/(tabs)/ChatForStaff",
+          tabBarIcon: ({ color, focused }) => (
+            <Entypo name="chat" size={24} color={color} />
+          ),
+        }}
+      />
 
-        <Tabs.Screen
-          name="profile"
-          options={{
-            title: "Hồ sơ",
-            tabBarIcon: ({ color, focused }) => (
-              <FontAwesome name="user-circle-o" size={24} color={color} />
-            ),
-          }}
-        />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Hồ sơ",
+          tabBarIcon: ({ color, focused }) => (
+            <FontAwesome name="user-circle-o" size={24} color={color} />
+          ),
+        }}
+      />
 
-        {/* <Tabs.Screen
+      {/* <Tabs.Screen
           name="streaming"
           options={{
             title: "Trực tiếp",
@@ -165,7 +178,6 @@ export default function TabLayout() {
             ),
           }}
         /> */}
-      </Tabs>
-    </View>
+    </Tabs>
   );
 }

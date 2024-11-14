@@ -1,5 +1,5 @@
   import React, { useEffect, useRef, useState } from "react";
-  import { Camera, CameraView } from "expo-camera";
+  import { CameraView } from "expo-camera";
   import { Stack, useRouter } from "expo-router";
   import { useFocusEffect } from "@react-navigation/native";
   import {
@@ -11,8 +11,10 @@
     StatusBar,
     StyleSheet,
     Text,
+    TouchableOpacity,
+    View,
   } from "react-native";
-  import { Overlay } from "../check-in/OverLay";
+  import  Overlay  from "../check-in/OverLay";
   import { useGetVisitorByCreadentialCardQuery } from "@/redux/services/visitor.service";
 
   interface ScanData {
@@ -56,15 +58,15 @@
       processingRef.current = false;
     };
 
-    useFocusEffect(
-      React.useCallback(() => {
-        resetStates();
-        redirected.current = false;
-        return () => {
+    // useFocusEffect(
+    //   React.useCallback(() => {
+    //     resetStates();
+    //     redirected.current = false;
+    //     return () => {
         
-        };
-      }, [])
-    );
+    //     };
+    //   }, [])
+    // );
 
 
 
@@ -170,9 +172,21 @@
           onBarcodeScanned={handleBarCodeScanned}
         />
         <Overlay />
-        <Pressable style={styles.backButton} onPress={handleGoBack}>
-          <Text style={styles.backButtonText}>Quay về</Text>
-        </Pressable>
+        {/* <Pressable style={styles.backButton} onPress={handleGoBack}>
+          <Text className="text-3xl" style={styles.backButtonText}>Quay về</Text>
+        </Pressable> */}
+        <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
+        <Text className="text-green-700 text-sm font-semibold">
+          Camera Tạo mới
+        </Text>
+      </View>
+
+      <TouchableOpacity
+        className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
+        onPress={handleGoBack}
+      >
+        <Text className="text-white">Thoát Camera</Text>
+      </TouchableOpacity>
       </SafeAreaView>
     );
   }
@@ -188,6 +202,6 @@
     },
     backButtonText: {
       color: "white",
-      fontSize: 16,
+      // fontSize: 16,
     },
   });

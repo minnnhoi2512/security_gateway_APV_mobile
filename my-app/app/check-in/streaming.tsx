@@ -21,6 +21,8 @@ interface VideoPlayerProps {
   autoCapture: boolean;
 }
 
+
+
 const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onCaptureImage,
   autoCapture,

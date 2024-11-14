@@ -12,9 +12,10 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
-import { Overlay } from "./OverLay";
+import Overlay from "./OverLay";
 import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service";
 import { useFocusEffect } from "@react-navigation/native";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
@@ -38,7 +39,7 @@ interface ImageData {
   ImageURL: string | null;
   ImageFile: string | null;
 }
-export default function Home() {
+const scanQr = () => {
   const qrLock = useRef(false);
   const appState = useRef(AppState.currentState);
   const router = useRouter();
@@ -82,7 +83,6 @@ export default function Home() {
   } = useGetDataByCardVerificationQuery(cardVerification || "", {
     skip: !cardVerification,
   });
-
   useEffect(() => {
     const fetchUserId = async () => {
       try {
@@ -94,10 +94,8 @@ export default function Home() {
         console.error("Error fetching userId from AsyncStorage:", error);
       }
     };
-
     fetchUserId();
   }, []);
-
   useEffect(() => {
     if (userId) {
       setCheckInData((prevState) => ({
@@ -106,11 +104,7 @@ export default function Home() {
       }));
     }
   }, [userId, selectedGateId]);
-
- 
- 
   const [autoCapture, setAutoCapture] = useState(false);
- 
   const handleImageCapture = async (imageData: ImageData) => {
     try {
       setCapturedImage([imageData]);
@@ -119,26 +113,20 @@ export default function Home() {
         ImageURL: "",
         Image: imageData.ImageFile || "",
       };
-
       setCheckInData((prev) => ({
         ...prev,
         Images: [formattedImageData],
       }));
-  
       // const downloadUrl = await uploadToFirebase(
       //   imageData.imageFile,
       //   `${imageData.imageType}_${Date.now()}.jpg`
       // );
-  
       // console.log("Image uploaded successfully:", downloadUrl);
-  
       // Update state or pass the URL as needed
     } catch (error) {
       Alert.alert("Upload Error", "Failed to upload image to Firebase");
     }
   };
-  
-
   useEffect(() => {
     if (qrCardData) {
       setAutoCapture(true);
@@ -170,13 +158,13 @@ export default function Home() {
     setIsProcessing(false);
     qrLock.current = false;
   };
-  useFocusEffect(
-    React.useCallback(() => {
-      resetState();
-      redirected.current = false;
-      return () => {};
-    }, [])
-  );
+  // useFocusEffect(
+  //   React.useCallback(() => {
+  //     resetState();
+  //     redirected.current = false;
+  //     return () => {};
+  //   }, [])
+  // );
   useEffect(() => {
     if (scannedData) {
       if (isCredentialCard(scannedData)) {
@@ -189,7 +177,6 @@ export default function Home() {
           resetState();
         }
       } else {
-     
         setCardVerification(scannedData);
         setCheckInData((prevData) => ({
           ...prevData,
@@ -242,17 +229,18 @@ export default function Home() {
   useEffect(() => {
     const handleNavigation = async () => {
       if (isLoadingVisit || isFetchingVisit) return;
-  
-      
       await new Promise((resolve) => setTimeout(resolve, 200));
-  
-       
-      const hasRequiredData = checkInData.QrCardVerification && checkInData.Images.length > 0;
-  
+      const hasRequiredData =
+        checkInData.QrCardVerification && checkInData.Images.length > 0;
       if (cardVerification && !redirected.current) {
         qrLock.current = true;
-  
-        if (qrCardData && !isLoadingQr && !isFetchingQr && !isErrorQr && hasRequiredData) {
+        if (
+          qrCardData &&
+          !isLoadingQr &&
+          !isFetchingQr &&
+          !isErrorQr &&
+          hasRequiredData
+        ) {
           redirected.current = true;
           await new Promise((resolve) => setTimeout(resolve, 500));
           router.push({
@@ -262,7 +250,11 @@ export default function Home() {
             },
           });
           resetState();
-        } else if (!isLoadingQr && !isFetchingQr && (isErrorQr || !qrCardData)) {
+        } else if (
+          !isLoadingQr &&
+          !isFetchingQr &&
+          (isErrorQr || !qrCardData)
+        ) {
           Alert.alert("Lỗi", "Mã xác thực không hợp lệ");
           resetState();
         }
@@ -276,13 +268,16 @@ export default function Home() {
             params: { credentialCardId: credentialCardId },
           });
           resetState();
-        } else if (!isLoadingVisit && !isFetchingVisit && !visitNotFoundShown.current) {
+        } else if (
+          !isLoadingVisit &&
+          !isFetchingVisit &&
+          !visitNotFoundShown.current
+        ) {
           visitNotFoundShown.current = true;
           handleVisitNotFound();
         }
       }
     };
-  
     handleNavigation();
   }, [
     visitOfUser,
@@ -293,9 +288,8 @@ export default function Home() {
     isLoadingQr,
     isFetchingQr,
     cardVerification,
-    checkInData, 
+    checkInData,
   ]);
-  
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (data && !qrLock.current) {
       qrLock.current = true;
@@ -323,7 +317,6 @@ export default function Home() {
           onCaptureImage={handleImageCapture}
           autoCapture={autoCapture}
         />
-
       </View>
       <Stack.Screen
         options={{
@@ -345,15 +338,28 @@ export default function Home() {
         isFetchingQr) && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#ffffff" />
-          <Text style={styles.loadingText}>Đang xử lý...</Text>
+          <Text className="text-3xl" style={styles.loadingText}>
+            Đang xử lý...
+          </Text>
         </View>
       )}
-      <Pressable style={styles.backButton} onPress={handleGoBack}>
-        <Text style={styles.backButtonText}>Quay về</Text>
-      </Pressable>
+      <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
+        <Text className="text-green-700 text-sm font-semibold">
+          Camera Checkin
+        </Text>
+      </View>
+      <TouchableOpacity
+        className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
+        onPress={handleGoBack}
+      >
+        <Text className="text-white">Thoát Camera</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
-}
+};
+
+export default scanQr;
+
 const styles = StyleSheet.create({
   backButton: {
     position: "absolute",
@@ -365,7 +371,6 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     color: "white",
-    fontSize: 16,
   },
   loadingContainer: {
     position: "absolute",
@@ -381,6 +386,5 @@ const styles = StyleSheet.create({
   loadingText: {
     color: "#ffffff",
     marginTop: 10,
-    fontSize: 16,
   },
 });

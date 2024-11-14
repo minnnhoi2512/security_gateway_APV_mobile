@@ -319,7 +319,7 @@ const CheckInOverall = () => {
           <View className="align-middle justify-center">
             {checkInStatus === "success" && (
               <>
-                <Text style={{ color: "green", fontSize: 30 }}>
+                <Text className="text-green-500 text-3xl">
                   {checkInMessage}
                 </Text>
               </>
@@ -445,7 +445,7 @@ const CheckInOverall = () => {
       {isCheckingIn && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#ffffff" />
-          <Text style={styles.loadingText}>Đang xử lý...</Text>
+          <Text className="text-3xl" style={styles.loadingText}>Đang xử lý...</Text>
         </View>
       )}
     </ScrollView>
@@ -469,6 +469,5 @@ const styles = StyleSheet.create({
   loadingText: {
     color: "#ffffff",
     marginTop: 10,
-    fontSize: 16,
   },
 });

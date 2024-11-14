@@ -13,6 +13,7 @@ import { useCameraPermissions } from "expo-camera";
 import { useGetAllVisitsByCurrentDateQuery } from "@/redux/services/visit.service";
 import Header from "@/components/UI/Header";
 import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 const CreateCustomer = () => {
   const [permission, requestPermission] = useCameraPermissions();
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
@@ -37,7 +38,7 @@ const CreateCustomer = () => {
     }
   };
   return (
-    <SafeAreaView className="flex-1 bg-backgroundApp">
+    <SafeAreaProvider className="flex-1 bg-backgroundApp">
       <View className="flex-1 bg-white">
         <StatusBar barStyle="dark-content" />
         <Header name="Đặng Dương" />
@@ -86,7 +87,7 @@ const CreateCustomer = () => {
           {/* </View> */}
         </View>
       </View>
-    </SafeAreaView>
+    </SafeAreaProvider>
   );
 };
 

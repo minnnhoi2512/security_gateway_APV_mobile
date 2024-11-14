@@ -10,6 +10,7 @@ import {
   Image,
   RefreshControl,
   ActivityIndicator,
+  Pressable,
 } from "react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Camera, CameraView, useCameraPermissions } from "expo-camera";
@@ -22,7 +23,7 @@ import {
   useGetVissitorSessionQuery,
 } from "@/redux/services/checkout.service";
 import { useSelector } from "react-redux";
-import { EvilIcons, Ionicons } from "@expo/vector-icons";
+import { EvilIcons, Ionicons, MaterialIcons } from "@expo/vector-icons";
 
 import Header from "@/components/UI/Header";
 import { RootState } from "@/redux/store/store";
@@ -168,6 +169,10 @@ const CheckoutCard = () => {
     }
   };
 
+  const handleGoBack = () => {
+    router.back();
+  };
+
   // const onRefresh = useCallback(async () => {
   //   setRefreshing(true);
   //   if (qrCardVerified) {
@@ -246,123 +251,137 @@ const CheckoutCard = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-backgroundApp">
-      <ScrollView className="flex-1 mt-[10%]">
-        <Section title="Thông tin checkin của khách">
-          {/* <InfoRow label="Mã chi tiết thăm" value={data.visitDetailId} /> */}
-          <InfoRow
-            label="Thời gian vào"
-            value={formatDate(visitData.checkinTime)}
-          />
-          <InfoRow label="Cổng vào" value={visitData.gateIn.gateName} />
-          <InfoRow label="Bảo vệ" value={visitData.securityIn.fullName} />
-        </Section>
-
-        <SectionDropDown
-          title="Thông tin thẻ"
-          icon={<View className="w-6 h-6 bg-green-500 rounded-full" />}
+      <View className=" bg-backgroundApp">
+        <Pressable
+          onPress={handleGoBack}
+          className="flex flex-row items-center space-x-2 px-4 py-2 bg-backgroundApp rounded-lg active:bg-gray-200"
         >
-          <InfoRow
-            label="Ngày cấp"
-            value={visitData.visitCard.issueDate.split("T")[0]}
-          />
-          <InfoRow
-            label="Ngày hết hạn"
-            value={visitData.visitCard.expiryDate.split("T")[0]}
-          />
-          {/* <InfoRow
+          <MaterialIcons name="arrow-back" size={24} color="white" />
+          <Text className="text-white font-medium">Quay về</Text>
+        </Pressable>
+      </View>
+      <ScrollView className="flex-1 mt-[5%]">
+        <View className="p-4">
+          <Section title="Thông tin checkin của khách">
+            {/* <InfoRow label="Mã chi tiết thăm" value={data.visitDetailId} /> */}
+            <InfoRow
+              label="Thời gian vào"
+              value={formatDate(visitData.checkinTime)}
+            />
+            <InfoRow label="Cổng vào" value={visitData.gateIn.gateName} />
+            <InfoRow label="Bảo vệ" value={visitData.securityIn.fullName} />
+          </Section>
+
+          <SectionDropDown
+            title="Thông tin thẻ"
+            icon={<View className="w-6 h-6 bg-green-500 rounded-full" />}
+          >
+            <InfoRow
+              label="Ngày cấp"
+              value={visitData.visitCard.issueDate.split("T")[0]}
+            />
+            <InfoRow
+              label="Ngày hết hạn"
+              value={visitData.visitCard.expiryDate.split("T")[0]}
+            />
+            {/* <InfoRow
             label="Trạng thái thẻ"
             value={visitData.visitCard.card.cardStatus}
           /> */}
-           <InfoRow
-            label="Trạng thái"
-            value={visitData.visitCard.card.cardStatus === "Active" ? "Hoạt động" : "Không hoạt động"}
-          />
-          <InfoRow
-            label="Ngày hết hạn"
-            value={visitData.visitCard.expiryDate.split("T")[0]}
-          />
-          <Image
-            source={{
-              uri: `data:image/png;base64,${visitData.visitCard.card.cardImage}`,
-            }}
-            style={{
-              width: "100%",
-              height: 200,
-              borderRadius: 10,
-              marginVertical: 10,
-            }}
-            resizeMode="contain"
-          />
-        </SectionDropDown>
+            <InfoRow
+              label="Trạng thái"
+              value={
+                visitData.visitCard.card.cardStatus === "Active"
+                  ? "Hoạt động"
+                  : "Không hoạt động"
+              }
+            />
+            <InfoRow
+              label="Ngày hết hạn"
+              value={visitData.visitCard.expiryDate.split("T")[0]}
+            />
+            <Image
+              source={{
+                uri: `data:image/png;base64,${visitData.visitCard.card.cardImage}`,
+              }}
+              style={{
+                width: "100%",
+                height: 200,
+                borderRadius: 10,
+                marginVertical: 10,
+              }}
+              resizeMode="contain"
+            />
+          </SectionDropDown>
 
-        <SectionDropDown
-          title="Thông tin chi tiết chuyến thăm"
-          icon={<View className="w-6 h-6 bg-purple-500 rounded-full" />}
-        >
-          <InfoRow
-            label="Giờ dự kiến vào"
-            value={visitData.visitDetail.expectedStartHour}
-          />
-          <InfoRow
-            label="Giờ dự kiến ra"
-            value={visitData.visitDetail.expectedEndHour}
-          />
-        </SectionDropDown>
+          <SectionDropDown
+            title="Thông tin chi tiết chuyến thăm"
+            icon={<View className="w-6 h-6 bg-purple-500 rounded-full" />}
+          >
+            <InfoRow
+              label="Giờ dự kiến vào"
+              value={visitData.visitDetail.expectedStartHour}
+            />
+            <InfoRow
+              label="Giờ dự kiến ra"
+              value={visitData.visitDetail.expectedEndHour}
+            />
+          </SectionDropDown>
 
-        <SectionDropDown
-          title="Thông tin chi tiết khách"
-          icon={<View className="w-6 h-6 bg-blue-500 rounded-full" />}
-        >
-          <InfoRow label="Tên đầy đủ" value={dataVisitor?.visitorName} />
-          <Image
-            source={{
-              uri: `data:image/png;base64,${dataVisitor?.visitorCredentialImage}`,
-            }}
-            style={{
-              width: "100%",
-              height: 200,
-              borderRadius: 10,
-              marginVertical: 10,
-            }}
-            resizeMode="contain"
-          />
-        </SectionDropDown>
-        <SectionDropDown
-          title="Hình ảnh giày"
-          icon={<View className="w-6 h-6 bg-yellow-500 rounded-full" />}
-        >
-          {dataVisitorSessionImage &&
-            dataVisitorSessionImage.map(
-              (
-                image: { imageURL: string; imageType: string },
-                index: number
-              ) => (
-                <View key={index} style={styles.imageContainer}>
-                  <Image
-                    source={{ uri: image.imageURL }}
-                    style={{
-                      width: "100%",
-                      height: 200,
-                      borderRadius: 10,
-                      marginVertical: 10,
-                    }}
-                    resizeMode="contain"
-                  />
-                  <Text style={styles.imageLabel}>
-                    {image.imageType === "Shoe" ? "Giày" : "Ảnh khách hàng"}
-                  </Text>
-                </View>
-              )
-            )}
-        </SectionDropDown>
-        <TouchableOpacity
+          <SectionDropDown
+            title="Thông tin chi tiết khách"
+            icon={<View className="w-6 h-6 bg-blue-500 rounded-full" />}
+          >
+            <InfoRow label="Tên đầy đủ" value={dataVisitor?.visitorName} />
+            <Image
+              source={{
+                uri: `data:image/png;base64,${dataVisitor?.visitorCredentialImage}`,
+              }}
+              style={{
+                width: "100%",
+                height: 200,
+                borderRadius: 10,
+                marginVertical: 10,
+              }}
+              resizeMode="contain"
+            />
+          </SectionDropDown>
+          <SectionDropDown
+            title="Hình ảnh giày"
+            icon={<View className="w-6 h-6 bg-yellow-500 rounded-full" />}
+          >
+            {dataVisitorSessionImage &&
+              dataVisitorSessionImage.map(
+                (
+                  image: { imageURL: string; imageType: string },
+                  index: number
+                ) => (
+                  <View key={index}>
+                    <Image
+                      source={{ uri: image.imageURL }}
+                      style={{
+                        width: "100%",
+                        height: 200,
+                        borderRadius: 10,
+                        marginVertical: 10,
+                      }}
+                      resizeMode="contain"
+                    />
+                    {/* <Text className="text-xl">
+                      {image.imageType === "Shoe" ? "Giày" : "Ảnh khách hàng"}
+                    </Text> */}
+                  </View>
+                )
+              )}
+          </SectionDropDown>
+          <TouchableOpacity
             onPress={handleCheckout}
             className="p-4 mb-4 bg-white rounded-full flex-row items-center justify-center"
           >
             <Text className="text-lg mr-2">Xác nhận Checkout</Text>
             <EvilIcons name="arrow-right" size={30} color="black" />
           </TouchableOpacity>
-        {/* <View style={styles.content}>
+          {/* <View style={styles.content}>
           <TouchableOpacity
             style={[
               styles.checkoutButton,
@@ -379,6 +398,7 @@ const CheckoutCard = () => {
             </View>
           </TouchableOpacity>
         </View> */}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -387,66 +407,66 @@ const CheckoutCard = () => {
 export default CheckoutCard;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  header: {
-    padding: 16,
-    backgroundColor: "white",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e5e5",
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1f2937",
-  },
-  content: {
-    padding: 16,
-  },
-  section: {
-    marginBottom: 24,
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#1f2937",
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e5e5",
-  },
-  label: {
-    fontSize: 16,
-    color: "#4b5563",
-    flex: 1,
-  },
-  value: {
-    fontSize: 16,
-    color: "#1f2937",
-    flex: 1,
-    textAlign: "right",
-  },
+  // container: {
+  //   flex: 1,
+  //   backgroundColor: "#f5f5f5",
+  // },
+  // scrollView: {
+  //   flex: 1,
+  // },
+  // header: {
+  //   padding: 16,
+  //   backgroundColor: "white",
+  //   borderBottomWidth: 1,
+  //   borderBottomColor: "#e5e5e5",
+  // },
+  // headerTitle: {
+  //   fontSize: 24,
+  //   fontWeight: "bold",
+  //   color: "#1f2937",
+  // },
+  // content: {
+  //   padding: 16,
+  // },
+  // section: {
+  //   marginBottom: 24,
+  //   backgroundColor: "white",
+  //   borderRadius: 12,
+  //   padding: 16,
+  //   shadowColor: "#000",
+  //   shadowOffset: {
+  //     width: 0,
+  //     height: 2,
+  //   },
+  //   shadowOpacity: 0.1,
+  //   shadowRadius: 3,
+  //   elevation: 3,
+  // },
+  // sectionTitle: {
+  //   fontSize: 20,
+  //   fontWeight: "600",
+  //   color: "#1f2937",
+  //   marginBottom: 16,
+  // },
+  // infoRow: {
+  //   flexDirection: "row",
+  //   justifyContent: "space-between",
+  //   alignItems: "center",
+  //   paddingVertical: 12,
+  //   borderBottomWidth: 1,
+  //   borderBottomColor: "#e5e5e5",
+  // },
+  // label: {
+  //   fontSize: 16,
+  //   color: "#4b5563",
+  //   flex: 1,
+  // },
+  // value: {
+  //   fontSize: 16,
+  //   color: "#1f2937",
+  //   flex: 1,
+  //   textAlign: "right",
+  // },
   imagesGrid: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -465,47 +485,47 @@ const styles = StyleSheet.create({
   },
   imageLabel: {
     marginTop: 8,
-    fontSize: 14,
+    // fontSize: 14,
     color: "#6b7280",
   },
-  statusBadge: {
-    backgroundColor: "#dcfce7",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  statusText: {
-    color: "#166534",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  cardImage: {
-    width: 96,
-    height: 96,
-    borderRadius: 8,
-    backgroundColor: "#f3f4f6",
-  },
-  checkoutButton: {
-    backgroundColor: "#22c55e",
-    borderRadius: 8,
-    padding: 16,
-    marginTop: 24,
-  },
-  checkoutButtonDisabled: {
-    opacity: 0.5,
-  },
-  buttonContent: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  buttonLoader: {
-    marginRight: 8,
-  },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
-  },
+  // statusBadge: {
+  //   backgroundColor: "#dcfce7",
+  //   paddingHorizontal: 12,
+  //   paddingVertical: 6,
+  //   borderRadius: 16,
+  // },
+  // statusText: {
+  //   color: "#166534",
+  //   fontSize: 14,
+  //   fontWeight: "500",
+  // },
+  // cardImage: {
+  //   width: 96,
+  //   height: 96,
+  //   borderRadius: 8,
+  //   backgroundColor: "#f3f4f6",
+  // },
+  // checkoutButton: {
+  //   backgroundColor: "#22c55e",
+  //   borderRadius: 8,
+  //   padding: 16,
+  //   marginTop: 24,
+  // },
+  // checkoutButtonDisabled: {
+  //   opacity: 0.5,
+  // },
+  // buttonContent: {
+  //   flexDirection: "row",
+  //   justifyContent: "center",
+  //   alignItems: "center",
+  // },
+  // buttonLoader: {
+  //   marginRight: 8,
+  // },
+  // buttonText: {
+  //   color: "white",
+  //   fontSize: 16,
+  //   fontWeight: "600",
+  //   textAlign: "center",
+  // },
 });

@@ -3,18 +3,10 @@ import {
   Text,
   SafeAreaView,
   TouchableOpacity,
-  Button,
   Alert,
-  StyleSheet,
-  ScrollView,
-  Image,
-  RefreshControl,
   Modal,
-  TextInput,
-  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-
 import Header from "@/components/UI/Header";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ButtonSingleTextMainColor from "../../components/UI/ButtonSingleTextMainColor";
@@ -23,11 +15,11 @@ import {
   useGetVissitorSessionByCardverifiedQuery,
   useGetVissitorSessionByCredentialIdQuery,
 } from "@/redux/services/checkout.service";
-import { VisitorSessionType } from "@/Types/VisitorSession.Type";
 import ModalSearch from "@/components/UI/ModalSearch";
 import { CameraView } from "expo-camera";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import  Overlay  from "../check-in/OverLay";
 type CameraType = "QR" | "CREDENTIAL_CARD" | "OTHER_TYPE";
-
 const Checkout = () => {
   const router = useRouter();
   const [isModalVisible, setModalVisible] = useState(false);
@@ -207,15 +199,15 @@ const Checkout = () => {
     isQrCardSet.current = false;
     setQrCardVerified(null);
   };
+
+
   return (
-    <SafeAreaView className="flex-1 bg-backgroundApp">
+    <SafeAreaProvider className="flex-1 bg-backgroundApp">
       <View className="flex-1 bg-white">
         <Header name="Đặng Dương" />
-        <View className="flex-1 justify-center mt-[80px] items-center px-4">
+        <View className="flex-1 justify-center mt-20 items-center px-4">
           <TouchableOpacity
-            onPress={() => {
-              handlePress();
-            }}
+            onPress={handlePress}
             className="bg-[#34495e] rounded-2xl p-6 items-center justify-center w-64 h-64 shadow-lg"
           >
             <Ionicons name="qr-code-outline" size={100} color="white" />
@@ -223,18 +215,18 @@ const Checkout = () => {
               Quét mã QR
             </Text>
           </TouchableOpacity>
-          <View className="p-4 ">
+          <View className="p-4">
             <Text className="text-2xl font-bold text-[#34495e]">
               Tiến hành check out
             </Text>
           </View>
           {errorByCardVerifided && (
-            <View className="p-4 ">
+            <View className="p-4">
               <Text className="text-2xl font-bold text-[#34495e]">loi ne</Text>
             </View>
           )}
         </View>
-        <View className="items-center justify-center">
+        <View className="items-center justify-center mb-44">
           <ButtonSingleTextMainColor
             text="khách mất thẻ"
             onPress={handleOptionSelect}
@@ -247,17 +239,24 @@ const Checkout = () => {
           animationType="slide"
           transparent={true}
         >
-          <View style={styles.cameraContainer}>
+          <View className="flex-1 bg-black justify-center items-center">
             <CameraView
-              style={styles.cameraView}
+              className="flex-1 w-full h-full"
               onBarcodeScanned={handleBarCodeScanned}
             />
-            <View style={styles.scanningFrame} />
+            <Overlay />
+            {/* <View className="absolute top-1/3 left-1/4 w-2/4 h-1/3 border-2 border-yellow-500 rounded-lg shadow-lg" /> */}
+            <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
+              <Text className="text-green-700 text-sm font-semibold">
+                Camera Checkout
+              </Text>
+            </View>
+
             <TouchableOpacity
-              style={styles.closeButton}
+              className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
               onPress={() => setIsCameraActive(false)}
             >
-              <Text style={styles.closeButtonText}>Thoát Camera</Text>
+              <Text className="text-white">Thoát Camera</Text>
             </TouchableOpacity>
           </View>
         </Modal>
@@ -267,66 +266,15 @@ const Checkout = () => {
             onClose={() => setModalVisible(false)}
             value={creadentialCard === null ? "" : creadentialCard}
             setValue={setCredentialCard}
-            handleSearch={handleSeachVisitSessionBCredentialCard}
-            isLoading={isLoadingByCredentialCard}
-            error={errorByCredentialCard}
+            handleSearch={() => {}}
+            isLoading={false}
+            error={null}
             placeholder="Nhập CCCD"
           />
         </View>
       </View>
-    </SafeAreaView>
+    </SafeAreaProvider>
   );
 };
 
 export default Checkout;
-const styles = StyleSheet.create({
-  cameraContainer: {
-    width: "100%",
-    height: "80%", 
-    justifyContent: "center",  
-    alignItems: "center", 
-    marginVertical: 85,
-  },
-  cameraView: {
-    width: "100%",  
-    height: "80%",  
-    borderRadius: 10, 
-  },
-  scanningFrame: {
-    position: "absolute",
-    top: "30%",
-    left: "30%",
-    width: "40%",
-    height: "30%",
-    borderWidth: 2,
-    borderColor: "yellow",
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  scanButton: {
-    backgroundColor: "#4CAF50",
-    padding: 15,
-    borderRadius: 5,
-    marginVertical: 10,
-  },
-  closeButton: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    padding: 10,
-    borderRadius: 5,
-  },
-  closeButtonText: {
-    color: "white",
-  },
-});

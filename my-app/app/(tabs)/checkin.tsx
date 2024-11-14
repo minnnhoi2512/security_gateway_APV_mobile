@@ -15,6 +15,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import VideoPlayer from "../check-in/streaming";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 interface ImageData {
   ImageType: "Shoe";
@@ -89,7 +90,7 @@ const Checkin = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-backgroundApp">
+    <SafeAreaProvider>
       <View className="flex-1 bg-white">
         <StatusBar barStyle="dark-content" />
         <Header name="Đặng Dương" />
@@ -134,7 +135,7 @@ const Checkin = () => {
           )}
         </View>
       </View>
-    </SafeAreaView>
+    </SafeAreaProvider>
   );
 };
 

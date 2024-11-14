@@ -36,6 +36,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import VideoPlayer from "./streaming";
+import { Overlay } from "./OverLay";
 interface ImageData {
   ImageType: "Shoe";
   ImageURL: string | null;
@@ -406,7 +407,7 @@ const UserDetail = () => {
           </Modal>
 
           {/* QR Scanner */}
-          <View className="mb-6">
+          {/* <View className="mb-6">
 
 
             <View className="w-full aspect-[3/4] relative mb-4">
@@ -422,6 +423,26 @@ const UserDetail = () => {
                 <Text className="text-white">Thoát Camera</Text>
               </TouchableOpacity>
             </View>
+          </View> */}
+          <View className="flex-1 bg-black justify-center items-center">
+            <CameraView
+              className="flex-1 w-full h-full"
+              onBarcodeScanned={handleBarCodeScanned}
+            />
+            <Overlay />
+            {/* <View className="absolute top-1/3 left-1/4 w-2/4 h-1/3 border-2 border-yellow-500 rounded-lg shadow-lg" /> */}
+            <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
+              <Text className="text-green-700 text-sm font-semibold">
+                Camera Checkin
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
+              onPress={() => setIsCameraActive(false)}
+            >
+              <Text className="text-white">Thoát Camera</Text>
+            </TouchableOpacity>
           </View>
         </GestureHandlerRootView>
       </ScrollView>
@@ -437,7 +458,7 @@ const UserDetail = () => {
       {( isValidating) && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#ffffff" />
-          <Text style={styles.loadingText}>Đang xử lý...</Text>
+          <Text className="text-3xl" style={styles.loadingText}>Đang xử lý...</Text>
         </View>
       )}
     </SafeAreaView>
@@ -446,18 +467,7 @@ const UserDetail = () => {
 export default UserDetail;
 
 const styles = StyleSheet.create({
-  backButton: {
-    position: "absolute",
-    top: 60,
-    left: 20,
-    padding: 10,
-    backgroundColor: "black",
-    borderRadius: 5,
-  },
-  backButtonText: {
-    color: "white",
-    fontSize: 16,
-  },
+ 
   loadingContainer: {
     position: "absolute",
     top: 0,
@@ -472,6 +482,6 @@ const styles = StyleSheet.create({
   loadingText: {
     color: "#ffffff",
     marginTop: 10,
-    fontSize: 16,
+ 
   },
 });

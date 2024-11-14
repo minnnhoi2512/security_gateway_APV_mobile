@@ -22,10 +22,8 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);  
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const router = useRouter();
-
-
 
   useEffect(() => {
     const checkAuthToken = async () => {
@@ -39,30 +37,25 @@ export default function RootLayout() {
     checkAuthToken();
   }, []);
 
-
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
 
-
-
   useEffect(() => {
     if (isAuthenticated !== null && loaded) {
       if (isAuthenticated) {
-        router.replace("/PickGate");  
+        router.replace("/PickGate");
       } else {
-        router.replace("/login");   
+        router.replace("/login");
       }
     }
   }, [isAuthenticated, loaded]);
 
   if (!loaded || isAuthenticated === null) {
-    return null; 
+    return null;
   }
-
-
 
   if (!loaded) {
     return null;
@@ -70,20 +63,21 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <Stack>
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+ 
           <Stack.Screen
             name="check-in/scanQr"
-            options={{ headerShown: true }}
+            options={{ headerShown: false }}
           />
+ 
           <Stack.Screen
             name="home/VisitDetail"
             options={{ headerShown: false }}
           />
-           <Stack.Screen
+          <Stack.Screen
             name="createVisit/ScanQrCreate"
             options={{ headerShown: false }}
           />
@@ -95,7 +89,7 @@ export default function RootLayout() {
             name="check-in/UserDetail"
             options={{ headerShown: false }}
           />
-           <Stack.Screen
+          <Stack.Screen
             name="createVisit/FormCreate"
             options={{ headerShown: false }}
           />
@@ -103,19 +97,19 @@ export default function RootLayout() {
             name="createVisitor/CreateVisitor"
             options={{ headerShown: false }}
           />
-           <Stack.Screen
+          <Stack.Screen
             name="check-out/CheckOutCard"
             options={{ headerShown: false }}
           />
-           <Stack.Screen
+          <Stack.Screen
             name="profile/ProfileDetail"
             options={{ headerShown: false }}
           />
-           <Stack.Screen
+          <Stack.Screen
             name="check-in/CheckInOverall"
             options={{ headerShown: false }}
           />
-           {/* <Stack.Screen
+          {/* <Stack.Screen
             name="check-in/ResponseCheckIn"
             options={{ headerShown: false }}
           /> */}
