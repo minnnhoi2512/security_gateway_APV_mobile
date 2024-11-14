@@ -24,7 +24,15 @@ export default function RootLayout() {
   });
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const router = useRouter();
-
+  const [role, setRole] = useState<string | null>(null);
+  useEffect(() => {
+    const fetchRole = async () => {
+      const storedRole = await AsyncStorage.getItem("userRole");
+      setRole(storedRole);
+      console.log("ROLE FROM ASYNC STORAGE: ", storedRole);
+    };
+    fetchRole();
+  }, []);
   useEffect(() => {
     const checkAuthToken = async () => {
       try {
@@ -43,15 +51,29 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
+  // useEffect(() => {
+  //   if (isAuthenticated !== null && loaded) {
+  //     if (isAuthenticated) {
+  //       router.replace("/PickGate");
+  //     } else {
+  //       router.replace("/login");
+  //     }
+  //   }
+  // }, [isAuthenticated, loaded]);
+
   useEffect(() => {
-    if (isAuthenticated !== null && loaded) {
+    if (isAuthenticated !== null && loaded && role !== null) {
       if (isAuthenticated) {
-        router.replace("/PickGate");
+        if (role === "Security") {
+          router.replace("/PickGate");
+        } else if (role === "Staff") {
+          router.replace("/VisitForStaff");
+        }
       } else {
         router.replace("/login");
       }
     }
-  }, [isAuthenticated, loaded]);
+  }, [isAuthenticated, loaded, role]);
 
   if (!loaded || isAuthenticated === null) {
     return null;

@@ -195,7 +195,7 @@ const FormCreate = () => {
         {
           text: "OK",
           onPress: () => {
-            router.push("/(tabs)/");
+            router.push("/(tabs)");
           },
         },
       ]);
@@ -227,7 +227,7 @@ const FormCreate = () => {
 
   const handleBackPress = () => {
     router.push({
-      pathname: "/(tabs)/",
+      pathname: "/(tabs)",
     });
   };
 

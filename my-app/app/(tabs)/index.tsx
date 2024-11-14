@@ -14,9 +14,10 @@ import { useGetAllVisitsByCurrentDateQuery } from "@/redux/services/visit.servic
 import { FontAwesome5, Ionicons } from "@expo/vector-icons";
 import { Visit2 } from "@/redux/Types/visit.type";
 import VisitItem from "../home/VisitItem";
-import  StaffCard  from "../home/StaffCard";
+import StaffCard from "../home/StaffCard";
 import { useGetAllStaffQuery } from "@/redux/services/user.service";
 import { Staff } from "@/Types/user.type";
+import AddButton from "@/components/UI/AddButton";
 // import calendar_icon from '@/assets/images/calendar.png'
 
 export default function HomeScreen() {
@@ -85,7 +86,6 @@ export default function HomeScreen() {
               <Text className="text-lg font-bold text-gray-800">
                 Nhân viên trực
               </Text>
- 
             </View>
 
             <ScrollView
@@ -98,8 +98,6 @@ export default function HomeScreen() {
               ))}
             </ScrollView>
           </View>
-
-
 
           <View className="px-6">
             <View className="flex-row justify-between items-center mb-6">
@@ -134,8 +132,11 @@ export default function HomeScreen() {
                 </Text>
               </View>
             )}
+              
           </View>
+        
         </ScrollView>
+        <AddButton />
       </View>
     </SafeAreaProvider>
   );

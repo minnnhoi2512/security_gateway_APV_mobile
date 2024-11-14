@@ -72,7 +72,13 @@ const VisitItem: React.FC<VisitCardProps> = ({ visit }) => {
           </Text>
         </View>
         <View className="flex-row items-center mt-1">
-        <FontAwesome5 name="calendar-check" size={14} color="#B0B0B0" />
+          <FontAwesome5 name="user-check" size={14} color="#B0B0B0" />
+          <Text className="text-sm text-gray-400 ml-2">
+            Người tạo: {visit.createByname}
+          </Text>
+        </View>
+        <View className="flex-row items-center mt-1">
+          <FontAwesome5 name="calendar-check" size={14} color="#B0B0B0" />
           <Text className="text-sm text-gray-400 ml-2">
             Loại lịch: {visit.scheduleTypeName}
           </Text>

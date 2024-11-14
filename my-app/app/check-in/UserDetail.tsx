@@ -36,7 +36,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import VideoPlayer from "./streaming";
-import { Overlay } from "./OverLay";
+import  Overlay  from "./OverLay";
 interface ImageData {
   ImageType: "Shoe";
   ImageURL: string | null;
@@ -362,7 +362,7 @@ const UserDetail = () => {
       <ScrollView>
         <GestureHandlerRootView className="flex-1 p-5">
           {/* Photo Section */}
-          <Text className="text-xl font-bold text-gray-800 mb-4">Chụp ảnh</Text>
+          {/* <Text className="text-xl font-bold text-gray-800 mb-4">Chụp ảnh</Text> */}
           <View>
             {/* <Button
               title={isVisible ? "Hide Video Player" : "Show Video Player"}
@@ -424,7 +424,7 @@ const UserDetail = () => {
               </TouchableOpacity>
             </View>
           </View> */}
-          <View className="flex-1 bg-black justify-center items-center">
+          <View className="w-full aspect-[2/4] relative mb-4">
             <CameraView
               className="flex-1 w-full h-full"
               onBarcodeScanned={handleBarCodeScanned}
@@ -441,7 +441,7 @@ const UserDetail = () => {
               className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
               onPress={() => setIsCameraActive(false)}
             >
-              <Text className="text-white">Thoát Camera</Text>
+              {/* <Text className="text-white">Thoát Camera</Text> */}
             </TouchableOpacity>
           </View>
         </GestureHandlerRootView>
