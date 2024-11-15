@@ -3,7 +3,6 @@ import {
   View,
   Text,
   SafeAreaView,
-  TouchableOpacity,
   ScrollView,
   ActivityIndicator,
 } from "react-native";
@@ -27,10 +26,13 @@ export default function HomeScreen() {
     data: visits,
     isLoading,
     isError,
-  } = useGetAllVisitsByCurrentDateQuery({
-    pageSize: 10,
-    pageNumber: 1,
-  });
+    refetch,
+  } = useGetAllVisitsByCurrentDateQuery(
+    { pageSize: 10, pageNumber: 1 },
+    {
+      refetchOnMountOrArgChange: true,
+    }
+  );
 
   const {
     data: staffList,
@@ -38,6 +40,12 @@ export default function HomeScreen() {
     isError: isErrorStaff,
     isFetching: isFetchingStaff,
   } = useGetAllStaffQuery({});
+
+  useEffect(() => {
+    if (visits && visits.length === 0) {
+      refetch();
+    }
+  }, [visits, refetch]);
 
   // const {
   //   data: visits,
