@@ -166,6 +166,12 @@ const scanQr = () => {
   //   }, [])
   // );
   useEffect(() => {
+    resetState();
+    redirected.current = false;
+
+    return () => {};
+  }, []);
+  useEffect(() => {
     if (scannedData) {
       if (isCredentialCard(scannedData)) {
         const parsedData = parseQRData(scannedData);

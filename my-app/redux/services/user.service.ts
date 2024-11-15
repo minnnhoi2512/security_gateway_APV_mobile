@@ -26,6 +26,9 @@ export const userApi = createApi({
     getUserProfile: builder.query<UserProfile, { userId: string }>({
       query: ({ userId }) => `User/${userId}`,
     }),
+    getStaffByPhone: builder.query({
+      query: (phonenumber: string) => `User/Staff/${phonenumber}`
+    }),
     updateUserProfile: builder.mutation({
       query: ({ userId, data }: { userId: string; data: UpdateUserProfile }) => ({
         url: `User/${userId}`,
@@ -37,4 +40,4 @@ export const userApi = createApi({
   })
 });
 
-export const { useGetAllStaffQuery, useGetUserProfileQuery , useUpdateUserProfileMutation } = userApi;
+export const { useGetAllStaffQuery, useGetUserProfileQuery , useUpdateUserProfileMutation, useGetStaffByPhoneQuery } = userApi;

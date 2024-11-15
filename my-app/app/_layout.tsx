@@ -136,6 +136,8 @@ export default function RootLayout() {
             options={{ headerShown: false }}
           /> */}
           <Stack.Screen name="PickGate" options={{ headerShown: false }} />
+          <Stack.Screen name="createVisitForStaff/createVisitDailyForStaffScreen1" options={{ headerShown: false }} />
+          <Stack.Screen name="createVisitForStaff/createVisitDailyLayout" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>
       </ThemeProvider>

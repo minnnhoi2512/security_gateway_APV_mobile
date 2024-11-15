@@ -8,12 +8,16 @@ import {
   ScrollView,
   Alert,
   Pressable,
+  Button,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useGetAllStaffQuery } from "@/redux/services/user.service";
+import {
+  useGetAllStaffQuery,
+  useGetStaffByPhoneQuery,
+} from "@/redux/services/user.service";
 import { useCreateVisitMutation } from "@/redux/services/visit.service";
 import { Staff } from "@/Types/user.type";
 
@@ -49,6 +53,8 @@ const FormCreate = () => {
     const seconds = String(now.getSeconds()).padStart(2, "0");
     return `${hours}:${minutes}:${seconds}`;
   };
+  const [searchPhoneNumber, setSearchPhoneNumber] = useState("");
+  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
 
   const {
     data: staffList,
@@ -57,6 +63,14 @@ const FormCreate = () => {
     isFetching: isFetchingStaff,
   } = useGetAllStaffQuery({});
   // console.log("List Staff: ", staffList);
+
+  const {
+    data: staffByPhone,
+    isLoading: isLoadingStaffByPhone,
+    isError: isErrorStaffByPhone,
+  } = useGetStaffByPhoneQuery(searchPhoneNumber, {
+    skip: searchPhoneNumber.length === 0,
+  });
 
   const [visitData, setVisitData] = useState({
     visitName: "",
@@ -83,6 +97,15 @@ const FormCreate = () => {
       return newErrors;
     });
   };
+
+  useEffect(() => {
+    if (staffByPhone && staffByPhone.userId) {
+      setVisitData((prevState) => ({
+        ...prevState,
+        responsiblePersonId: staffByPhone.userId,
+      }));
+    }
+  }, [staffByPhone]);
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -131,13 +154,28 @@ const FormCreate = () => {
     }));
   };
 
-  const handleStaffSelect = (itemValue: number) => {
-    setSelectedStaffId(itemValue);
-    setVisitData((prevState) => ({
-      ...prevState,
-      responsiblePersonId: itemValue,
-    }));
-  };
+  // const handleStaffSelect = (itemValue: number) => {
+  //   setSelectedStaffId(itemValue);
+  //   setVisitData((prevState) => ({
+  //     ...prevState,
+  //     responsiblePersonId: itemValue,
+  //   }));
+  // };
+
+  // useEffect(() => {
+  //   if (staffByPhone && staffByPhone.length > 0) {
+  //     const firstStaff = staffByPhone[0];
+  //     setSelectedStaff(firstStaff);
+  //     handleStaffSelect(firstStaff.userId);
+  //   }
+  // }, [staffByPhone]);
+
+  // const handleStaffSelect = (userId: number) => {
+  //   setVisitData((prevState) => ({
+  //     ...prevState,
+  //     responsiblePersonId: userId,
+  //   }));
+  // };
 
   const handleTimeChange = (
     event: any,
@@ -199,7 +237,7 @@ const FormCreate = () => {
           },
         },
       ]);
-       console.log("Visit created:", result);
+      console.log("Visit created:", result);
     } catch (error: any) {
       // if (error?.status === 400) {
       //   showErrorAlert(error.data.errors);
@@ -211,7 +249,7 @@ const FormCreate = () => {
       //   );
       // }
       const errorMessage =
-          error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
+        error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
       // console.error("Check-in error:", error);
       // Alert.alert("Đã có lỗi xảy ra", errorMessage, [
       //   {
@@ -241,7 +279,8 @@ const FormCreate = () => {
     return validationErrors[field];
   };
 
-  // console.log("Data create visit: ", visitData);
+  console.log("Data create visit: ", visitData);
+  // console.log("Data staff lay dc: ", selectedStaff);
 
   return (
     <ScrollView className="flex-1 bg-gradient-to-b from-blue-50 to-white">
@@ -294,6 +333,45 @@ const FormCreate = () => {
               </Text>
             )}
           </View>
+          <View className="mb-4">
+            <Text className="text-sm font-semibold text-white mb-2">
+              Chọn nhân viên theo số điện thoại
+            </Text>
+            <TextInput
+              className={`bg-gray-50 border ${
+                hasError("searchPhoneNumber")
+                  ? "border-red-500"
+                  : "border-gray-200"
+              } rounded-lg px-4 py-3 text-backgroundApp`}
+              value={searchPhoneNumber}
+              onChangeText={(text) => {
+                setSearchPhoneNumber(text);
+                clearValidationError("searchPhoneNumber");
+              }}
+              placeholder="Nhập số điện thoại"
+            />
+            {hasError("searchPhoneNumber") && (
+              <Text className="text-red-500 text-sm mt-1">
+                {getErrorMessage("searchPhoneNumber")}
+              </Text>
+            )}
+          </View>
+ 
+          {isLoadingStaffByPhone && (
+            <Text className="text-white mt-2">Đang tra cứu...</Text>
+          )}
+          {isErrorStaffByPhone && (
+            <Text className="text-red-500">Không tìm thấy nhân viên</Text>
+          )}
+          {staffByPhone && (
+            <View className="bg-gray-100 rounded-lg p-4 mt-4 mb-4">
+              <Text className="text-backgroundApp">
+                Nhân viên: {staffByPhone.fullName}
+              </Text>
+              {/* <Text className="text-backgroundApp">User ID: {staffByPhone.userId}</Text> */}
+            </View>
+          )}
+
           <View className="mb-4">
             <Text className="text-sm font-semibold text-white mb-2">
               Thời gian bắt đầu
@@ -362,7 +440,7 @@ const FormCreate = () => {
             )}
           </View>
 
-          <View className="mb-4">
+          {/* <View className="mb-4">
             <Text className="text-sm font-semibold text-white mb-2">
               Chọn nhân viên phụ trách
             </Text>
@@ -398,7 +476,7 @@ const FormCreate = () => {
                 {getErrorMessage("responsiblePersonId")}
               </Text>
             )}
-          </View>
+          </View> */}
 
           <TouchableOpacity
             className="bg-buttonColors rounded-lg py-4 px-6 shadow-md"
