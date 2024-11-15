@@ -16,6 +16,11 @@ import {
   import { useCreateVisitorMutation } from "@/redux/services/visitor.service";
   import { Visitor } from "@/Types/visitor.type";
   import { MaterialIcons } from "@expo/vector-icons";
+import { useDetectIdentityCardMutation } from "@/redux/services/pythonApi.service";
+import { useDispatch, useSelector } from "react-redux";
+import VisitStaffCreate from "@/Types/VisitStaffCreate.Type";
+import { setVisitStaffCreate } from "@/redux/slices/visitStaffCreate.slice";
+import VisitDetailType from "@/Types/VisitDetailCreate.Type";
   interface ScanData {
     id: string;
     nationalId: string;
@@ -30,8 +35,11 @@ import {
     const [permission, requestPermission] = useCameraPermissions();
     const [isPermissionGranted, setIsPermissionGranted] = useState(false);
     const router = useRouter();
+    const dispatch = useDispatch();
     const [isCameraActive, setIsCameraActive] = useState(false);
     const [createVisitor, { isLoading }] = useCreateVisitorMutation();
+    const [detectCard] = useDetectIdentityCardMutation();
+    var visitCreateData = useSelector<any>(s => s.visitStaff.data) as VisitStaffCreate
     let credentialCardId: string | null = null;
     const parseQRData = (qrData: string): ScanData => {
       const [id, nationalId, name, dateOfBirth, gender, address, issueDate] =
@@ -84,6 +92,13 @@ import {
           };
           handleInputChange("VisitorCredentialImageFromRequest", file);
           setPhotoUri(uri);
+          const formData = new FormData();
+          formData.append("file", file as any)
+          const res = await detectCard(formData).unwrap()
+          if(res){
+            handleInputChange("VisitorName", res.name)
+            handleInputChange("CredentialsCard", res.id)
+          }
         }
       } catch (error) {
         console.error("Error taking photo:", JSON.stringify(error, null, 2));
@@ -136,13 +151,27 @@ import {
         );
       }
       try {
-        const response = await createVisitor(formData).unwrap();
+        const response = await createVisitor(formData).unwrap().then((res) => {
+          var oldItem = [...visitCreateData.visitDetail]
+          var newItem : VisitDetailType = {
+            expectedEndHour : oldItem[0].expectedEndHour,
+            expectedStartHour : oldItem[0].expectedStartHour,
+            visitorId : res.visitorId,
+            visitorCompany : visitor.CompanyName,
+            visitorName: visitor.VisitorName
+          }
+          if(!oldItem.find(s => s.visitorId === res.visitorId)){
+            oldItem.push(newItem)
+          }
+          visitCreateData = {
+            ...visitCreateData,
+            visitDetail : oldItem
+          }
+          dispatch(setVisitStaffCreate(visitCreateData))
+        });
         Alert.alert("Thành công", "Tạo khách vãng lai thành công", [
           {
             text: "OK",
-            onPress: () => {
-              router.push("/(tabs)/createCustomer");
-            },
           },
         ]);
       } catch (error: any) {
@@ -166,18 +195,9 @@ import {
     const handleGoBack = () => {
       router.back();
     };
-  console.log("Create visitor data: ", visitor);
+ console.log("Create visitor data: ", visitor);
     return (
       <ScrollView className="flex-1 bg-gradient-to-b from-blue-50 to-white">
-        {/* <View>
-          <Pressable
-            onPress={handleGoBack}
-            className="flex flex-row items-center space-x-2 px-4 py-2 bg-gray-100 rounded-lg active:bg-gray-200"
-          >
-            <MaterialIcons name="arrow-back" size={24} color="#4B5563" />
-            <Text className="text-gray-600 font-medium">Quay về</Text>
-          </Pressable>
-        </View> */}
         <View className="p-6">
           <Text className="text-3xl font-bold mb-6 text-backgroundApp text-center">
             Tạo khách đến thăm
@@ -186,7 +206,7 @@ import {
             <View className="mb-4">
               <Text className="text-sm font-semibold text-white mb-2">CCCD</Text>
               <View className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-white">
-                <Text className="text-backgroundApp">{userData?.id || ""}</Text>
+                <Text className="text-backgroundApp">{visitor?.CredentialsCard || ""}</Text>
               </View>
             </View>
             <View className="mb-4">
@@ -194,7 +214,7 @@ import {
                 Tên khách hàng
               </Text>
               <View className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-white">
-                <Text className="text-backgroundApp">{userData?.name || ""}</Text>
+                <Text className="text-backgroundApp">{visitor?.VisitorName || ""}</Text>
               </View>
             </View>
             <View className="mb-4">

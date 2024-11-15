@@ -1,7 +1,9 @@
 import { View, Text, Image, TextInput } from 'react-native'
 import React from 'react'
+import { useGetVisitorByIdQuery } from '@/redux/services/visitor.service';
 
-const VisitorItem = () => {
+const VisitorItem: React.FC<{visitor : any}> = ({visitor}) => {
+    console.log(visitor)
     return (
         <View className='w-full h-[170px] border-2 border-slate-200 rounded-lg mb-4'>
             <View className='h-[50%]' style={{ flexDirection: "row" }}>
@@ -13,8 +15,8 @@ const VisitorItem = () => {
                 </View>
                 <View className='h-full w-[50%]'>
                     <View className='mt-4 ml-2'>
-                        <Text className='font-bold text-l'>Trịnh Quốc Phú</Text>
-                        <Text className='text-gray-400'>Công Ty FPT</Text>
+                        <Text className='font-bold text-l'>{visitor.visitorName}</Text>
+                        <Text className='text-gray-400'>{visitor.visitorCompany}</Text>
                     </View>
                 </View>
                 <View className='w-[25%] items-center justify-center'>
@@ -32,7 +34,7 @@ const VisitorItem = () => {
                         <View className='border-2 border-green-600 rounded-full px-1'>
                             <Text className='text-lg text-green-800'>Giờ Vào</Text>
                         </View>
-                        <TextInput className='text-lg text-green-900' value='7:00' />
+                        <TextInput className='text-lg text-green-900' value={visitor.expectedStartHour} />
                     </View>
                     
                 </View>
@@ -42,7 +44,7 @@ const VisitorItem = () => {
                         <View className= 'border-2 border-red-600 rounded-full px-1'>
                             <Text className='text-lg text-red-700'>Giờ Ra</Text>
                         </View>
-                        <TextInput className='text-lg' value='19:00' />
+                        <TextInput className='text-lg' value={visitor.expectedEndHour} />
                     </View>
 
                 </View>

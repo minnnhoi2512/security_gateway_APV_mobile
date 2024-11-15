@@ -1,15 +1,20 @@
 import { View, Text, SafeAreaView, ScrollView, Pressable, TextInput, TouchableOpacity } from 'react-native'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { MaterialIcons } from '@expo/vector-icons'
 import DateTimePicker from "@react-native-community/datetimepicker";
+import VisitStaffCreate from '@/Types/VisitStaffCreate.Type';
+import { setVisitStaffCreate } from '@/redux/slices/visitStaffCreate.slice';
+import { useDispatch, useSelector } from 'react-redux';
 
 const CreateVisitDailyForStaffScreen1 = () => {
     const [validationErrors, setValidationErrors] = useState<{
         [key: string]: string;
     }>({});
+    const dispatch = useDispatch();
     const hasError = (field: string) => {
         return validationErrors[field] !== undefined;
     };
+    
     const [showStartPicker, setShowStartPicker] = useState(false);
     const [showEndPicker, setShowEndPicker] = useState(false);
     const getCurrentTime = () => {
@@ -19,28 +24,26 @@ const CreateVisitDailyForStaffScreen1 = () => {
         const seconds = String(now.getSeconds()).padStart(2, "0");
         return `${hours}:${minutes}:${seconds}`;
     };
-    const [visitData, setVisitData] = useState({
-        visitName: "",
-        visitQuantity: 1,
-        expectedStartTime: new Date().toISOString().split("T")[0],
-        expectedEndTime: new Date().toISOString().split("T")[0],
-        createById: 0,
-        description: "",
-        responsiblePersonId: 0,
-        visitDetail: [
-            {
-                expectedStartHour: getCurrentTime(),
-                expectedEndHour: "12:00:00",
-                visitorId: 0,
-            },
-        ],
-    });
+    const visitCreateData = useSelector<any>(s => s.visitStaff.data) as VisitStaffCreate
+    const [visitData, setVisitData] = useState<VisitStaffCreate>(useSelector<any>(s => s.visitStaff.data) as VisitStaffCreate);
+ 
     const handleInputChange = (field: string, value: any) => {
-        setVisitData((prevState) => ({
-            ...prevState,
-            [field]: value,
-        }));
+        if(field !== "visitQuantity"){
+            setVisitData((prevState) => ({
+                ...prevState,
+                [field]: value,
+            }));      
+        }
+        else{
+            setVisitData((prevState) => ({
+                ...prevState,
+                [field]: Number(value),
+            }));  
+        }
     };
+    useEffect(() => {
+        dispatch(setVisitStaffCreate(visitData))
+    },[visitData])
     const handleDetailChange = (field: string, value: any) => {
         setVisitData((prevState) => ({
           ...prevState,
@@ -81,7 +84,7 @@ const CreateVisitDailyForStaffScreen1 = () => {
                             <TextInput
                                 className={`bg-gray-50 border ${hasError("visitName") ? "border-red-500" : "border-gray-200"
                                     } rounded-lg px-4 py-4 text-black`}
-                                // value={visitData.visitName}
+                                value={visitCreateData.visitName}
                                 onChangeText={(text) => handleInputChange("visitName", text)}
                                 placeholderTextColor="grey"
                                 placeholder="Nhập tiêu đề chuyến thăm"
@@ -113,14 +116,15 @@ const CreateVisitDailyForStaffScreen1 = () => {
                         </View>
                         <View className="mb-4">
                             <Text className="text-sm font-semibold text-black mb-2">
-                                Tiêu đề
+                                Số lượng
                             </Text>
                             <TextInput
                                 className={`bg-gray-50 border ${hasError("visitName") ? "border-red-500" : "border-gray-200"
                                     } rounded-lg px-4 py-4 text-black`}
-                                // value={visitData.visitName}
-                                onChangeText={(text) => handleInputChange("visitName", text)}
+                                value={visitData.visitQuantity.toString()}
+                                onChangeText={(text) => handleInputChange("visitQuantity", text)}
                                 placeholderTextColor="grey"
+
                                 placeholder="Nhập tiêu đề chuyến thăm"
                                 
                             />

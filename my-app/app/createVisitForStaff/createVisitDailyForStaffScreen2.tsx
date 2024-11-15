@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Button, TextInput } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Button, TextInput, Alert } from 'react-native'
 import React, { useState } from 'react'
 import { useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -6,6 +6,8 @@ import CreateVisitorForStaff from './createVisitorForStaff'
 import VisitorItem from '@/components/UI/VisitorItem'
 import { useGetVisitorByCreadentialCardQuery } from '@/redux/services/visitor.service'
 import VistorInforModal from '@/components/UI/VistorInforModal'
+import { useSelector } from 'react-redux'
+import VisitStaffCreate from '@/Types/VisitStaffCreate.Type'
 
 
 const CreateVisitDailyForStaffScreen2 = () => {
@@ -21,16 +23,23 @@ const CreateVisitDailyForStaffScreen2 = () => {
       } = useGetVisitorByCreadentialCardQuery(credentialCardId || "", {
         skip: !credentialCardId, refetchOnMountOrArgChange: 2, refetchOnFocus: true
       });
-
+    const visitCreateData = useSelector<any>(s => s.visitStaff.data) as VisitStaffCreate
     const openAddVisitorHandler = (type : string) => {
-        if (!modalStatus) {
-            SetModalStatus(true)
-        }
         if(type === "ADD"){
             SetAction("ADD")
+            if (!modalStatus) {
+                SetModalStatus(true)
+            }
         }
         if(type === "FIND"){
-            SetAction("FIND")
+            if(visitData){
+                SetAction("FIND")
+                if (!modalStatus) {
+                    SetModalStatus(true)
+                }
+            }else{
+                Alert.alert("Not found Visitor")
+            }
         }
     }
     const closeAddVisitorHandler = () => {
@@ -75,11 +84,10 @@ const CreateVisitDailyForStaffScreen2 = () => {
                     action === "ADD"?(<>
                         <CreateVisitorForStaff/>
                     </>):(<></>)
-
                 }
                                 {
                     action === "FIND"?(<>
-                        {/* <VistorInforModal /> */}
+                        <VistorInforModal visitor={visitData} />
                     </>):(<></>)
 
                 }
@@ -88,11 +96,20 @@ const CreateVisitDailyForStaffScreen2 = () => {
             <ScrollView
                 className='mt-5 h-[95%]'
             >
-                <VisitorItem/>
-                <VisitorItem/>
-                <VisitorItem/>
-                <VisitorItem/>
-                <VisitorItem/>
+                {
+                    visitCreateData.visitDetail.map((item, index) =>
+                    {
+                        if(item.visitorId != 0)
+                        {
+                            return (
+                                <>
+                                    <VisitorItem visitor={item}/>
+                                </>
+                            )
+                        }
+                    }
+                    )
+                }
             </ScrollView>
         </View>
     )
