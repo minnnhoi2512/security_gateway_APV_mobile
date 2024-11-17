@@ -9,9 +9,9 @@ import { FontAwesome5 } from "@expo/vector-icons";
       <View className="relative">
         <Image
           source={{ uri: staff.image }}
-          className="w-20 h-16 rounded-2xl"
+          className="w-18 h-14 rounded-2xl"
         />
-        <Text className="text-sm font-medium text-gray-700 mb-2 text-center">
+        <Text className="text-sm font-medium text-gray-700 mb-2 mt-1 text-center">
           {staff.fullName}
         </Text>
       

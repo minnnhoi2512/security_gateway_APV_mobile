@@ -66,7 +66,9 @@ const styles = StyleSheet.create({
     right : 20,
     borderRadius : 50,
     justifyContent : "center",
-    alignItems : "center"
+    alignItems : "center",
+    marginBottom: 100
+
   }
 })
 export default visitForStaff

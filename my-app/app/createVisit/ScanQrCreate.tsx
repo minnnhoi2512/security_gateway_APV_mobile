@@ -58,15 +58,15 @@
       processingRef.current = false;
     };
 
-    // useFocusEffect(
-    //   React.useCallback(() => {
-    //     resetStates();
-    //     redirected.current = false;
-    //     return () => {
+    useFocusEffect(
+      React.useCallback(() => {
+        resetStates();
+        redirected.current = false;
+        return () => {
         
-    //     };
-    //   }, [])
-    // );
+        };
+      }, [])
+    );
 
 
 

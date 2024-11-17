@@ -61,7 +61,7 @@ const UserDetail = () => {
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
   const [resultValid, setResultValid] = useState();
   const [isVisible, setIsVisible] = useState(false);
-  console.log("GATE ID", selectedGateId);
+  // console.log("GATE ID", selectedGateId);
   const handleToggleView = () => {
     setIsVisible((prev) => !prev);
   };
@@ -131,6 +131,10 @@ const UserDetail = () => {
         const storedUserId = await AsyncStorage.getItem("userId");
         if (storedUserId) {
           setUserId(storedUserId);
+          setCheckInData((prevState) => ({
+            ...prevState,
+            SecurityInId: Number(storedUserId) || 0,
+          }));
           console.log("User ID from AsyncStorage:", storedUserId);
         } else {
           console.log("No userId found in AsyncStorage");
@@ -143,14 +147,14 @@ const UserDetail = () => {
     fetchUserId();
   }, []);
 
-  useEffect(() => {
-    if (userId) {
-      setCheckInData((prevState) => ({
-        ...prevState,
-        SecurityInId: Number(userId) || 0,
-      }));
-    }
-  }, [userId, selectedGateId]);
+  // useEffect(() => {
+  //   if (userId) {
+  //     setCheckInData((prevState) => ({
+  //       ...prevState,
+  //       SecurityInId: Number(userId) || 0,
+  //     }));
+  //   }
+  // }, [userId, selectedGateId]);
 
   useEffect(() => {
     if (visitDetail && Array.isArray(visitDetail) && visitDetail.length > 0) {
@@ -321,7 +325,7 @@ const UserDetail = () => {
     validateAndNavigate();
   }, [checkInData, hasNavigated]);
 
-  console.log("DATA CI: ", checkInData);
+  // console.log("DATA CI: ", checkInData);
   // console.log("DATA DTV: ", visitDetail);
 
   //PERMISSION VIEW
@@ -345,7 +349,7 @@ const UserDetail = () => {
   }
 
 
-  console.log("Valid check data: ", validCheckInData);
+  // console.log("Valid check data: ", validCheckInData);
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">

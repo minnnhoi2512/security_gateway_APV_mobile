@@ -20,6 +20,7 @@ import {
 } from "@/redux/services/user.service";
 import { useCreateVisitMutation } from "@/redux/services/visit.service";
 import { Staff } from "@/Types/user.type";
+import { useToast } from "@/components/Toast/ToastContext";
 
 interface ErrorResponse {
   status: number;
@@ -55,7 +56,7 @@ const FormCreate = () => {
   };
   const [searchPhoneNumber, setSearchPhoneNumber] = useState("");
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
-
+  const { showToast } = useToast();
   const {
     data: staffList,
     isLoading: isLoadingStaff,
@@ -229,6 +230,7 @@ const FormCreate = () => {
       };
       // console.log("Submit Data:", submitData);
       const result = await createVisit(submitData).unwrap();
+      showToast("Bạn vừa tạo lịch ghé thăm thành công!", "success");
       Alert.alert("Thành công", "Tạo lịch ghé thăm thành công!", [
         {
           text: "OK",
@@ -259,6 +261,7 @@ const FormCreate = () => {
       //     },
       //   },
       // ]);
+      showToast("Đã có lỗi xảy ra", "error");
       Alert.alert("Đã có lỗi xảy ra", errorMessage);
     }
   };

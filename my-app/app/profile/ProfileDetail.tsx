@@ -72,7 +72,7 @@ const ProfileDetail = () => {
       phoneNumber: updatedData.phoneNumber || profile?.phoneNumber || "",
       image: profile?.image || "",
       roleID: 5,
-      departmentId: profile?.department || null,
+      departmentId: profile?.department || 3,
     };
 
     try {

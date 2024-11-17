@@ -21,6 +21,7 @@ import {
 import { uploadToFirebase } from "@/firebase-config";
 import { EvilIcons, MaterialIcons } from "@expo/vector-icons";
 import { ActivityIndicator } from "react-native";
+import { useToast } from "@/components/Toast/ToastContext";
 
 interface Visitor {
   visitorId: number;
@@ -75,7 +76,7 @@ const CheckInOverall = () => {
   const [validCheckIn, { isLoading: isValidCheckingIn }] =
     useValidCheckInMutation();
   const router = useRouter();
-
+  const { showToast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
@@ -114,6 +115,10 @@ const CheckInOverall = () => {
         const storedUserId = await AsyncStorage.getItem("userId");
         if (storedUserId) {
           setUserId(storedUserId);
+          setCheckInData((prevState) => ({
+            ...prevState,
+            SecurityInId: Number(storedUserId) || 0,
+          }));
         }
       } catch (error) {
         console.error("Error fetching userId from AsyncStorage:", error);
@@ -123,14 +128,14 @@ const CheckInOverall = () => {
     fetchUserId();
   }, []);
 
-  useEffect(() => {
-    if (userId) {
-      setCheckInData((prevState) => ({
-        ...prevState,
-        SecurityInId: Number(userId) || 0,
-      }));
-    }
-  }, [userId, selectedGateId]);
+  // useEffect(() => {
+  //   if (userId) {
+  //     setCheckInData((prevState) => ({
+  //       ...prevState,
+  //       SecurityInId: Number(userId) || 0,
+  //     }));
+  //   }
+  // }, [userId, selectedGateId]);
 
   useEffect(() => {
     const performCheckIn = async () => {
@@ -176,6 +181,7 @@ const CheckInOverall = () => {
         setResultData(response);
         setCheckInStatus("success");
         setCheckInMessage("Bạn vừa check in thành công!");
+        showToast("Bạn vừa check in thành công!", "success");
       } catch (error: any) {
         setCheckInStatus("error");
         // console.log("ER: ", error);
@@ -183,6 +189,7 @@ const CheckInOverall = () => {
         const errorMessage =
           error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
         // Alert.alert("Đã có lỗi xảy ra", errorMessage);
+        showToast("Đã có lỗi xảy ra", "error");
         Alert.alert("Đã có lỗi xảy ra", errorMessage, [
           {
             text: "OK",
@@ -316,7 +323,7 @@ const CheckInOverall = () => {
       </View>
       <View className="flex-1 mt-[5%]">
         <View className="p-4">
-          <View className="align-middle justify-center">
+          {/* <View className="align-middle justify-center">
             {checkInStatus === "success" && (
               <>
                 <Text className="text-green-500 text-3xl">
@@ -324,7 +331,7 @@ const CheckInOverall = () => {
                 </Text>
               </>
             )}
-          </View>
+          </View> */}
           <Section title="Thông tin cơ bản">
             <View className="flex-row items-center mb-4">
               <Text className="text-gray-600 text-lg">

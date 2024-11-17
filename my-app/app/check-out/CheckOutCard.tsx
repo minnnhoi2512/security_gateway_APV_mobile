@@ -28,6 +28,7 @@ import { EvilIcons, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import Header from "@/components/UI/Header";
 import { RootState } from "@/redux/store/store";
 import { useGetVisitorByIdQuery } from "@/redux/services/visitor.service";
+import { useToast } from "@/components/Toast/ToastContext";
 
 const CheckoutCard = () => {
   const { data, qrCardVerifiedProps } = useLocalSearchParams();
@@ -69,6 +70,7 @@ const CheckoutCard = () => {
     securityOutId: 0,
     gateOutId: Number(selectedGateId) || 0,
   });
+  const { showToast } = useToast();
 
   const formatDate = (dateString: any) => {
     const date = new Date(dateString);
@@ -161,10 +163,12 @@ const CheckoutCard = () => {
           checkoutData: checkOutData,
         }).unwrap();
       }
-      Alert.alert("Thành công", "Checkout thành công!");
+      // Alert.alert("Thành công", "Checkout thành công!");
+      showToast("Bạn vừa check out thành công!", "success");
       router.push("/(tabs)/checkout");
     } catch (error) {
-      console.error("Checkout error:", error);
+      // console.error("Checkout error:", error);
+      showToast("Đã có lỗi xảy ra", "error");
       Alert.alert("Lỗi", "Checkout thất bại.");
     }
   };

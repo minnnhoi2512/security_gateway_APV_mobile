@@ -38,7 +38,13 @@ const VisitItem: React.FC<VisitCardProps> = ({ visit }) => {
     );
   }
 
-  // console.log("visit detail: ", visitDetail);
+  const formatTime = (time: string) => {
+    return new Date(time).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
 
   return (
     <TouchableOpacity
@@ -56,33 +62,42 @@ const VisitItem: React.FC<VisitCardProps> = ({ visit }) => {
       }}
       className="flex-row bg-white p-4 rounded-2xl shadow-md mb-4"
     >
-      {/* <View className="justify-center items-center mr-4">
-        <Text className=" font-bold text-[#3D5A99]">{visit.createByname}</Text>
-       
-      </View> */}
+      <View className="w-20 mr-4 items-center justify-center">
+        <Text className="text-lg font-bold text-gray-700">
+         07:00 
+        </Text>
+        <Text className="text-sm text-gray-700">
+        -
+        </Text>
+        <Text className="text-lg font-bold text-gray-700">
+          17:00
+        </Text>
+        {/* <Text className="text-sm text-gray-400 mt-1">AM</Text> */}
+      </View>
 
-      <View className="flex-1">
-        <Text className="text-lg font-bold text-gray-800">
+      <View className="flex-1 border-l border-gray-200 pl-4">
+        <Text className="text-lg font-bold text-[#1a5276]">
           {visit.visitName}
         </Text>
         <View className="flex-row items-center mt-1">
-          <FontAwesome5 name="user-friends" size={14} color="#B0B0B0" />
-          <Text className="text-sm text-gray-400 ml-2">
-            Số người tham gia: {visit.visitQuantity}
-          </Text>
-        </View>
-        <View className="flex-row items-center mt-1">
           <FontAwesome5 name="user-check" size={14} color="#B0B0B0" />
           <Text className="text-sm text-gray-400 ml-2">
-            Người tạo: {visit.createByname}
+            {visit.createByname}
           </Text>
         </View>
-        <View className="flex-row items-center mt-1">
-          <FontAwesome5 name="calendar-check" size={14} color="#B0B0B0" />
-          <Text className="text-sm text-gray-400 ml-2">
-            Loại lịch: {visit.scheduleTypeName}
+        <View className="flex-row items-baseline mt-2">
+          <View className="flex-row items-center">
+            <FontAwesome5 name="user-friends" size={14} color="#B0B0B0" />
+            <Text className="text-sm text-gray-400 ml-2">
+              {visit.visitQuantity} người
+            </Text>
+          </View>
+          <Text className="text-sm text-gray-400 mx-2">•</Text>
+          <Text className="text-sm text-gray-400">
+            {visit.scheduleTypeName}
           </Text>
         </View>
+        
       </View>
     </TouchableOpacity>
   );

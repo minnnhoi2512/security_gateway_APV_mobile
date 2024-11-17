@@ -25,6 +25,7 @@ import { uploadToFirebase } from "@/firebase-config";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useToast } from "@/components/Toast/ToastContext";
 interface ScanData {
   id: string;
   nationalId: string;
@@ -55,6 +56,7 @@ const scanQr = () => {
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
+  const { showToast } = useToast();
   const {
     data: visitOfUser,
     isLoading: isLoadingVisit,
@@ -89,6 +91,10 @@ const scanQr = () => {
         const storedUserId = await AsyncStorage.getItem("userId");
         if (storedUserId) {
           setUserId(storedUserId);
+          setCheckInData((prevState) => ({
+            ...prevState,
+            SecurityInId: Number(storedUserId) || 0,
+          }));
         }
       } catch (error) {
         console.error("Error fetching userId from AsyncStorage:", error);
@@ -96,14 +102,14 @@ const scanQr = () => {
     };
     fetchUserId();
   }, []);
-  useEffect(() => {
-    if (userId) {
-      setCheckInData((prevState) => ({
-        ...prevState,
-        SecurityInId: Number(userId) || 0,
-      }));
-    }
-  }, [userId, selectedGateId]);
+  // useEffect(() => {
+  //   if (userId) {
+  //     setCheckInData((prevState) => ({
+  //       ...prevState,
+  //       SecurityInId: Number(userId) || 0,
+  //     }));
+  //   }
+  // }, [userId, selectedGateId]);
   const [autoCapture, setAutoCapture] = useState(false);
   const handleImageCapture = async (imageData: ImageData) => {
     try {
@@ -158,19 +164,19 @@ const scanQr = () => {
     setIsProcessing(false);
     qrLock.current = false;
   };
-  // useFocusEffect(
-  //   React.useCallback(() => {
-  //     resetState();
-  //     redirected.current = false;
-  //     return () => {};
-  //   }, [])
-  // );
-  useEffect(() => {
-    resetState();
-    redirected.current = false;
+  useFocusEffect(
+    React.useCallback(() => {
+      resetState();
+      redirected.current = false;
+      return () => {};
+    }, [])
+  );
+  // useEffect(() => {
+  //   resetState();
+  //   redirected.current = false;
 
-    return () => {};
-  }, []);
+  //   return () => {};
+  // }, []);
   useEffect(() => {
     if (scannedData) {
       if (isCredentialCard(scannedData)) {
@@ -255,13 +261,15 @@ const scanQr = () => {
               dataCheckIn: JSON.stringify(checkInData),
             },
           });
+          
           resetState();
         } else if (
           !isLoadingQr &&
           !isFetchingQr &&
           (isErrorQr || !qrCardData)
         ) {
-          Alert.alert("Lỗi", "Mã xác thực không hợp lệ");
+          showToast("Mã xác thực không hợp lệ", "error");
+          // Alert.alert("Lỗi", "Mã xác thực không hợp lệ");
           resetState();
         }
       } else if (credentialCardId && !redirected.current) {
@@ -280,6 +288,7 @@ const scanQr = () => {
           !visitNotFoundShown.current
         ) {
           visitNotFoundShown.current = true;
+          showToast("Không tìm thấy thông tin chuyến thăm", "error");
           handleVisitNotFound();
         }
       }
@@ -310,7 +319,7 @@ const scanQr = () => {
   };
   // console.log("CCCD: ", credentialCardId);
   // console.log("Card id: ", cardVerification);
-  console.log("Log lay anh ben scan: ", checkInData);
+  // console.log("Log lay anh ben scan: ", checkInData);
   return (
     <SafeAreaView style={StyleSheet.absoluteFillObject}>
       <View

@@ -88,10 +88,10 @@ export default function HomeScreen() {
       <View className="flex-1 bg-gray-50">
         <Header name="Đặng Dương" />
 
-        <ScrollView className="flex-1 pt-4">
+        <ScrollView className="flex-1 pt-4 mt-4">
           <View className="mb-6">
             <View className="px-6 mb-4 flex-row justify-between items-center">
-              <Text className="text-lg font-bold text-gray-800">
+              <Text className="text-xl font-bold text-gray-800">
                 Nhân viên trực
               </Text>
             </View>
