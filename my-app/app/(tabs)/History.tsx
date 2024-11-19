@@ -14,19 +14,37 @@ import { MaterialIcons } from "@expo/vector-icons";
 // import { vi } from "date-fns/locale";
 import { useGetVisitorSessionsQuery } from "@/redux/services/visitorSession.service";
 import { VisitorSessionType } from "@/Types/VisitorSession.Type";
+import { useGetAllVisitsByCurrentDateQuery } from "@/redux/services/visit.service";
 
 const History = () => {
   const [page, setPage] = useState(1);
-  const { data, isLoading, isFetching, refetch } = useGetVisitorSessionsQuery({
-    pageNumber: page,
-    pageSize: 10,
-  });
+  // const { data, isLoading, isFetching, refetch } = useGetVisitorSessionsQuery({
+  //   pageNumber: page,
+  //   pageSize: 10,
+  // });
 
+
+
+  const {
+    data: historyData,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useGetVisitorSessionsQuery(
+    { pageSize: 10, pageNumber: 1 },
+    {
+      refetchOnMountOrArgChange: true,
+    }
+  );
   // const formatDateTime = (dateString: string) => {
   //   return format(new Date(dateString), "HH:mm - dd/MM/yyyy", { locale: vi });
   // };
 
-  console.log("His:", data);
+  console.log("History Data:", historyData);
+  console.log("Is Error:", isError);
+  console.log("Error Details:", error);
+
   
 
   const renderSessionCard = ({ item }: { item: VisitorSessionType }) => (
@@ -131,52 +149,53 @@ const History = () => {
   );
 
   return (
-    <View className="flex-1 bg-gray-100">
+    <View></View>
+    // <View className="flex-1 bg-gray-100">
  
-      <View className="bg-white shadow-sm">
-        <View className="pt-14 pb-4 px-4">
-          <Text className="text-xl font-bold text-gray-800">
-            Lịch sử ra/vào
-          </Text>
-        </View>
-      </View>
+    //   <View className="bg-white shadow-sm">
+    //     <View className="pt-14 pb-4 px-4">
+    //       <Text className="text-xl font-bold text-gray-800">
+    //         Lịch sử ra/vào
+    //       </Text>
+    //     </View>
+    //   </View>
 
   
-      <FlatList
-        data={data?.items}
-        renderItem={renderSessionCard}
-        keyExtractor={(item) => item.visitorSessionId.toString()}
-        // contentContainerClassName="p-4"
-        refreshControl={
-          <RefreshControl refreshing={isFetching} onRefresh={refetch} />
-        }
-        ListEmptyComponent={
-          isLoading ? (
-            <View className="flex-1 justify-center items-center py-8">
-              <ActivityIndicator size="large" color="#6366F1" />
-            </View>
-          ) : (
-            <View className="flex-1 justify-center items-center py-8">
-              <MaterialIcons name="history" size={48} color="#9CA3AF" />
-              <Text className="text-gray-500 text-lg mt-4">
-                Không có lịch sử ra/vào
-              </Text>
-            </View>
-          )
-        }
-        ListFooterComponent={
-          isFetching && !isLoading ? (
-            <ActivityIndicator size="small" color="#6366F1" className="py-4" />
-          ) : null
-        }
-        onEndReached={() => {
-          if (data && data.items.length < data.totalCount) {
-            setPage((prev) => prev + 1);
-          }
-        }}
-        onEndReachedThreshold={0.5}
-      />
-    </View>
+    //   <FlatList
+    //     data={data?.items}
+    //     renderItem={renderSessionCard}
+    //     keyExtractor={(item) => item.visitorSessionId.toString()}
+    //     // contentContainerClassName="p-4"
+    //     refreshControl={
+    //       <RefreshControl refreshing={isFetching} onRefresh={refetch} />
+    //     }
+    //     ListEmptyComponent={
+    //       isLoading ? (
+    //         <View className="flex-1 justify-center items-center py-8">
+    //           <ActivityIndicator size="large" color="#6366F1" />
+    //         </View>
+    //       ) : (
+    //         <View className="flex-1 justify-center items-center py-8">
+    //           <MaterialIcons name="history" size={48} color="#9CA3AF" />
+    //           <Text className="text-gray-500 text-lg mt-4">
+    //             Không có lịch sử ra/vào
+    //           </Text>
+    //         </View>
+    //       )
+    //     }
+    //     ListFooterComponent={
+    //       isFetching && !isLoading ? (
+    //         <ActivityIndicator size="small" color="#6366F1" className="py-4" />
+    //       ) : null
+    //     }
+    //     onEndReached={() => {
+    //       if (data && data.items.length < data.totalCount) {
+    //         setPage((prev) => prev + 1);
+    //       }
+    //     }}
+    //     onEndReachedThreshold={0.5}
+    //   />
+    // </View>
   );
 };
 

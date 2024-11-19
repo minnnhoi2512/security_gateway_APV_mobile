@@ -1,12 +1,7 @@
-import {
-  View,
-  Text,
-  useWindowDimensions,
-} from "react-native";
+import { View, Text, useWindowDimensions } from "react-native";
 import React from "react";
 import { Visit2 } from "@/redux/Types/visit.type";
 import { FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
- 
 
 interface VisitCardProps {
   visit: Visit2;
@@ -15,7 +10,6 @@ interface VisitCardProps {
 const VisitItemDetail: React.FC<VisitCardProps> = ({ visit }) => {
   const { width } = useWindowDimensions();
 
- 
   const getPlainDescription = (html: string) => {
     return html.replace(/<[^>]+>/g, "");
   };
@@ -40,6 +34,13 @@ const VisitItemDetail: React.FC<VisitCardProps> = ({ visit }) => {
       </View>
 
       <View className="flex-row justify-between mb-6">
+        <View className="items-center bg-purple-50 rounded-xl px-4 py-2 flex-1 mx-1">
+          <FontAwesome5 name="users" size={20} color="#9b59b6" />
+          <Text className="text-xs text-gray-500 mt-1">Tổng số</Text>
+          <Text className="text-lg font-bold text-purple-600">
+            {visit.visitQuantity}
+          </Text>
+        </View>
         <View className="items-center bg-blue-50 rounded-xl px-4 py-2 flex-1 mx-1">
           <FontAwesome5 name="user-check" size={20} color="#2980b9" />
           <Text className="text-xs text-gray-500 mt-1">Đã vào</Text>
@@ -52,13 +53,6 @@ const VisitItemDetail: React.FC<VisitCardProps> = ({ visit }) => {
           <Text className="text-xs text-gray-500 mt-1">Đã ra</Text>
           <Text className="text-lg font-bold text-red-600">
             {visit.visitorSessionCheckedOutCount}
-          </Text>
-        </View>
-        <View className="items-center bg-purple-50 rounded-xl px-4 py-2 flex-1 mx-1">
-          <FontAwesome5 name="users" size={20} color="#9b59b6" />
-          <Text className="text-xs text-gray-500 mt-1">Tổng</Text>
-          <Text className="text-lg font-bold text-purple-600">
-            {visit.visitQuantity}
           </Text>
         </View>
       </View>
@@ -87,7 +81,7 @@ const VisitItemDetail: React.FC<VisitCardProps> = ({ visit }) => {
           <View className="ml-3">
             <Text className="text-xs text-gray-500">Loại lịch</Text>
             <Text className="text-base font-semibold text-gray-700">
-              {visit.scheduleTypeName}
+              {visit.scheduleTypeName || "Lịch hàng ngày"}
             </Text>
           </View>
         </View>

@@ -8,6 +8,8 @@ import {
   Button,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import React, { useState } from "react";
 import { useLocalSearchParams } from "expo-router";
@@ -63,85 +65,63 @@ const CreateVisitDailyForStaffScreen2 = () => {
     }
   };
   return (
-    <View
-      className="bg-gradient-to-b from-blue-50 to-white px-6 "
-      style={{ width: "100%" }}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      className="flex-1 bg-gray-50"
     >
-      <View className="h-[40px] inline-block w-full">
-        <View className="flex-1 w-[80%]">
-          <View
-            className="rounded-full border-2 border-neutral-950 h-full"
-            style={styles.floatBtn}
-            // onPress={openAddVisitorHandler}
-          >
-            {/* <TextInput className='flex-1 w-11/12 rounded-full text-center absolute left-0 top-0 text-white text-xl' maxLength={12} placeholder='Nhập CCCD của khách ....' onChangeText={SetCredentialCardId} placeholderTextColor="White" /> */}
+      <View className="flex-1 px-4 pt-4">
+        <View className="flex-row items-center space-x-2 mb-4">
+          <View className="flex-1 bg-white rounded-xl border border-gray-200 flex-row items-center shadow-sm">
             <TextInput
-              className="flex-1 w-11/12 rounded-full text-center absolute left-0 top-0 text-white text-xl"
+              className="flex-1 px-4 py-3 text-gray-800 text-base rounded-xl"
               maxLength={12}
-              placeholder="Nhập CCCD của khách ...."
-              onChangeText={setCredentialCardId}  
-              placeholderTextColor="white"
+              placeholder="Nhập CCCD của khách..."
+              onChangeText={setCredentialCardId}
+              placeholderTextColor="gray"
             />
             <TouchableOpacity
-              className="w-1/5 h-full rounded-full bg-white absolute right-0 items-center justify-center"
+              className="p-3 bg-blue-500 rounded-r-xl"
               onPress={() => openAddVisitorHandler("FIND")}
             >
-              <Ionicons name="search" color="Black" size={20}></Ionicons>
+              <Ionicons name="search" color="white" size={20} />
             </TouchableOpacity>
           </View>
+          <TouchableOpacity
+            className="bg-green-500 p-3 rounded-xl"
+            onPress={() => openAddVisitorHandler("ADD")}
+          >
+            <Ionicons name="add" color="white" size={24} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          className="w-1/6 right-0 ml- absolute rounded-full h-full bg-white border-2 border-neutral-950 items-center justify-center"
-          onPress={() => openAddVisitorHandler("ADD")}
+
+        <Modal
+          visible={modalStatus}
+          animationType="slide"
+          presentationStyle="pageSheet"
         >
-          <View>
-            <Ionicons name="add" color="Black" size={30}></Ionicons>
+          <View className="flex-1 bg-gray-50 p-4">
+            <TouchableOpacity
+              className="self-end mb-4 bg-red-500 px-4 py-2 rounded-lg"
+              onPress={closeAddVisitorHandler}
+            >
+              <Text className="text-white font-semibold">Đóng</Text>
+            </TouchableOpacity>
+
+            {action === "ADD" && <CreateVisitorForStaff />}
+            {action === "FIND" && <VistorInforModal visitor={visitData} />}
           </View>
-        </TouchableOpacity>
+        </Modal>
+
+        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+          {visitCreateData.visitDetail.map((item, index) =>
+            item.visitorId != 0 ? (
+              <VisitorItem key={item.visitorId || index} visitor={item} />
+            ) : null
+          )}
+        </ScrollView>
       </View>
-      <Modal
-        visible={modalStatus}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
-        <Button title="Đóng" onPress={closeAddVisitorHandler}></Button>
-        {action === "ADD" ? (
-          <>
-            <CreateVisitorForStaff />
-          </>
-        ) : (
-          <></>
-        )}
-        {action === "FIND" ? (
-          <>
-            <VistorInforModal visitor={visitData} />
-          </>
-        ) : (
-          <></>
-        )}
-        {/* <CreateVisitorForStaff/> */}
-      </Modal>
-      <ScrollView className="mt-5 h-[95%]">
-        {visitCreateData.visitDetail.map((item, index) => {
-          if (item.visitorId != 0) {
-            return (
-              <>
-                <VisitorItem key={item.visitorId || index} visitor={item} />
-              </>
-            );
-          }
-        })}
-      </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
-const styles = StyleSheet.create({
-  floatBtn: {
-    backgroundColor: "grey",
-    width: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});
 
 export default CreateVisitDailyForStaffScreen2;

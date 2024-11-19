@@ -54,13 +54,21 @@ export const visitorSessionApi = createApi({
     },
   }),
   endpoints: (builder) => ({
-    getVisitorSessions: builder.query<VisitorSessionResponse, { pageNumber: number; pageSize: number }>({
-      query: ({ pageNumber, pageSize }) => ({
-        url: `/VisitorSession?pageNumber=1&pageSize=10`,
-        params: { pageNumber, pageSize }
-      }),
+    getVisitorSessions: builder.query({
+      query: () => {
+        return `/VisitorSession?pageNumber=1&pageSize=10`;
+       
+      },
     }),
   }),
+  // endpoints: (builder) => ({
+  //   getVisitorSessions: builder.query<VisitorSessionResponse, { pageNumber: number; pageSize: number }>({
+  //     query: ({ pageNumber, pageSize }) => ({
+  //       url: `/VisitorSession?pageNumber=1&pageSize=10`,
+  //       params: { pageNumber, pageSize }
+  //     }),
+  //   }),
+  // }),
 });
 
 export const {

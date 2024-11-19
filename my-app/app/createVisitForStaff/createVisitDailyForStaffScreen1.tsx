@@ -6,6 +6,8 @@ import {
   Pressable,
   TextInput,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -83,174 +85,127 @@ const CreateVisitDailyForStaffScreen1 = () => {
     }
   };
 
-  return (
-    <ScrollView className="bg-gradient-to-b from-blue-50 to-white">
-      <View className="px-6">
-        <View className=" mb-6 ">
-          <View className="mb-4">
-            <Text className="text-sm font-semibold text-black mb-2">
-              Tiêu đề
-            </Text>
-            <TextInput
-              className={`bg-gray-50 border ${
-                hasError("visitName") ? "border-red-500" : "border-gray-200"
-              } rounded-lg px-4 py-4 text-black`}
-              value={visitCreateData.visitName}
-              onChangeText={(text) => handleInputChange("visitName", text)}
-              placeholderTextColor="grey"
-              placeholder="Nhập tiêu đề chuyến thăm"
-            />
-            {hasError("visitName") && (
-              <Text className="text-red-500 text-sm mt-1">
-                {getErrorMessage("visitName")}
-              </Text>
-            )}
-          </View>
-          <View className="mb-4">
-            <Text className="text-sm font-semibold text-black mb-2">Mô tả</Text>
-            <TextInput
-              className={`bg-gray-50 border ${
-                hasError("description") ? "border-red-500" : "border-gray-200"
-              } rounded-lg px-4 py-10 text-backgroundApp h-50`}
-              value={visitData.description}
-              onChangeText={(text) => handleInputChange("description", text)}
-              placeholderTextColor="grey"
-              placeholder="Nhập mô tả"
-              multiline
-              numberOfLines={4}
-            />
-            {hasError("description") && (
-              <Text className="text-red-500 text-sm mt-1">
-                {getErrorMessage("description")}
-              </Text>
-            )}
-          </View>
-          <View className="mb-4">
-            <Text className="text-sm font-semibold text-black mb-2">
-              Số lượng
-            </Text>
-            <TextInput
-              className={`bg-gray-50 border ${
-                hasError("visitName") ? "border-red-500" : "border-gray-200"
-              } rounded-lg px-4 py-4 text-black`}
-              value={visitData.visitQuantity.toString()}
-              onChangeText={(text) => handleInputChange("visitQuantity", text)}
-              placeholderTextColor="grey"
-              placeholder="Nhập tiêu đề chuyến thăm"
-            />
-            {hasError("visitName") && (
-              <Text className="text-red-500 text-sm mt-1">
-                {getErrorMessage("visitName")}
-              </Text>
-            )}
-          </View>
-          <View className="mb-4">
-            <Text className="text-sm font-semibold text-black mb-2">
-              Thời gian bắt đầu
-            </Text>
-            <TouchableOpacity
-              className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3"
-              onPress={() => setShowStartPicker(true)}
-            >
-              <Text className="text-gray-700">
-                {visitData.visitDetail[0].expectedStartHour}
-              </Text>
-            </TouchableOpacity>
-            {hasError("visitDetail[0].expectedStartHour") && (
-              <Text className="text-red-500 text-sm mt-1">
-                {getErrorMessage("visitDetail[0].expectedStartHour")}
-              </Text>
-            )}
-            {showStartPicker && (
-              <DateTimePicker
-                value={new Date()}
-                mode="time"
-                is24Hour={true}
-                display="default"
-                onChange={(event, selectedDate) =>
-                  handleTimeChange(event, selectedDate, true)
-                }
-              />
-            )}
-          </View>
-          <View className="mb-4">
-            <Text className="text-sm font-semibold text-black mb-2">
-              Thời gian kết thúc
-            </Text>
-            <TouchableOpacity
-              className={`bg-gray-50 border ${
-                hasError("visitDetail[0].expectedEndHour")
-                  ? "border-red-500"
-                  : "border-gray-200"
-              } rounded-lg px-4 py-3`}
-              onPress={() => setShowEndPicker(true)}
-            >
-              <Text className="text-gray-700">
-                {visitData.visitDetail[0].expectedEndHour}
-              </Text>
-            </TouchableOpacity>
-            {hasError("visitDetail[0].expectedEndHour") && (
-              <Text className="text-red-500 text-sm mt-1">
-                {getErrorMessage("visitDetail[0].expectedEndHour")}
-              </Text>
-            )}
-            {showEndPicker && (
-              <DateTimePicker
-                value={
-                  new Date(
-                    `2000-01-01T${visitData.visitDetail[0].expectedEndHour}`
-                  )
-                }
-                mode="time"
-                is24Hour={true}
-                display="default"
-                onChange={(event, selectedDate) =>
-                  handleTimeChange(event, selectedDate, false)
-                }
-              />
-            )}
-          </View>
+  const renderInputField = (
+    label: string,
+    value: string,
+    onChangeText: (text: string) => void,
+    placeholder: string,
+    field: string,
+    multiline: boolean = false,
+    keyboardType: "default" | "numeric" = "default"
+  ) => (
+    <View className="mb-4">
+      <Text className="text-base font-semibold text-[#34495e] mb-2">{label}</Text>
+      <TextInput
+        className={`bg-white border ${
+          hasError(field) ? "border-red-500" : "border-gray-300"
+        } rounded-xl px-4 py-3 text-gray-900 `}
+        value={value}
+        onChangeText={onChangeText}
+        placeholderTextColor="gray"
+        placeholder={placeholder}
+        multiline={multiline}
+        numberOfLines={multiline ? 4 : 1}
+        keyboardType={keyboardType}
+      />
+      {hasError(field) && (
+        <Text className="text-red-500 text-sm mt-1">{getErrorMessage(field)}</Text>
+      )}
+    </View>
+  );
 
-          {/* <View className="mb-4">
-            <Text className="text-sm font-semibold text-white mb-2">
-              Chọn nhân viên phụ trách
-            </Text>
-            <View
-              className={`border ${
-                hasError("responsiblePersonId")
-                  ? "border-red-500"
-                  : "border-gray-200"
-              } rounded-lg`}
-            >
-              <Picker
-                selectedValue={selectedStaffId}
-                onValueChange={(itemValue) => handleStaffSelect(itemValue)}
-                style={{
-                  backgroundColor: "#f0f0f0",
-                  borderRadius: 8,
-                  padding: 10,
-                  color: "#333",
-                }}
-              >
-                <Picker.Item label="Chọn nhân viên" value={null} />
-                {staffList?.map((staff: Staff) => (
-                  <Picker.Item
-                    key={staff.userId}
-                    label={staff.userName}
-                    value={staff.userId}
-                  />
-                ))}
-              </Picker>
-            </View>
-            {hasError("responsiblePersonId") && (
-              <Text className="text-red-500 text-sm mt-1">
-                {getErrorMessage("responsiblePersonId")}
-              </Text>
-            )}
-          </View> */}
-        </View>
+  const renderTimePicker = (
+    label: string,
+    value: string,
+    onPress: () => void,
+    showPicker: boolean,
+    onTimeChange: (event: any, date: Date | undefined) => void,
+    field: string
+  ) => (
+    <View className="mb-4">
+      <Text className="text-base font-semibold text-[#34495e] mb-2">{label}</Text>
+      <TouchableOpacity
+        className={`bg-white border ${
+          hasError(field) ? "border-red-500" : "border-gray-300"
+        } rounded-xl px-4 py-3 flex-row items-center justify-between `}
+        onPress={onPress}
+      >
+        <Text className="text-gray-800">{value}</Text>
+        <MaterialIcons name="access-time" size={24} color="gray" />
+      </TouchableOpacity>
+      {hasError(field) && (
+        <Text className="text-red-500 text-sm mt-1">{getErrorMessage(field)}</Text>
+      )}
+      {showPicker && (
+        <DateTimePicker
+          value={new Date()}
+          mode="time"
+          is24Hour={true}
+          display="default"
+          onChange={onTimeChange}
+        />
+      )}
+    </View>
+  );
+
+  return (
+    <KeyboardAvoidingView
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+    className="flex-1 bg-gray-50"
+  >
+    <ScrollView 
+      className="flex-1"
+      contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 16 }}
+      keyboardShouldPersistTaps="handled"
+    >
+      <View className="bg-white rounded-2xl p-6 shadow-md">
+        {renderInputField(
+          "Tiêu đề",
+          visitCreateData.visitName,
+          (text) => handleInputChange("visitName", text),
+          "Nhập tiêu đề chuyến thăm",
+          "visitName"
+        )}
+
+        {renderInputField(
+          "Mô tả",
+          visitData.description,
+          (text) => handleInputChange("description", text),
+          "Nhập mô tả",
+          "description",
+          true
+        )}
+
+        {renderInputField(
+          "Số lượng",
+          visitData.visitQuantity.toString(),
+          (text) => handleInputChange("visitQuantity", text),
+          "Nhập số lượng chuyến thăm",
+          "visitQuantity",
+          false,
+          "numeric"
+        )}
+
+        {renderTimePicker(
+          "Thời gian bắt đầu",
+          visitData.visitDetail[0].expectedStartHour,
+          () => setShowStartPicker(true),
+          showStartPicker,
+          (event, selectedDate) => handleTimeChange(event, selectedDate, true),
+          "visitDetail[0].expectedStartHour"
+        )}
+
+        {renderTimePicker(
+          "Thời gian kết thúc",
+          visitData.visitDetail[0].expectedEndHour,
+          () => setShowEndPicker(true),
+          showEndPicker,
+          (event, selectedDate) => handleTimeChange(event, selectedDate, false),
+          "visitDetail[0].expectedEndHour"
+        )}
       </View>
     </ScrollView>
+  </KeyboardAvoidingView>
   );
 };
 
