@@ -94,15 +94,15 @@ const Header: React.FC<HeaderProps> = ({ name }) => {
         </View>
       </View>
 
-      {selectedGate && (
-        <View className="absolute -bottom-6 left-0 right-0 items-center">
-          <View className="bg-white  backdrop-blur-sm px-5 py-2 rounded-full shadow-lg border border-white/20">
+      {/* {selectedGate && (
+        <View className=" left-0 right-0 items-center mb-4">
+          <View className="bg-white/90 px-5 py-2 rounded-full shadow-lg border border-white/30">
             <Text className="text-backgroundApp text-sm font-semibold">
               Cổng {selectedGate}
             </Text>
           </View>
         </View>
-      )}
+      )} */}
     </SafeAreaView>
   );
 };

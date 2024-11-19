@@ -99,14 +99,14 @@ const FormCreate = () => {
     });
   };
 
-  useEffect(() => {
-    if (staffByPhone && staffByPhone.userId) {
-      setVisitData((prevState) => ({
-        ...prevState,
-        responsiblePersonId: staffByPhone.userId,
-      }));
-    }
-  }, [staffByPhone]);
+  // useEffect(() => {
+  //   if (staffByPhone && staffByPhone.userId) {
+  //     setVisitData((prevState) => ({
+  //       ...prevState,
+  //       responsiblePersonId: staffByPhone.userId,
+  //     }));
+  //   }
+  // }, [staffByPhone]);
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -272,12 +272,43 @@ const FormCreate = () => {
     });
   };
 
-  // Helper function to determine if a field has an error
+  // useEffect(() => {
+  //   if (staffByPhone) {
+  //     setSearchPhoneNumber(`${staffByPhone.fullName}`);
+  //   }
+  // }, [staffByPhone]);
+
+  useEffect(() => {
+     
+    if (staffByPhone) {
+      setSearchPhoneNumber(`${staffByPhone.fullName}`);
+    }
+  }, [staffByPhone]);
+  
+  useEffect(() => {
+ 
+    if (!searchPhoneNumber.trim()) {
+      setVisitData((prevState) => ({
+        ...prevState,
+        responsiblePersonId: 0,
+      }));
+    }
+  }, [searchPhoneNumber]);
+  
+  useEffect(() => {
+ 
+    if (staffByPhone && staffByPhone.userId) {
+      setVisitData((prevState) => ({
+        ...prevState,
+        responsiblePersonId: staffByPhone.userId,
+      }));
+    }
+  }, [staffByPhone]);
+
   const hasError = (field: string) => {
     return validationErrors[field] !== undefined;
   };
 
-  // Helper function to get error message for a field
   const getErrorMessage = (field: string) => {
     return validationErrors[field];
   };
@@ -359,7 +390,44 @@ const FormCreate = () => {
               </Text>
             )}
           </View>
- 
+
+          {/* {isLoadingStaffByPhone && (
+            <Text className="text-white mt-2">Đang tra cứu...</Text>
+          )}
+          {isErrorStaffByPhone && (
+            <Text className="text-red-500">Không tìm thấy nhân viên</Text>
+          )} */}
+          {/* {staffByPhone && (
+            <View className="bg-gray-100 rounded-lg p-4 mt-4 mb-4">
+              <Text className="text-backgroundApp">
+                Nhân viên: {staffByPhone.fullName}
+              </Text>
+            </View>
+          )} */}
+          {/* <View className="mb-4">
+            <Text className="text-sm font-semibold text-white mb-2">
+              Chọn nhân viên theo số điện thoại
+            </Text>
+            <TextInput
+              className={`bg-gray-50 border ${
+                hasError("searchPhoneNumber")
+                  ? "border-red-500"
+                  : "border-gray-200"
+              } rounded-lg px-4 py-3 text-backgroundApp`}
+              value={searchPhoneNumber}
+              onChangeText={(text) => {
+                setSearchPhoneNumber(text);
+                clearValidationError("searchPhoneNumber");
+              }}
+              placeholder="Nhập số điện thoại"
+            />
+            {hasError("searchPhoneNumber") && (
+              <Text className="text-red-500 text-sm mt-1">
+                {getErrorMessage("searchPhoneNumber")}
+              </Text>
+            )}
+          </View>
+
           {isLoadingStaffByPhone && (
             <Text className="text-white mt-2">Đang tra cứu...</Text>
           )}
@@ -371,9 +439,9 @@ const FormCreate = () => {
               <Text className="text-backgroundApp">
                 Nhân viên: {staffByPhone.fullName}
               </Text>
-              {/* <Text className="text-backgroundApp">User ID: {staffByPhone.userId}</Text> */}
+             
             </View>
-          )}
+          )} */}
 
           <View className="mb-4">
             <Text className="text-sm font-semibold text-white mb-2">

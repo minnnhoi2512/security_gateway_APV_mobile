@@ -34,6 +34,9 @@ export default function HomeScreen() {
     }
   );
 
+  console.log("VISS: ", visits);
+  
+
   const {
     data: staffList,
     isLoading: isLoadingStaff,
@@ -88,10 +91,10 @@ export default function HomeScreen() {
       <View className="flex-1 bg-gray-50">
         <Header name="Đặng Dương" />
 
-        <ScrollView className="flex-1 pt-4 mt-4">
+        <ScrollView className="flex-1 pt-4 mt-5">
           <View className="mb-6">
             <View className="px-6 mb-4 flex-row justify-between items-center">
-              <Text className="text-xl font-bold text-gray-800">
+              <Text className="text-xl font-bold text-[#d35400]">
                 Nhân viên trực
               </Text>
             </View>
@@ -109,7 +112,7 @@ export default function HomeScreen() {
 
           <View className="px-6">
             <View className="flex-row justify-between items-center mb-6">
-              <Text className="text-xl font-bold text-gray-900">
+              <Text className="text-xl ml-2 font-bold text-[#d35400]">
                 Lịch hẹn Hôm nay
               </Text>
               <View className="bg-emerald-100 px-4 py-2 rounded-full flex-row items-center space-x-2">

@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+const BASE_URL2 = `https://securitygateapv-be-y69w.onrender.com/api/`;
 
 export const visitApi = createApi({
   reducerPath: 'visitApi',

@@ -25,6 +25,7 @@ export const store = configureStore({
     [visitorApi.reducerPath]: visitorApi.reducer,
     [userApi.reducerPath]: userApi.reducer,
     [pythonAPI.reducerPath]: pythonAPI.reducer,
+ 
     auth: authSlice,
     visitStaff : visitStaffCreateSlice
   },

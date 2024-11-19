@@ -126,7 +126,7 @@ const CreateVisitDailyForStaffScreen2 = () => {
           if (item.visitorId != 0) {
             return (
               <>
-                <VisitorItem visitor={item} />
+                <VisitorItem key={item.visitorId || index} visitor={item} />
               </>
             );
           }

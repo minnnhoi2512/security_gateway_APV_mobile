@@ -38,5 +38,10 @@ export interface Visitor {
     description?: string | null;
     createByname?: string;
     scheduleTypeName?: string;
+    visitDetailStartTime?: string;
+    visitDetailEndTime?: string;
+    visitorSessionCheckedOutCount?: number;
+    visitorSessionCheckedInCount?: number;
+    visitorCheckOutedCount?: number;
   }
   
