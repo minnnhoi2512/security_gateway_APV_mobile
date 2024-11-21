@@ -33,7 +33,7 @@ const VisitItem: React.FC<VisitCardProps> = ({ visit }) => {
       className="flex-row bg-white p-4 rounded-2xl shadow-md mb-4"
     >
       <View className="w-20 mr-4 items-center justify-center">
-          <Text className="text-lg font-bold text-[#45b39d]">
+        <Text className="text-lg font-bold text-[#45b39d]">
           {visit.visitDetailStartTime?.split(":").slice(0, 2).join(":")}
         </Text>
         <Text className="text-sm text-[#45b39d]">-</Text>
@@ -63,7 +63,13 @@ const VisitItem: React.FC<VisitCardProps> = ({ visit }) => {
           </View>
           <Text className="text-sm text-[#1a5276] mx-2">•</Text>
           <Text className="text-sm text-[#1a5276]">
-            {visit.scheduleTypeName}
+            {visit.scheduleTypeName === "ProcessWeek"
+              ? "Lịch theo tuần"
+              : visit.scheduleTypeName === "ProcessMonth"
+              ? "Lịch theo tháng"
+              : visit.scheduleTypeName === "ProcessYear"
+              ? "Lịch theo năm"
+              : "Lịch hàng ngày"}
           </Text>
         </View>
         <View className="flex-row items-center mt-1">

@@ -1,17 +1,77 @@
-import { View, Text, useWindowDimensions } from "react-native";
-import React from "react";
+import {
+  View,
+  Text,
+  useWindowDimensions,
+  TouchableOpacity,
+  ScrollView,
+  Modal,
+} from "react-native";
+import React, { useState } from "react";
 import { Visit2 } from "@/redux/Types/visit.type";
 import { FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
-
+import RenderHTML from "react-native-render-html";
 interface VisitCardProps {
   visit: Visit2;
 }
 
 const VisitItemDetail: React.FC<VisitCardProps> = ({ visit }) => {
   const { width } = useWindowDimensions();
-
+  const [isDescriptionModalVisible, setDescriptionModalVisible] =
+    useState(false);
   const getPlainDescription = (html: string) => {
     return html.replace(/<[^>]+>/g, "");
+  };
+
+  const renderDescription = (description: string, maxLength: number = 100) => {
+    const plainDesc = getPlainDescription(description);
+
+    if (plainDesc.length <= maxLength) {
+      return <Text className="text-base text-gray-700">{plainDesc}</Text>;
+    }
+
+    return (
+      <View>
+        <Text className="text-base text-gray-700">
+          {plainDesc.slice(0, maxLength)}...{" "}
+          <Text
+            className="text-blue-600 font-bold"
+            onPress={() => setDescriptionModalVisible(true)}
+          >
+            Xem thêm
+          </Text>
+        </Text>
+      </View>
+    );
+  };
+
+  const renderTruncatedDescription = (description: string, maxLength: number = 100) => {
+    const plainText = description.replace(/<[^>]+>/g, "");
+    
+    if (plainText.length <= maxLength) {
+      return (
+        <RenderHTML
+          contentWidth={width}
+          source={{ html: description }}
+          classesStyles={{
+            "text-base": { color: "#4a4a4a" },
+          }}
+        />
+      );
+    }
+
+    return (
+      <View>
+        <Text className="text-base text-gray-700">
+          {plainText.slice(0, maxLength)}...{" "}
+          <Text
+            className="text-blue-600 font-bold"
+            onPress={() => setDescriptionModalVisible(true)}
+          >
+            Xem thêm
+          </Text>
+        </Text>
+      </View>
+    );
   };
 
   return (
@@ -30,6 +90,7 @@ const VisitItemDetail: React.FC<VisitCardProps> = ({ visit }) => {
           <Text className="text-lg font-semibold text-gray-600">
             {visit.visitDetailEndTime?.split(":").slice(0, 2).join(":")}
           </Text>
+          <Text className="italic text-[#2ecc71]">(Dự kiến)</Text>
         </View>
       </View>
 
@@ -80,8 +141,14 @@ const VisitItemDetail: React.FC<VisitCardProps> = ({ visit }) => {
           </View>
           <View className="ml-3">
             <Text className="text-xs text-gray-500">Loại lịch</Text>
-            <Text className="text-base font-semibold text-gray-700">
-              {visit.scheduleTypeName || "Lịch hàng ngày"}
+            <Text className="text-base font-semibold  text-gray-700">
+              {visit.scheduleTypeName === "ProcessWeek"
+                ? "Lịch theo tuần"
+                : visit.scheduleTypeName === "ProcessMonth"
+                ? "Lịch theo tháng"
+                : visit.scheduleTypeName === "ProcessYear"
+                ? "Lịch theo năm"
+                : "Lịch hàng ngày"}
             </Text>
           </View>
         </View>
@@ -97,12 +164,41 @@ const VisitItemDetail: React.FC<VisitCardProps> = ({ visit }) => {
             </View>
             <View className="ml-3 flex-1">
               <Text className="text-xs text-gray-500">Mô tả</Text>
-              <Text className="text-base text-gray-700">
-                {getPlainDescription(visit.description)}
-              </Text>
+              {renderDescription(visit.description)}
             </View>
           </View>
         )}
+
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={isDescriptionModalVisible}
+          onRequestClose={() => setDescriptionModalVisible(false)}
+        >
+          <View className="flex-1 justify-center items-center bg-opacity-50">
+            <View className="bg-white w-[90%] rounded-xl p-6 max-h-[80%]">
+              <View className="flex-row justify-between items-center mb-4">
+                <Text className="text-lg font-bold text-gray-700">
+                  Mô tả chi tiết
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setDescriptionModalVisible(false)}
+                >
+                  <MaterialCommunityIcons
+                    name="close"
+                    size={24}
+                    color="black"
+                  />
+                </TouchableOpacity>
+              </View>
+              <ScrollView>
+                <Text className="text-base text-gray-700">
+                  {getPlainDescription(visit.description || "")}
+                </Text>
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
       </View>
     </View>
   );

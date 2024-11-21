@@ -18,12 +18,31 @@ interface SessionImage {
   imageURL: string;
 }
 
+interface Visitor {
+  visitorId: number;
+  visitorName: string;
+  companyName: string;
+  phoneNumber: string;
+  credentialsCard: string;
+  visitorCredentialImage: string;
+  status: string;
+}
+
+interface VisitDetail {
+  visitDetailId: number;
+  expectedStartHour: string;
+  expectedEndHour: string;
+  status: boolean;
+  sessionStatus: string | null;
+  visitor: Visitor;
+}
+
 export interface VisitorSession {
   visitorSessionId: number;
   checkinTime: string;
   checkoutTime: string;
   qrCardId: number;
-  visitDetailId: number;
+  visitDetail: VisitDetail;
   securityIn: SecurityPerson;
   securityOut: SecurityPerson;
   gateIn: Gate;
@@ -31,6 +50,7 @@ export interface VisitorSession {
   status: string;
   images: SessionImage[];
 }
+
 
 interface VisitorSessionResponse {
   items: VisitorSession[];
@@ -42,11 +62,11 @@ interface VisitorSessionResponse {
 const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
 export const visitorSessionApi = createApi({
-  reducerPath: 'visitorSessionApi',
+  reducerPath: "visitorSessionApi",
   baseQuery: fetchBaseQuery({
     baseUrl: BASE_URL,
     prepareHeaders: async (headers) => {
-      const token = await AsyncStorage.getItem('userToken');
+      const token = await AsyncStorage.getItem("userToken");
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
@@ -54,11 +74,15 @@ export const visitorSessionApi = createApi({
     },
   }),
   endpoints: (builder) => ({
-    getVisitorSessions: builder.query({
-      query: () => {
-        return `/VisitorSession?pageNumber=1&pageSize=10`;
-       
-      },
+    getVisitorSessions: builder.query<
+      any,
+      { pageNumber: number; pageSize: number }
+    >({
+      query: ({ pageNumber, pageSize }) => ({
+        // return `/VisitorSession?pageNumber=${pageNumber}&pageSize=${}`;
+        url: `/VisitorSession`,
+        params: { pageNumber, pageSize },
+      }),
     }),
   }),
   // endpoints: (builder) => ({
@@ -71,6 +95,4 @@ export const visitorSessionApi = createApi({
   // }),
 });
 
-export const {
-  useGetVisitorSessionsQuery,
-} = visitorSessionApi;
+export const { useGetVisitorSessionsQuery } = visitorSessionApi;

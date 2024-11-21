@@ -6,8 +6,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
+  RefreshControl,
 } from "react-native";
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Header from "@/components/UI/Header";
 import { useGetAllVisitsByCurrentDateQuery } from "@/redux/services/visit.service";
@@ -18,10 +19,12 @@ import { useRouter } from "expo-router";
 
 const visitForStaff = () => {
   const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
   const {
     data: visits,
     isLoading,
     isError,
+    refetch,
   } = useGetAllVisitsByCurrentDateQuery({
     pageSize: 10,
     pageNumber: 1,
@@ -29,6 +32,20 @@ const visitForStaff = () => {
   const redirectToAddVisitPageHandler = () => {
     router.push("/createVisitForStaff/createVisitDailyLayout");
   };
+
+  useEffect(() => {
+    if (visits && visits.length === 0) {
+      refetch();
+    }
+  }, [visits, refetch]);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
 
   const renderEmptyState = () => (
     <View className="bg-white p-8 rounded-xl border border-gray-100 items-center">
@@ -56,14 +73,14 @@ const visitForStaff = () => {
           ListHeaderComponent={
             <>
               <View className="px-6 mt-8">
-                <View className="flex-row justify-between items-center mb-6">
-                  <Text className="text-xl  font-bold text-[#d35400]">
+                <View className="flex-row justify-between items-center mb-6 gap-5">
+                  <Text className="text-2xl font-bold text-colorTitleHeader mb-3">
                     Lịch hẹn Hôm nay
                   </Text>
-                  <View className="bg-emerald-100 px-4 py-2 rounded-full flex-row items-center space-x-2">
+                  <View className="bg-emerald-100 px-4 py-2 rounded-full flex-row items-center space-x-1 mb-2">
                     <FontAwesome5
                       name="calendar-check"
-                      size={18}
+                      size={12}
                       color="#059669"
                     />
                     <Text className="text-emerald-700 font-semibold">
@@ -77,6 +94,9 @@ const visitForStaff = () => {
           data={visits}
           renderItem={renderVisitItem}
           keyExtractor={(visit) => visit.visitId.toString()}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
           ListEmptyComponent={renderEmptyState}
           contentContainerStyle={{
             paddingBottom: 100,

@@ -1,10 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
   SafeAreaView,
   ActivityIndicator,
   FlatList,
+  RefreshControl,
 } from "react-native";
 import Header from "@/components/UI/Header";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -22,6 +23,7 @@ import { useGetVisitorSessionsQuery } from "@/redux/services/visitorSession.serv
 export default function HomeScreen() {
   const { selectedGate } = useLocalSearchParams();
   const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
   const {
     data: visits,
     isLoading,
@@ -34,20 +36,26 @@ export default function HomeScreen() {
     }
   );
 
- 
-
   const {
     data: staffList,
     isLoading: isLoadingStaff,
     isError: isErrorStaff,
   } = useGetAllStaffQuery({});
- 
 
   useEffect(() => {
     if (visits && visits.length === 0) {
       refetch();
     }
   }, [visits, refetch]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
 
   const renderEmptyState = () => (
     <View className="bg-white p-8 rounded-xl border border-gray-100 items-center">
@@ -81,6 +89,8 @@ export default function HomeScreen() {
       </SafeAreaView>
     );
   }
+
+  // console.log("vs: ", visits);
 
   return (
     <SafeAreaProvider>
@@ -131,6 +141,9 @@ export default function HomeScreen() {
           renderItem={renderVisitItem}
           keyExtractor={(visit) => visit.visitId.toString()}
           ListEmptyComponent={renderEmptyState}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
           contentContainerStyle={{
             paddingBottom: 100,
             paddingHorizontal: 16,

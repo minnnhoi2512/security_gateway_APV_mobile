@@ -221,7 +221,7 @@ const ProfileDetail = () => {
                 disabled={isUpdating}
               >
                 <Text className="text-white text-center font-semibold">
-                  {isUpdating ? "Đang cập nhật..." : "Lưu thay đổi"}
+                  {isUpdating ? "Đang cập nhật..." : "Cập Nhật Thông Tin"}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity

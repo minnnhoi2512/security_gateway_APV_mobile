@@ -10,7 +10,12 @@ import React, { useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 import { VisitDetailType } from "@/redux/Types/visit.type";
-import { FontAwesome, FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import {
+  FontAwesome,
+  FontAwesome5,
+  Ionicons,
+  MaterialIcons,
+} from "@expo/vector-icons";
 import VisitItemDetail from "./VisitItemDetail";
 
 const VisitDetail = () => {
@@ -29,20 +34,7 @@ const VisitDetail = () => {
   };
 
   const toggleExpansion = (index: number) => {
-    setExpandedItem((prev) => (prev === index ? null : index));   
-  };
-
-  const getTimeStatusIcon = (expectedStartHour: string) => {
-    const now = new Date();
-    const startHour = new Date();
-    const [hour, minute] = expectedStartHour.split(':').map(Number);
-    startHour.setHours(hour, minute, 0, 0);
-
-    if (startHour > now) {
-      return <Ionicons name="notifications" size={24}  color="#1abc9c" />;
-    } else {
-      return <MaterialIcons  name="notifications-on" size={24} color="red" />;
-    }
+    setExpandedItem((prev) => (prev === index ? null : index));
   };
 
   if (isLoading) {
@@ -67,137 +59,154 @@ const VisitDetail = () => {
 
   return (
     <ScrollView className="bg-gray-50">
-    <View className="relative">
-      <Pressable
-        onPress={handleGoBack}
-        className="absolute top-6 left-2 flex flex-row items-center space-x-2 px-4 py-2 rounded-lg mt-4 z-10"
-      >
-        <MaterialIcons name="arrow-back" size={24} color="white" />
-        <Text className="text-white font-medium">Quay về</Text>
-      </Pressable>
+      <View className="relative">
+        <Pressable
+          onPress={handleGoBack}
+          className="absolute top-6 left-2 flex flex-row items-center space-x-2 px-4 py-2 rounded-lg mt-4 z-10"
+        >
+          <MaterialIcons name="arrow-back" size={24} color="white" />
+          <Text className="text-white font-medium">Quay về</Text>
+        </Pressable>
 
-      <ImageBackground
-        source={{
-          uri: "https://images.pexels.com/photos/269077/pexels-photo-269077.jpeg",
-        }}
-        className="w-full h-72"
-        resizeMode="cover"
-      >
-        <View className="absolute inset-0 bg-black/40" />
-      </ImageBackground>
+        <ImageBackground
+          source={{
+            uri: "https://images.pexels.com/photos/269077/pexels-photo-269077.jpeg",
+          }}
+          className="w-full h-72"
+          resizeMode="cover"
+        >
+          <View className="absolute inset-0 bg-black/40" />
+        </ImageBackground>
 
-      <View className="p-4 bottom-[160px]">
-        <View className="mb-8">
-          <VisitItemDetail visit={visitData} />
-        </View>
+        <View className="p-4 bottom-[160px]">
+          <View className="mb-8">
+            <VisitItemDetail visit={visitData} />
+          </View>
 
-        <View className="bg-gray-50 rounded-3xl mb-4">
-          <Text className="text-2xl font-semibold mb-6 text-[#34495e]">
-            Chi tiết cuộc hẹn
-          </Text>
-
-          {visitDetail && visitDetail.length > 0 ? (
-            visitDetail.map((visit: VisitDetailType, index: number) => (
-              <View key={index}>
-                <TouchableOpacity
-                  onPress={() => toggleExpansion(index)}
-                  className="bg-white rounded-2xl shadow-md mb-4"
-                >
-                  <View className="p-4">
-          
-                    {/* <View className="flex-row justify-between items-center mb-3">
-                      {getStatusBadge(visit.visitor?.status || "Tạm thời")}
-                      <View className="flex-row items-center space-x-3">
-                        <View className="flex-row items-center">
-                          <FontAwesome5 name="sign-in-alt" size={14} color={visit.checkInTime ? "#4CAF50" : "#B0B0B0"} />
-                          <Text className={`text-sm ml-1 ${visit.checkInTime ? "text-green-600" : "text-gray-400"}`}>
-                            Check-in
-                          </Text>
-                        </View>
-                        <View className="flex-row items-center">
-                          <FontAwesome5 name="sign-out-alt" size={14} color={visit.checkOutTime ? "#F44336" : "#B0B0B0"} />
-                          <Text className={`text-sm ml-1 ${visit.checkOutTime ? "text-red-600" : "text-gray-400"}`}>
-                            Check-out
-                          </Text>
-                        </View>
-                      </View>
-                    </View> */}
- 
-                    <View className="flex-row items-center justify-between">
-                      <View className="flex-row items-center space-x-3">
-                        {/* <Ionicons name="time-outline" size={25} color="#1abc9c" /> */}
-                        {/* <FontAwesome5 name="user-check" size={22} color="#e67e22" /> */}
-                        <FontAwesome name="user" size={24} color="#1abc9c" />
-                        <View>
-                          <Text className="text-sm font-medium text-gray-800">
-                            {visit.visitor?.visitorName}
-                          </Text>
-                          <Text className="text-xs text-gray-400">
-                            {visit.expectedStartHour?.split(":").slice(0, 2).join(":")} - {visit.expectedEndHour?.split(":").slice(0, 2).join(":")}
-                          </Text>
-                        </View>
-                      </View>
-                      <View className="flex-row items-center space-x-2">
-                        {getTimeStatusIcon(visit.expectedStartHour)}
-                        <FontAwesome5
-                          name={isExpanded ? "chevron-up" : "chevron-down"}
-                          size={20}
-                          color="#1abc9c"
-                        />
-                      </View>
-                    </View>
-
-           
-                    {expandedItem === index && (
-                      <View className="mt-4 space-y-3">
-                        <View className="flex-row items-center space-x-3">
-                          <FontAwesome5 name="building" size={20} color="#1abc9c" />
-                          <View>
-                            <Text className="text-xs text-gray-500">Công ty</Text>
-                            <Text className="text-sm font-medium text-gray-800">
-                              {visit.visitor?.companyName || "N/A"}
-                            </Text>
-                          </View>
-                        </View>
-
-                        <View className="flex-row items-center space-x-3">
-                          <FontAwesome5 name="phone" size={20} color="#1abc9c" />
-                          <View>
-                            <Text className="text-xs text-gray-500">
-                              Số điện thoại
-                            </Text>
-                            <Text className="text-sm font-medium text-gray-800">
-                              {visit.visitor?.phoneNumber || "N/A"}
-                            </Text>
-                          </View>
-                        </View>
-
-                        <View className="flex-row items-center space-x-3">
-                          <FontAwesome5 name="id-card" size={20} color="#1abc9c" />
-                          <View>
-                            <Text className="text-xs text-gray-500">
-                              CMND/CCCD
-                            </Text>
-                            <Text className="text-sm font-medium text-gray-800">
-                              {visit.visitor?.credentialsCard || "N/A"}
-                            </Text>
-                          </View>
-                        </View>
-                      </View>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              </View>
-            ))
-          ) : (
-            <Text className="text-lg text-gray-600 text-center italic">
-              Không có thông tin chi tiết.
+          <View className="bg-gray-50 rounded-3xl mb-4">
+            <Text className="text-2xl font-semibold mb-6 text-[#34495e]">
+              Thông tin khách hàng
             </Text>
-          )}
+
+            {visitDetail && visitDetail.length > 0 ? (
+              visitDetail.map((visit: VisitDetailType, index: number) => (
+                <View key={index}>
+                  <TouchableOpacity
+                    onPress={() => toggleExpansion(index)}
+                    className="bg-white rounded-2xl shadow-md mb-4"
+                  >
+                    <View className="p-4">
+                      <View className="flex-row items-center justify-between">
+                        <View className="flex-row items-center space-x-3">
+                          <FontAwesome name="user" size={24} color="#1abc9c" />
+                          <View>
+                            <Text className="text-sm font-medium text-gray-800">
+                              {visit.visitor?.visitorName}
+                            </Text>
+                            <Text className="text-xs text-gray-400">
+                              {visit.expectedStartHour
+                                ?.split(":")
+                                .slice(0, 2)
+                                .join(":")}{" "}
+                              -{" "}
+                              {visit.expectedEndHour
+                                ?.split(":")
+                                .slice(0, 2)
+                                .join(":")}
+                            </Text>
+                          </View>
+                          <View
+                            style={{
+                              backgroundColor:
+                                visit.sessionStatus === "CheckIn"
+                                  ? "#abebc6"
+                                  : visit.sessionStatus === "CheckOut"
+                                  ? "#fadbd8"
+                                  : "#e5e8e8",
+                              paddingHorizontal: 12,
+                              paddingVertical: 4,
+                              borderRadius: 16,
+                              marginBottom: 16,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color:
+                                  visit.sessionStatus === "CheckIn"
+                                    ? "#2ecc71"
+                                    : visit.sessionStatus === "CheckOut"
+                                    ? "#e74c3c"
+                                    : "#85929e",
+                                fontSize: 12,
+                                fontWeight: "500",
+                              }}
+                            >
+                              {visit.sessionStatus === "CheckIn"
+                                ? "Đã vào"
+                                : visit.sessionStatus === "CheckOut"
+                                ? "Đã ra"
+                                : "Chưa vào"}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View className="flex-row items-center space-x-2">
+                          <FontAwesome5
+                            name={isExpanded ? "chevron-up" : "chevron-down"}
+                            size={20}
+                            color="#1abc9c"
+                          />
+                        </View>
+                      </View>
+
+                      {expandedItem === index && (
+                        <View className="mt-4 space-y-3">
+                          <View className="flex-row items-center space-x-3">
+                            <FontAwesome5
+                              name="building"
+                              size={20}
+                              color="#1abc9c"
+                            />
+                            <View>
+                              <Text className="text-xs text-gray-500">
+                                Công ty
+                              </Text>
+                              <Text className="text-sm font-medium text-gray-800">
+                                {visit.visitor?.companyName || "N/A"}
+                              </Text>
+                            </View>
+                          </View>
+
+                          <View className="flex-row items-center space-x-3">
+                            <FontAwesome5
+                              name="phone"
+                              size={20}
+                              color="#1abc9c"
+                            />
+                            <View>
+                              <Text className="text-xs text-gray-500">
+                                Số điện thoại
+                              </Text>
+                              <Text className="text-sm font-medium text-gray-800">
+                                {visit.visitor?.phoneNumber || "N/A"}
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              ))
+            ) : (
+              <Text className="text-lg text-gray-600 text-center italic">
+                Không có thông tin chi tiết.
+              </Text>
+            )}
+          </View>
         </View>
       </View>
-    </View>
-  </ScrollView>
+    </ScrollView>
   );
 };
 
