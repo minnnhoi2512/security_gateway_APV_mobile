@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -31,7 +31,15 @@ const Login: React.FC = () => {
   const [loginUser, { isLoading }] = useLoginUserMutation();
   const router = useRouter();
   const dispatch = useDispatch();
-
+  const [role, setRole] = useState<string | null>(null);
+  useEffect(() => {
+    const fetchRole = async () => {
+      const storedRole = await AsyncStorage.getItem("userRole");
+      setRole(storedRole);
+      console.log("ROLE FROM ASYNC STORAGE: ", storedRole);
+    };
+    fetchRole();
+  }, []);
   // const handleLogin = async () => {
   //   try {
   //     const result = await loginUser({ username, password }).unwrap();
@@ -71,7 +79,13 @@ const Login: React.FC = () => {
           role: role,
         }));
 
-        router.push("/PickGate");
+        if(role === "Security") {
+          router.push("/PickGate");
+        } else {
+          router.push("/VisitForStaff");
+        }
+
+       
       }
     } catch (error) {
       console.error("Login failed with error:", error);

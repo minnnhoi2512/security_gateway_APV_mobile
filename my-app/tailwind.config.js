@@ -8,6 +8,7 @@ module.exports = {
           buttonGreen: '#28b463',
           textWhile: '#FFFFFF',
           textBlack: '#000000',
+          colorTitleHeader:'#d35400',
 
       },
       },

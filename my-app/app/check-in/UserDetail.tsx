@@ -36,7 +36,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import VideoPlayer from "./streaming";
-import { Overlay } from "./OverLay";
+import  Overlay  from "./OverLay";
 interface ImageData {
   ImageType: "Shoe";
   ImageURL: string | null;
@@ -61,7 +61,7 @@ const UserDetail = () => {
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
   const [resultValid, setResultValid] = useState();
   const [isVisible, setIsVisible] = useState(false);
-  console.log("GATE ID", selectedGateId);
+  // console.log("GATE ID", selectedGateId);
   const handleToggleView = () => {
     setIsVisible((prev) => !prev);
   };
@@ -131,6 +131,10 @@ const UserDetail = () => {
         const storedUserId = await AsyncStorage.getItem("userId");
         if (storedUserId) {
           setUserId(storedUserId);
+          setCheckInData((prevState) => ({
+            ...prevState,
+            SecurityInId: Number(storedUserId) || 0,
+          }));
           console.log("User ID from AsyncStorage:", storedUserId);
         } else {
           console.log("No userId found in AsyncStorage");
@@ -143,14 +147,14 @@ const UserDetail = () => {
     fetchUserId();
   }, []);
 
-  useEffect(() => {
-    if (userId) {
-      setCheckInData((prevState) => ({
-        ...prevState,
-        SecurityInId: Number(userId) || 0,
-      }));
-    }
-  }, [userId, selectedGateId]);
+  // useEffect(() => {
+  //   if (userId) {
+  //     setCheckInData((prevState) => ({
+  //       ...prevState,
+  //       SecurityInId: Number(userId) || 0,
+  //     }));
+  //   }
+  // }, [userId, selectedGateId]);
 
   useEffect(() => {
     if (visitDetail && Array.isArray(visitDetail) && visitDetail.length > 0) {
@@ -321,7 +325,7 @@ const UserDetail = () => {
     validateAndNavigate();
   }, [checkInData, hasNavigated]);
 
-  console.log("DATA CI: ", checkInData);
+  // console.log("DATA CI: ", checkInData);
   // console.log("DATA DTV: ", visitDetail);
 
   //PERMISSION VIEW
@@ -345,7 +349,7 @@ const UserDetail = () => {
   }
 
 
-  console.log("Valid check data: ", validCheckInData);
+  // console.log("Valid check data: ", validCheckInData);
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
@@ -362,7 +366,7 @@ const UserDetail = () => {
       <ScrollView>
         <GestureHandlerRootView className="flex-1 p-5">
           {/* Photo Section */}
-          <Text className="text-xl font-bold text-gray-800 mb-4">Chụp ảnh</Text>
+          {/* <Text className="text-xl font-bold text-gray-800 mb-4">Chụp ảnh</Text> */}
           <View>
             {/* <Button
               title={isVisible ? "Hide Video Player" : "Show Video Player"}
@@ -424,7 +428,7 @@ const UserDetail = () => {
               </TouchableOpacity>
             </View>
           </View> */}
-          <View className="flex-1 bg-black justify-center items-center">
+          <View className="w-full aspect-[2/4] relative mb-4">
             <CameraView
               className="flex-1 w-full h-full"
               onBarcodeScanned={handleBarCodeScanned}
@@ -441,7 +445,7 @@ const UserDetail = () => {
               className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
               onPress={() => setIsCameraActive(false)}
             >
-              <Text className="text-white">Thoát Camera</Text>
+              {/* <Text className="text-white">Thoát Camera</Text> */}
             </TouchableOpacity>
           </View>
         </GestureHandlerRootView>

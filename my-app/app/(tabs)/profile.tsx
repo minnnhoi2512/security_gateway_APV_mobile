@@ -36,7 +36,7 @@ const Profile: React.FC = () => {
     fetchUserId();
   }, []);
   const renderMenuItem = ({ icon, title, rightText }: MenuItem) => (
-    <TouchableOpacity className="flex-row items-center bg-[#34495e] p-4 rounded-lg mb-4">
+    <TouchableOpacity className="flex-row items-center bg-[#34495e] p-4 rounded-lg mb-2">
       <View className="bg-white p-2 rounded-full mr-4">
         <Feather name={icon} size={24} color="#4B5563" />
       </View>
@@ -104,7 +104,7 @@ const Profile: React.FC = () => {
               console.log("Error during logout:", error);
             }
           }}
-          className="flex-row items-center bg-[#34495e] p-4 rounded-lg mb-4"
+          className="flex-row items-center bg-[#34495e] p-4 rounded-lg mb-5"
         >
           <View className="bg-gray-200 p-2 rounded-full mr-4">
             <Feather name="log-out" size={24} color="#4B5563" />

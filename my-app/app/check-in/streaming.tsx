@@ -94,7 +94,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       });
       return uri;
     } catch (error) {
-      console.error("Failed to generate thumbnail:", error);
+      // console.error("Failed to generate thumbnail:", error);
       throw error;
     }
   };
@@ -122,7 +122,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
       return path;
     } catch (error) {
-      console.error("Failed to process thumbnail:", error);
+      // console.error("Failed to process thumbnail:", error);
       throw error;
     }
   };
@@ -137,7 +137,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       const thumbnailUri = await generateThumbnail(videoSource, currentTime);
       await processThumbnail(thumbnailUri);
     } catch (error) {
-      console.error("Failed to capture from primary source:", error);
+      // console.error("Failed to capture from primary source:", error);
       try {
         // Fallback to static video if primary source fails
         const staticVideoUrl = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";

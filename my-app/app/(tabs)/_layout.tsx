@@ -1,4 +1,4 @@
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -17,15 +17,23 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   // const role = useSelector((state: any) => state.auth.role);
   // console.log("ROLE NE: ", role);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchRole = async () => {
       const storedRole = await AsyncStorage.getItem("userRole");
       setRole(storedRole);
-      console.log("ROLE FROM ASYNC STORAGE: ", storedRole);
+      // if (storedRole === "Staff") {
+      //   router.replace("/(tabs)/VisitForStaff");
+      // }
+      // console.log("ROLE FROM ASYNC STORAGE: ", storedRole);
     };
     fetchRole();
   }, []);
+
+  // if (role === null) {
+  //   return null;  
+  // }
 
   return (
     <Tabs
@@ -36,12 +44,7 @@ export default function TabLayout() {
           paddingTop: 2,
           paddingBottom: 10,
           position: "absolute",
-          width: 360,
-          marginLeft:16,
-          borderRadius:12,
-          bottom: 20,
-          height: 70,
-          
+          height: 88,
           backgroundColor: "#34495e",
           shadowColor: "#000",
           shadowOffset: {
@@ -118,7 +121,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="createCustomer"
         options={{
-          href: role === "Staff" ? null : "/(tabs)/createCustomer",
+          href: role === "Staff" || role === "Security" ? null : "/(tabs)/createCustomer",
           title: "Tạo mới",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name="create-outline" size={24} color={color} />
@@ -151,7 +154,7 @@ export default function TabLayout() {
         name="ChatForStaff"
         options={{
           title: "Trò chuyện",
-          href: role === "Security" ? null : "/(tabs)/ChatForStaff",
+          // href: role === "Security" ? null : "/(tabs)/ChatForStaff",
           tabBarIcon: ({ color, focused }) => (
             <Entypo name="chat" size={24} color={color} />
           ),
@@ -180,3 +183,5 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+
