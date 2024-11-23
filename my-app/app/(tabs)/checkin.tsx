@@ -121,8 +121,7 @@ const Checkin = () => {
           {isVideoPlayerVisible && (
             <View className="h-[200px] w-[300px]">
               <VideoPlayer
-                onCaptureImage={handleImageCapture}
-                autoCapture={autoCapture}
+              
               />
                    <TouchableOpacity
             onPress={toggleVideoPlayer}
