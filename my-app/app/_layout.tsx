@@ -120,6 +120,10 @@ export default function RootLayout() {
               options={{ headerShown: false }}
             />
             <Stack.Screen
+              name="chat"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
               name="check-in/UserDetail"
               options={{ headerShown: false }}
             />
