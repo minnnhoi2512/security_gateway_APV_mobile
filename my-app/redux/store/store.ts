@@ -4,10 +4,16 @@ import { setupListeners } from "@reduxjs/toolkit/query";
 import { visitApi } from "../services/visit.service";
 import { gateApi } from "../services/gate.service";
 import gateSlice from "../slices/gate.slice";
+import authSlice from "../slices/auth.slice";
+import visitStaffCreateSlice from "../slices/visitStaffCreate.slice";
 import { qrcodeApi } from "../services/qrcode.service";
 import { checkinApi } from "../services/checkin.service";
-import { visitorSessionApi } from "../services/checkout.service";
+
 import { visitorApi } from "../services/visitor.service";
+import { userApi } from "../services/user.service";
+import { pythonAPI } from "../services/pythonApi.service";
+import { visitorSessionApi } from "../services/visitorSession.service";
+import { checkOutApi } from "../services/checkout.service";
 
 export const store = configureStore({
   reducer: {
@@ -17,13 +23,30 @@ export const store = configureStore({
     gate: gateSlice,
     [qrcodeApi.reducerPath]: qrcodeApi.reducer,
     [checkinApi.reducerPath]: checkinApi.reducer,
+    [checkOutApi.reducerPath]: checkOutApi.reducer,
     [visitorSessionApi.reducerPath]: visitorSessionApi.reducer,
     [visitorApi.reducerPath]: visitorApi.reducer,
-
+    [userApi.reducerPath]: userApi.reducer,
+    [pythonAPI.reducerPath]: pythonAPI.reducer,
+ 
+    auth: authSlice,
+    visitStaff : visitStaffCreateSlice
   },
 
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(authApi.middleware, visitApi.middleware, gateApi.middleware, qrcodeApi.middleware, checkinApi.middleware,visitorSessionApi.middleware, visitorApi.middleware),
+    getDefaultMiddleware({
+      serializableCheck: false
+    }).concat(
+      authApi.middleware,
+      visitApi.middleware,
+      gateApi.middleware,
+      qrcodeApi.middleware,
+      checkinApi.middleware,
+      checkOutApi.middleware,
+      visitorSessionApi.middleware, 
+      visitorApi.middleware, 
+      userApi.middleware
+    ),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

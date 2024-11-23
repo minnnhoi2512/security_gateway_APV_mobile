@@ -50,7 +50,7 @@ export const qrcodeApi = createApi({
       },
     }),
     getDataByCardVerification: builder.query({
-      query: (cardVerification: string) => `QRCode/${cardVerification}`
+      query: (cardVerification: string) => `Card/${cardVerification}`
     })
   }),
 });

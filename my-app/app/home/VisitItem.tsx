@@ -1,16 +1,20 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import React from 'react'
-import { Visit2 } from '@/redux/Types/visit.type';
-import { router } from 'expo-router';
-import { FontAwesome5, Ionicons } from '@expo/vector-icons';
-import home from './../home';
-import { FontWeight } from '@shopify/react-native-skia';
-import { styled } from 'nativewind';
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
+} from "react-native";
+import React from "react";
+import { Visit2 } from "@/redux/Types/visit.type";
+import { router } from "expo-router";
+import { FontAwesome5 } from "@expo/vector-icons";
+import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 
 interface VisitCardProps {
   visit: Visit2;
 }
-// id, visitName, quantity
+
 const VisitItem: React.FC<VisitCardProps> = ({ visit }) => {
   return (
     <TouchableOpacity
@@ -18,127 +22,80 @@ const VisitItem: React.FC<VisitCardProps> = ({ visit }) => {
       onPress={() => {
         router.push({
           pathname: `/home/VisitDetail`,
-
-
           params: {
             id: visit.visitId,
             visitName: visit.visitName,
             quantity: visit.visitQuantity,
-            data: JSON.stringify(visit)
+            data: JSON.stringify(visit),
           },
         });
       }}
-      className="flex-1 bg-[#3d5a99] p-4 rounded-xl shadow-lg transition-all duration-300 active:bg-gray-50 items-center "
+      className="flex-row bg-white p-4 rounded-2xl shadow-md mb-4"
     >
-      <View className='w-full flex-row my-1'>
-        <FontAwesome5
-          name="calendar-alt"
-          size={'30%'}
-          color="#FFFFFF"
-        />
-        <Text
-          className={`font-bold text-lg ${visit.scheduleTypeName === "daily"
-            ? "text-green-600"
-            : "text-white"
-            } pl-2`}
-        >
-          Tên cuộc hẹn: {visit.visitName}
+      <View className="w-20 mr-4 items-center justify-center">
+        <Text className="text-lg font-bold text-[#45b39d]">
+          {visit.visitDetailStartTime?.split(":").slice(0, 2).join(":")}
+        </Text>
+        <Text className="text-sm text-[#45b39d]">-</Text>
+        <Text className="text-lg font-bold text-[#45b39d]">
+          {visit.visitDetailEndTime?.split(":").slice(0, 2).join(":")}
         </Text>
       </View>
-      <View className='w-full flex-row my-1'>
-        <FontAwesome5
-          name="calendar-alt"
-          size={'30%'}
-          color="#FFFFFF"
-        />
-        <Text
-          className={`font-bold text-lg ${visit.scheduleTypeName === "daily"
-            ? "text-green-600"
-            : "text-white"
-            } pl-2`}
-        >
-          Người tạo: {visit.createByname}
-        </Text>
-      </View>
-      <View className='w-full flex-row my-1'>
-        <FontAwesome5
-          name="calendar-alt"
-          size={'30%'}
-          color="#FFFFFF"
-        />
-        <Text
-          className={`font-bold text-lg ${visit.scheduleTypeName === "daily"
-            ? "text-green-600"
-            : "text-white"
-            } pl-2`}
-        >
-          Loại cuộc hẹn: {visit.scheduleTypeName}
-        </Text>
-      </View>
-      <View className='w-full flex-row my-1'>
-        <FontAwesome5
-          name="users"
-          size={'30%'}
-          color="#FFFFFF"
-        />
-        <Text
-          className={`font-bold text-lg ${visit.scheduleTypeName === "daily"
-            ? "text-green-600"
-            : "text-white"
-            } pl-2`}
-        >
-          Số lượng người tham gia: {visit.visitQuantity}
-        </Text>
-      </View>
-      <View className='w-full flex-row my-1'>
-        <FontAwesome5
-          name="calendar-alt"
-          size={'30%'}
-          color="#FFFFFF"
-        />
-        <Text
-          className={`font-bold text-lg ${visit.scheduleTypeName === "daily"
-            ? "text-green-600"
-            : "text-white"
-            } pl-2`}
-        >
-          Chi tiết: {visit.description}
-        </Text>
-      </View>
-      
-      {/* <View className="w-1/6 p-3 m-1 bg-white rounded-full items-center">
-        <Ionicons
-          name="calendar-outline"
-          size={30}
-          color="#3d5a99"
-        />
-      </View>
-      <View className="w-4/6">
-        <Text
-          className={`font-bold text-lg ${visit.scheduleTypeName === "daily"
-            ? "text-green-600"
-            : "text-white"
-            }`}
-        >
-          Tên cuộc hẹn: {visit.visitName}
-        </Text>
-        <Text className="text-sm font-medium text-white">
-          Tạo bởi: {visit.createByname}
-        </Text>
-        <Text className="text-sm font-medium text-white">
-          Loại tham quan: {visit.scheduleTypeName}
-        </Text>
 
+      <View className="flex-1 border-l border-gray-200 pl-4">
+        <View className="flex-row items-center justify-between">
+          <Text className="text-lg font-bold text-[#1a5276]">
+            {visit.visitName}
+          </Text>
+          {(visit.visitorSessionCheckedInCount || 0) > 0 && (
+            <View className="bg-green-100 px-2 py-1 rounded">
+              <Text className="text-sm text-green-600">Đã có khách vào</Text>
+            </View>
+          )}
+        </View>
+
+        <View className="flex-row items-baseline mt-2">
+          <View className="flex-row items-center">
+            <FontAwesome5 name="user-friends" size={14} color="#e67e22" />
+            <Text className="text-sm text-[#1a5276] ml-2">
+              {visit.visitQuantity} người
+            </Text>
+          </View>
+          <Text className="text-sm text-[#1a5276] mx-2">•</Text>
+          <Text className="text-sm text-[#1a5276]">
+            {visit.scheduleTypeName === "ProcessWeek"
+              ? "Lịch theo tuần"
+              : visit.scheduleTypeName === "ProcessMonth"
+              ? "Lịch theo tháng"
+              : visit.scheduleTypeName === "ProcessYear"
+              ? "Lịch theo năm"
+              : "Lịch hàng ngày"}
+          </Text>
+        </View>
+        <View className="flex-row items-center mt-1">
+          <FontAwesome5 name="user-check" size={14} color="#e67e22" />
+          <Text className="text-sm text-[#1a5276] ml-2">
+            Người tạo • {visit.createByname}
+          </Text>
+        </View>
+        <View className="flex-row items-center mt-2 space-x-3">
+          <View className="flex-row items-center">
+            <FontAwesome5 name="sign-in-alt" size={14} color="#4CAF50" />
+            <Text className="text-sm text-gray-600 ml-2">
+              Vào: {visit.visitorSessionCheckedInCount}
+            </Text>
+          </View>
+
+          <View className="flex-row items-center">
+            <FontAwesome5 name="sign-out-alt" size={14} color="#F44336" />
+            <Text className="text-sm text-gray-600 ml-2">
+              Ra: {visit.visitorSessionCheckedOutCount}
+            </Text>
+          </View>
+        </View>
       </View>
-      <View className=" w-1/6 aspect-square bg-white rounded-full items-center justify-center">
-        <Text className="text-black ">
-           {visit.visitQuantity}
-        </Text>
-      </View> */}
     </TouchableOpacity>
-  )
-}
+  );
+};
 
-export default VisitItem
-
-const styles = StyleSheet.create({})
+export default VisitItem;

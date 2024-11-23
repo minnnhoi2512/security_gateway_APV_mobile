@@ -26,8 +26,8 @@ export interface CreateVisit {
   expectedStartTime: string;
   expectedEndTime: string;
   createById: number;
-  description: string;
-  // scheduleId: number;
+  description: string,
+  responsiblePersonId: number;
   visitDetail: Array<{
     expectedStartHour: string;
     expectedEndHour: string;

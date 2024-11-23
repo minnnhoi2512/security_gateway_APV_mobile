@@ -1,179 +1,207 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Camera, CameraView } from "expo-camera";
-import { Stack, useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
-import {
-  Alert,
-  AppState,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  Text,
-} from "react-native";
-import { Overlay } from "../check-in/OverLay";
-import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service";
-import { useGetVisitorByCreadentialCardQuery } from "@/redux/services/visitor.service";
+  import React, { useEffect, useRef, useState } from "react";
+  import { CameraView } from "expo-camera";
+  import { Stack, useRouter } from "expo-router";
+  import { useFocusEffect } from "@react-navigation/native";
+  import {
+    Alert,
+    AppState,
+    Platform,
+    Pressable,
+    SafeAreaView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+  } from "react-native";
+  import  Overlay  from "../check-in/OverLay";
+  import { useGetVisitorByCreadentialCardQuery } from "@/redux/services/visitor.service";
 
-interface ScanData {
-  id: string;
-  nationalId: string;
-  name: string;
-  dateOfBirth: string;
-  gender: string;
-  address: string;
-  issueDate: string;
-}
+  interface ScanData {
+    id: string;
+    nationalId: string;
+    name: string;
+    dateOfBirth: string;
+    gender: string;
+    address: string;
+    issueDate: string;
+  }
 
-export default function ScanQrCreate() {
-  const qrLock = useRef(false);
-  const appState = useRef(AppState.currentState);
-  const router = useRouter();
+  export default function ScanQrCreate() {
+    const qrLock = useRef(false);
+    const appState = useRef(AppState.currentState);
+    const router = useRouter();
+    const [scannedData, setScannedData] = useState<string>("");
+    const [credentialCardId, setCredentialCardId] = useState<string | null>(null);
+    const processingRef = useRef(false);
+    const redirected = useRef(false);
+    const [visitorCreated, setVisitorCreated] = useState(false);
+    const parseQRData = (qrData: string): ScanData => {
+      const [id, nationalId, name, dateOfBirth, gender, address, issueDate] =
+        qrData.split("|");
+      return { id, nationalId, name, dateOfBirth, gender, address, issueDate };
+    };
 
-  const [scannedData, setScannedData] = useState<string>("");
-  const [credentialCardId, setCredentialCardId] = useState<string | null>(null);
-  const [alertDisplayed, setAlertDisplayed] = useState(false);
-
-  const parseQRData = (qrData: string): ScanData => {
-    const [id, nationalId, name, dateOfBirth, gender, address, issueDate] =
-      qrData.split("|");
-    return { id, nationalId, name, dateOfBirth, gender, address, issueDate };
-  };
-
-  const {
-    data: visitData,
-    error,
-    isLoading,
-    isFetching,
-  } = useGetVisitorByCreadentialCardQuery(credentialCardId || "", {
-    skip: !credentialCardId,
-  });
-
-  console.log("VISITỎR DATA ID: ", visitData);
-
-  // Reset states function
-  const resetStates = () => {
-    setScannedData("");
-    setCredentialCardId(null);
-    setAlertDisplayed(false);
-    qrLock.current = false;
-  };
-
-  // Use useFocusEffect to reset states when screen comes into focus
-  useFocusEffect(
-    React.useCallback(() => {
-      resetStates();
-
-      return () => {
-        // Cleanup if needed
-      };
-    }, [])
-  );
-
-  useEffect(() => {
-    if (scannedData) {
-      const parsedData = parseQRData(scannedData);
-      setCredentialCardId(parsedData.id);
-    }
-  }, [scannedData]);
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextAppState) => {
-      if (
-        appState.current.match(/inactive|background/) &&
-        nextAppState === "active"
-      ) {
-        resetStates();
-      }
-      appState.current = nextAppState;
+    const {
+      data: visitData,
+      error,
+      isLoading,
+      isFetching,
+    } = useGetVisitorByCreadentialCardQuery(credentialCardId || "", {
+      skip: !credentialCardId, refetchOnMountOrArgChange: 2, refetchOnFocus: true
     });
 
-    return () => {
-      subscription.remove();
+    const resetStates = () => {
+      setScannedData("");
+      setCredentialCardId(null);
+      qrLock.current = false;
+      processingRef.current = false;
     };
-  }, []);
 
-  useEffect(() => {
-    if (credentialCardId && !isFetching && !alertDisplayed) {
-      qrLock.current = true;
-      if (visitData && !isFetching && !isLoading && !error) {
-        router.push({
-          pathname: "/createVisit/FormCreate",
-          params: {
-            visitorId: visitData.visitorId,
-          },
-        });
-      } else {
-        Alert.alert(
-          "Không tìm thấy dữ liệu",
-          "Không tìm thấy dữ liệu cho ID này. Bạn sẽ được chuyển hướng đến tạo khách mới.",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                router.push({
-                  pathname: "/createVisitor/CreateVisitor",
-                  params: { data: scannedData },
-                });
-                qrLock.current = false;
-                setAlertDisplayed(false);
-              },
-            },
-          ]
-        );
-        setAlertDisplayed(true);
+    useFocusEffect(
+      React.useCallback(() => {
+        resetStates();
+        redirected.current = false;
+        return () => {
+        
+        };
+      }, [])
+    );
+
+
+
+    useEffect(() => {
+      if (scannedData) {
+        const parsedData = parseQRData(scannedData);
+        setCredentialCardId(parsedData.id);
       }
-    }
-  }, [credentialCardId, visitData, error]);
+     
+    }, [scannedData]);
 
-  const handleBarCodeScanned = ({ data }: { data: string }) => {
-    if (data && !qrLock.current) {
-      qrLock.current = true;
-      setScannedData(data);
-    }
-  };
+    useEffect(() => {
+      const subscription = AppState.addEventListener("change", (nextAppState) => {
+        if (
+          appState.current.match(/inactive|background/) &&
+          nextAppState === "active"
+        ) {
+          resetStates();
+        }
+        appState.current = nextAppState;
+      });
+      return () => {
+        subscription.remove();
+      };
+    }, []);
 
-  const handleGoBack = () => {
-    resetStates();
-    router.back();
-  };
-  // console.log("visit data: ", visitData);
+    const handleVisitorNotFound = () => {
+      Alert.alert(
+        "Không tìm thấy dữ liệu",
+        "Không tìm thấy dữ liệu cho ID này. Bạn sẽ được chuyển hướng đến tạo khách mới.",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              router.push({
+                pathname: "/createVisitor/CreateVisitor",
+                params: { data: scannedData },
+              });
+              resetStates();
+            },
+          },
+          {
+            text: "Hủy",
+            onPress: () => {
+              resetStates();
+            },
+          },
+        ]
+      );
+    };
 
-  return (
-    <SafeAreaView style={StyleSheet.absoluteFillObject}>
-      <Stack.Screen
-        options={{
-          title: "Overview",
-          headerShown: false,
-        }}
-      />
-      {Platform.OS === "android" ? <StatusBar hidden /> : null}
-      <CameraView
-        style={StyleSheet.absoluteFillObject}
-        facing="back"
-        onBarcodeScanned={handleBarCodeScanned}
-      />
-      <Overlay />
 
-      <Pressable style={styles.backButton} onPress={handleGoBack}>
-        <Text style={styles.backButtonText}>Quay về</Text>
-      </Pressable>
-    </SafeAreaView>
-  );
-}
+    useEffect(() => {
+      if (!credentialCardId || processingRef.current || redirected.current) return;
 
-const styles = StyleSheet.create({
-  backButton: {
-    position: "absolute",
-    top: 60,
-    left: 20,
-    padding: 10,
-    backgroundColor: "black",
-    borderRadius: 5,
-  },
-  backButtonText: {
-    color: "white",
-    fontSize: 16,
-  },
-});
+      if (credentialCardId && !isLoading && !isFetching) {
+        processingRef.current = true;
+        qrLock.current = true;
+        if (visitData?.visitorId && !isFetching && !isLoading && !error) {
+          redirected.current = true;  
+          router.push({
+            pathname: "/createVisit/FormCreate",
+            params: {
+              visitorId: visitData.visitorId,
+            },
+            
+          });
+          resetStates();
+          
+        } else if(!visitData  || error ) {
+          handleVisitorNotFound();
+        }
+      }
+      
+    }, [visitData, isLoading, isFetching, credentialCardId]);
+
+    const handleBarCodeScanned = ({ data }: { data: string }) => {
+      if (data && !qrLock.current && !processingRef.current) {
+        qrLock.current = true;
+        setScannedData(data);
+        console.log("QR SS QUET MOI", data);
+        
+      }
+    };
+
+    const handleGoBack = () => {
+      resetStates();
+      router.back();
+    };
+
+    return (
+      <SafeAreaView style={StyleSheet.absoluteFillObject}>
+        <Stack.Screen
+          options={{
+            title: "Overview",
+            headerShown: false,
+          }}
+        />
+        {Platform.OS === "android" ? <StatusBar hidden /> : null}
+        <CameraView
+          style={StyleSheet.absoluteFillObject}
+          facing="back"
+          onBarcodeScanned={handleBarCodeScanned}
+        />
+        <Overlay />
+        {/* <Pressable style={styles.backButton} onPress={handleGoBack}>
+          <Text className="text-3xl" style={styles.backButtonText}>Quay về</Text>
+        </Pressable> */}
+        <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
+        <Text className="text-green-700 text-sm font-semibold">
+          Camera Tạo mới
+        </Text>
+      </View>
+
+      <TouchableOpacity
+        className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
+        onPress={handleGoBack}
+      >
+        <Text className="text-white">Thoát Camera</Text>
+      </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  const styles = StyleSheet.create({
+    backButton: {
+      position: "absolute",
+      top: 60,
+      left: 20,
+      padding: 10,
+      backgroundColor: "black",
+      borderRadius: 5,
+    },
+    backButtonText: {
+      color: "white",
+      // fontSize: 16,
+    },
+  });

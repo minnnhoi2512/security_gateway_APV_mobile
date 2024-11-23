@@ -1,32 +1,78 @@
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
   SafeAreaView,
-  TouchableOpacity,
-  ScrollView,
   ActivityIndicator,
+  FlatList,
+  RefreshControl,
 } from "react-native";
 import Header from "@/components/UI/Header";
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGetAllVisitsByCurrentDateQuery } from "@/redux/services/visit.service";
-import { Ionicons } from "@expo/vector-icons";
+import { FontAwesome5 } from "@expo/vector-icons";
 import { Visit2 } from "@/redux/Types/visit.type";
 import VisitItem from "../home/VisitItem";
-// import calendar_icon from '@/assets/images/calendar.png'
+import StaffCard from "../home/StaffCard";
+import { useGetAllStaffQuery } from "@/redux/services/user.service";
+import { Staff } from "@/Types/user.type";
+import AddButton from "@/components/UI/AddButton";
+import { useGetVisitorSessionsQuery } from "@/redux/services/visitorSession.service";
 
 export default function HomeScreen() {
   const { selectedGate } = useLocalSearchParams();
   const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
   const {
     data: visits,
     isLoading,
     isError,
-  } = useGetAllVisitsByCurrentDateQuery({
-    pageSize: 10,
-    pageNumber: 1,
-  });
+    refetch,
+  } = useGetAllVisitsByCurrentDateQuery(
+    { pageSize: 10, pageNumber: 1 },
+    {
+      refetchOnMountOrArgChange: true,
+    }
+  );
+
+  const {
+    data: staffList,
+    isLoading: isLoadingStaff,
+    isError: isErrorStaff,
+  } = useGetAllStaffQuery({});
+
+  useEffect(() => {
+    if (visits && visits.length === 0) {
+      refetch();
+    }
+  }, [visits, refetch]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
+
+  const renderEmptyState = () => (
+    <View className="bg-white p-8 rounded-xl border border-gray-100 items-center">
+      <View className="w-16 h-16 bg-gray-100 rounded-full items-center justify-center mb-4">
+        <FontAwesome5 name="calendar-times" size={24} color="#9CA3AF" />
+      </View>
+      <Text className="text-gray-400 text-center">
+        Không có lịch hẹn nào cho hôm nay
+      </Text>
+    </View>
+  );
+
+  const renderVisitItem = ({ item }: { item: Visit2 }) => (
+    <View className="mb-2">
+      <VisitItem visit={item} />
+    </View>
+  );
 
   if (isLoading) {
     return (
@@ -44,46 +90,68 @@ export default function HomeScreen() {
     );
   }
 
+  // console.log("vs: ", visits);
+
   return (
     <SafeAreaProvider>
-      <View className="flex-1 bg-white">
+      <View className="flex-1 bg-gray-50">
         <Header name="Đặng Dương" />
-        <ScrollView className="flex-1">
-          <View className="bg-white py-6">
-            {selectedGate && (
-              <View className="items-center mb-6">
-                <View className="bg-backgroundApp px-6 py-4 rounded-lg shadow-md w-[89%]">
-                  <Text className="text-xl text-center text-white font-bold">
-                    Cổng {selectedGate}
+
+        <FlatList
+          ListHeaderComponent={
+            <>
+              <View className="mb-6">
+                <View className="px-6 mb-4 flex-row justify-between items-center">
+                  <Text className="text-xl font-bold text-[#d35400]">
+                    Nhân viên trực
                   </Text>
                 </View>
-              </View>
-            )}
 
-            <View className="px-4">
-              <View className="flex-row justify-between items-center mb-6">
-                <Text className="text-xl font-bold text-[#3d5a99]">
-                  Lịch hẹn hôm nay
-                </Text>
-                <TouchableOpacity className="bg-buttonGreen px-4 py-2 rounded-full">
-                  <Text className="text-white font-semibold">Xem tất cả</Text>
-                </TouchableOpacity>
+                <View className="px-6">
+                  <FlatList
+                    horizontal
+                    data={staffList}
+                    renderItem={({ item }) => <StaffCard staff={item} />}
+                    keyExtractor={(staff) => staff.userId}
+                    showsHorizontalScrollIndicator={false}
+                  />
+                </View>
               </View>
 
-              {visits && visits.length > 0 ? (
-                visits.map((visit: Visit2) => (
-                  <View className="py-1" key={visit.visitId} >
-                    <VisitItem visit={visit} />
+              <View className="px-6">
+                <View className="flex-row justify-between items-center mb-6">
+                  <Text className="text-xl ml-2 font-bold text-[#d35400]">
+                    Lịch hẹn Hôm nay
+                  </Text>
+                  <View className="bg-emerald-100 px-4 py-2 rounded-full flex-row items-center space-x-2">
+                    <FontAwesome5
+                      name="calendar-check"
+                      size={18}
+                      color="#059669"
+                    />
+                    <Text className="text-emerald-700 font-semibold">
+                      {visits?.length || 0} lịch hẹn
+                    </Text>
                   </View>
-                ))
-              ) : (
-                <Text className="text-center text-gray-500 italic">
-                  Không có lịch hẹn nào
-                </Text>
-              )}
-            </View>
-          </View>
-        </ScrollView>
+                </View>
+              </View>
+            </>
+          }
+          data={visits}
+          renderItem={renderVisitItem}
+          keyExtractor={(visit) => visit.visitId.toString()}
+          ListEmptyComponent={renderEmptyState}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          contentContainerStyle={{
+            paddingBottom: 100,
+            paddingHorizontal: 16,
+          }}
+          showsVerticalScrollIndicator={false}
+        />
+
+        <AddButton />
       </View>
     </SafeAreaProvider>
   );
