@@ -11,61 +11,50 @@ import {
   Pressable,
   StyleSheet,
 } from "react-native";
-import React, { useEffect, useRef, useState } from "react";
 import {
   GestureHandlerRootView,
   TouchableOpacity,
 } from "react-native-gesture-handler";
-import { SaveFormat } from "expo-image-manipulator";
+import * as FileSystem from "expo-file-system";
 import { MaterialIcons } from "@expo/vector-icons";
+import React, { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Camera, CameraView, useCameraPermissions } from "expo-camera";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { uploadToFirebase } from "../../firebase-config";
-import { CheckInVer02, ValidCheckIn } from "@/Types/checkIn.type";
-import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
-import {
-  useGetDataByCardVerificationQuery,
-  useShoeDetectMutation,
-} from "@/redux/services/qrcode.service";
-import {
-  useCheckInMutation,
-  useValidCheckInMutation,
-} from "@/redux/services/checkin.service";
+import Overlay from "./OverLay";
+import { CheckInVer02 } from "@/Types/checkIn.type";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import VideoPlayer from "./streaming";
-import  Overlay  from "./OverLay";
+import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
+import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
+
 interface ImageData {
   ImageType: "Shoe";
   ImageURL: string | null;
   ImageFile: string | null;
 }
+
 const UserDetail = () => {
   const { visitId } = useLocalSearchParams<{ visitId: string }>();
   const { data } = useLocalSearchParams<{ data: string }>();
-  const router = useRouter();
-  const [permission, requestPermission] = useCameraPermissions();
-  const [isPermissionGranted, setIsPermissionGranted] = useState(false);
-  const [isCameraActive, setIsCameraActive] = useState(false);
-  const qrLock = useRef(false);
-  const [userId, setUserId] = useState<string | null>(null);
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
+
+  const router = useRouter();
+  const [permission, requestPermission] = useCameraPermissions();
+  const qrLock = useRef(false);
+
+  const [isPermissionGranted, setIsPermissionGranted] = useState(false);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [qrImage, setQrImage] = useState<string | null>(null);
-  const [isValidating, setIsValidating] = useState(false);
   const [hasNavigated, setHasNavigated] = useState(false);
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
-  const [resultValid, setResultValid] = useState();
-  const [isVisible, setIsVisible] = useState(false);
-  // console.log("GATE ID", selectedGateId);
-  const handleToggleView = () => {
-    setIsVisible((prev) => !prev);
-  };
-
+  const [autoCapture, setAutoCapture] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   // RTK QUERY
 
   const {
@@ -82,49 +71,59 @@ const UserDetail = () => {
     QrCardVerification: "",
     Images: [],
   });
-  const [validCheckInData, setValidCheckInData] = useState<ValidCheckIn>({
-    CredentialCard: null,
-    QrCardVerification: "",
-    ImageShoe: [],
-  });
 
-  const handleImageCapture = async (imageData: ImageData) => {
+  const fetchCaptureImage = async (): Promise<ImageData | null> => {
     try {
-      setCapturedImage([imageData]);
-      const formattedImageData = {
-        ImageType: imageData.ImageType,
-        ImageURL: "",
-        Image: imageData.ImageFile || "",
-      };
+      const response = await fetch(
+        "https://security-gateway-camera.tools.kozow.com/camera-1/capture-image",
+        {
+          method: "GET",
+        }
+      );
 
-      setCheckInData((prev) => ({
-        ...prev,
-        Images: [formattedImageData],
-      }));
-  
-      // const downloadUrl = await uploadToFirebase(
-      //   imageData.imageFile,
-      //   `${imageData.imageType}_${Date.now()}.jpg`
-      // );
-  
-      // console.log("Image uploaded successfully:", downloadUrl);
-  
-      // Update state or pass the URL as needed
+      if (!response.ok) {
+        console.error("HTTP Response Status:", response.status);
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const fileUri = `${FileSystem.cacheDirectory}captured-image.jpg`;
+
+      const fileSaved = await new Promise<string | null>((resolve, reject) => {
+        const fileReader = new FileReader();
+        fileReader.onloadend = async () => {
+          const base64data = fileReader.result?.toString().split(",")[1];
+          if (base64data) {
+            await FileSystem.writeAsStringAsync(fileUri, base64data, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            resolve(fileUri);
+          } else {
+            reject(null);
+          }
+        };
+        fileReader.readAsDataURL(blob);
+      });
+      console.log("file:", fileSaved);
+
+      return {
+        ImageType: "Shoe",
+        ImageURL: null,
+        ImageFile: fileSaved,
+      };
     } catch (error) {
-      Alert.alert("Upload Error", "Failed to upload image to Firebase");
+      console.error("Failed to fetch capture image:", error);
+      Alert.alert("Error", "Failed to fetch the image. Please try again.");
+      return null;
     }
   };
+
   const {
     data: qrCardData,
     isLoading: isLoadingQr,
     isError: isErrorQr,
   } = useGetDataByCardVerificationQuery(checkInData.QrCardVerification);
 
-  const [validCheckIn, { isLoading: isValidCheckingIn }] =
-    useValidCheckInMutation();
-  const [isCheckInEnabled, setIsCheckInEnabled] = useState(false);
-
-  const [autoCapture, setAutoCapture] = useState(false);
   useEffect(() => {
     const fetchUserId = async () => {
       try {
@@ -147,18 +146,8 @@ const UserDetail = () => {
     fetchUserId();
   }, []);
 
-  // useEffect(() => {
-  //   if (userId) {
-  //     setCheckInData((prevState) => ({
-  //       ...prevState,
-  //       SecurityInId: Number(userId) || 0,
-  //     }));
-  //   }
-  // }, [userId, selectedGateId]);
-
   useEffect(() => {
     if (visitDetail && Array.isArray(visitDetail) && visitDetail.length > 0) {
-      // Lấy credentialsCard từ phần tử đầu tiên của mảng
       const credentialCard = visitDetail[0]?.visitor?.credentialsCard;
 
       console.log("Original Credential Card:", credentialCard);
@@ -167,8 +156,6 @@ const UserDetail = () => {
         ...prevData,
         CredentialCard: credentialCard,
       }));
-
- 
     }
   }, [visitDetail]);
 
@@ -191,57 +178,70 @@ const UserDetail = () => {
   const handleGoBack = () => {
     router.back();
   };
- 
-  // useEffect(() => {
-  //   const validateCheckInData = async () => {
-  //     const isQrValid = !!validCheckInData.QrCardVerification;
-  //     const hasOneImage = validCheckInData.ImageShoe.length === 1;
-
-  //     if (!isQrValid || !hasOneImage) {
-  //       setIsCheckInEnabled(false);
-  //       return;
-  //     }
-
-  //     try {
-  //       const result = await validCheckIn(validCheckInData).unwrap();
-  //       setIsCheckInEnabled(result);
-  //       setResultValid(result);
-  //     } catch (error: any) {
-  //       // console.error("Validation error:", error);
-
-  //       const errorMessage = error.data?.message || "Please ensure all requirements are met.";
-
-  //       Alert.alert("Đã xảy ra lỗi", errorMessage);
-
-  //       setIsCheckInEnabled(false);
-
-  //     }
-  //   };
-
-  //   validateCheckInData();
-  // }, [validCheckInData]);
-
-  // console.log("CApture image: ", capturedImage);
-  // console.log("Data passed: ", data);
-
- 
 
   useEffect(() => {
-    if (qrCardData?.cardImage) {
-      setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
-    }
+    const handleQrDataAndCapture = async () => {
+      if (qrCardData) {
+        console.log("QR Card Data received:", qrCardData);
+        setAutoCapture(true);
+
+        if (qrCardData.cardImage) {
+          setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
+        }
+
+        if (qrCardData.cardVerification) {
+          console.log(
+            "Processing card verification:",
+            qrCardData.cardVerification
+          );
+
+          try {
+            const capturedImageData = await fetchCaptureImage();
+            console.log("Captured image data:", capturedImageData);
+
+            if (capturedImageData && capturedImageData.ImageFile) {
+              setCapturedImage([capturedImageData]);
+              const formattedImage = {
+                ImageType: "Shoe",
+                ImageURL: "",
+                Image: capturedImageData.ImageFile,
+              };
+
+              // console.log("Formatted image data:", formattedImage);
+              setCheckInData((prevData) => {
+                const newData = {
+                  ...prevData,
+                  QrCardVerification: qrCardData.cardVerification,
+                  Images: [formattedImage],
+                };
+                console.log("Updated checkInData:", newData);
+                return newData;
+              });
+            } else {
+              console.error("No image data captured");
+            }
+          } catch (error) {
+            console.error("Error in capture process:", error);
+            Alert.alert("Error", "Failed to capture and save image");
+          }
+        }
+      }
+    };
+
+    handleQrDataAndCapture().catch((error) => {
+      console.error("Error in handleQrDataAndCapture:", error);
+    });
   }, [qrCardData]);
 
   useEffect(() => {
     if (qrCardData) {
-      setAutoCapture(true);
-
+      // setAutoCapture(true);
+      setIsProcessing(true);
       if (qrCardData.cardVerification) {
         setCheckInData((prevData) => ({
           ...prevData,
           QrCardVerification: qrCardData.cardVerification,
         }));
- 
       } else {
         setIsCameraActive(true);
       }
@@ -252,7 +252,8 @@ const UserDetail = () => {
 
   useEffect(() => {
     if (qrCardData) {
-      setAutoCapture(true);
+      setIsProcessing(true);
+      // setAutoCapture(true);
       if (qrCardData.cardImage) {
         setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
       }
@@ -262,30 +263,46 @@ const UserDetail = () => {
           ...prevData,
           QrCardVerification: qrCardData.cardVerification,
         }));
- 
       }
     }
   }, [qrCardData]);
 
+  // const handleBarCodeScanned = async ({ data }: { data: string }) => {
+  //   if (data && !qrLock.current) {
+  //     qrLock.current = true;
+  //     setIsScanning(true);
+  //     console.log("Scanned QR Code Data:", data);
+
+  //     setCheckInData((prevData) => ({
+  //       ...prevData,
+  //       QrCardVerification: data,
+  //     }));
+
+  //     setIsCameraActive(false);
+  //     // setAutoCapture(true);
+  //   }
+  // };
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
     if (data && !qrLock.current) {
       qrLock.current = true;
-      console.log("Scanned QR Code Data:", data);
+      setIsProcessing(true);
 
- 
-      setCheckInData((prevData) => ({
-        ...prevData,
-        QrCardVerification: data,
-      }));
- 
-      setIsCameraActive(false);
-      setAutoCapture(true);
+      try {
+        console.log("Scanned QR Code Data:", data);
 
-      // Show thông báo quét thành công
-      // Alert.alert(
-      //   "Đã quét QR Code",
-      //   "QR Code đã được quét thành công và sẽ hiển thị ảnh bên dưới"
-      // );
+        setCheckInData((prevData) => ({
+          ...prevData,
+          QrCardVerification: data,
+        }));
+
+        setIsCameraActive(false);
+      } catch (error) {
+        console.error("Error handling QR Code:", error);
+        Alert.alert("Error", "Failed to process QR code. Please try again.");
+      } finally {
+        setIsProcessing(false);
+        qrLock.current = false;
+      }
     }
   };
 
@@ -300,26 +317,22 @@ const UserDetail = () => {
       }
 
       try {
-        // setIsValidating(true);
-        // const result = await validCheckIn(validCheckInData).unwrap();
-
         if (!hasNavigated) {
           setHasNavigated(true);
           router.push({
             pathname: "/check-in/CheckInOverall",
             params: {
-              // resultData: JSON.stringify(result),
               dataCheckIn: JSON.stringify(checkInData),
             },
           });
         }
       } catch (error: any) {
         console.log("ERR", error);
-        
+
         const errorMessage =
           error.data?.message || "Please ensure all requirements are met.";
         Alert.alert("Đã xảy ra lỗi", errorMessage);
-      } 
+      }
     };
 
     validateAndNavigate();
@@ -338,18 +351,35 @@ const UserDetail = () => {
     );
   }
 
-  if (isLoading) {
+  // if (isLoadingQr) {
+  //   return (
+  //     <View className="flex-1 justify-center items-center bg-gray-100">
+  //       <Text className="text-xl font-semibold text-backgroundApp">
+  //         Đang tải...
+  //       </Text>
+  //     </View>
+  //   );
+  // }
+
+  // if (isProcessing || isLoadingQr) {
+  //   return (
+  //     <View style={styles.loadingCentered}>
+  //       <ActivityIndicator size="large" color="red" />
+  //       <Text style={styles.loadingText}>Hệ thống đang xử lý QR Code...</Text>
+  //     </View>
+  //   );
+  // }
+
+  if (isProcessing || isLoadingQr) {
     return (
-      <View className="flex-1 justify-center items-center bg-gray-100">
-        <Text className="text-xl font-semibold text-backgroundApp">
-          Loading...
-        </Text>
+      <View className="flex-1 items-center justify-center bg-backgroundApp">
+        <ActivityIndicator size="large" color="#ffffff" />
+        <Text className="text-white mt-4">Đang xử lý mã QR Code...</Text>
       </View>
     );
   }
-
-
-  // console.log("Valid check data: ", validCheckInData);
+  
+  
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
@@ -365,27 +395,6 @@ const UserDetail = () => {
 
       <ScrollView>
         <GestureHandlerRootView className="flex-1 p-5">
-          {/* Photo Section */}
-          {/* <Text className="text-xl font-bold text-gray-800 mb-4">Chụp ảnh</Text> */}
-          <View>
-            {/* <Button
-              title={isVisible ? "Hide Video Player" : "Show Video Player"}
-              onPress={handleToggleView}
-            /> */}
-
-            <View
-              style={{
-                opacity: isVisible ? 1 : 0,
-                height: isVisible ? "auto" : 0,
-              }}
-            >
-              <VideoPlayer
-                onCaptureImage={handleImageCapture}
-                autoCapture={autoCapture}
-              />
-            </View>
-          </View>
-
           {/* MODAL VIEW IMAGE */}
           <Modal
             visible={!!selectedImage}
@@ -410,31 +419,13 @@ const UserDetail = () => {
             </View>
           </Modal>
 
-          {/* QR Scanner */}
-          {/* <View className="mb-6">
-
-
-            <View className="w-full aspect-[3/4] relative mb-4">
-              <CameraView
-                onBarcodeScanned={handleBarCodeScanned}
-                className="flex-1"
-              />
-              <View className="absolute top-[30%] left-[30%] w-[40%] h-[30%] border-2 border-yellow-400 rounded-lg" />
-              <TouchableOpacity
-                onPress={() => setIsCameraActive(false)}
-                className="absolute top-2 right-2 bg-black/50 p-2 rounded"
-              >
-                <Text className="text-white">Thoát Camera</Text>
-              </TouchableOpacity>
-            </View>
-          </View> */}
           <View className="w-full aspect-[2/4] relative mb-4">
             <CameraView
               className="flex-1 w-full h-full"
               onBarcodeScanned={handleBarCodeScanned}
             />
             <Overlay />
-            {/* <View className="absolute top-1/3 left-1/4 w-2/4 h-1/3 border-2 border-yellow-500 rounded-lg shadow-lg" /> */}
+
             <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
               <Text className="text-green-700 text-sm font-semibold">
                 Camera Checkin
@@ -444,48 +435,38 @@ const UserDetail = () => {
             <TouchableOpacity
               className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
               onPress={() => setIsCameraActive(false)}
-            >
-              {/* <Text className="text-white">Thoát Camera</Text> */}
-            </TouchableOpacity>
+            ></TouchableOpacity>
           </View>
         </GestureHandlerRootView>
       </ScrollView>
-      {/* <View className="flex-1 justify-center">
-        {isValidating && (
-          <View className="absolute inset-0 bg-black/30 flex items-center justify-center z-50">
-            <ActivityIndicator size="large" color="#0000ff" />
-            <Text className="text-white mt-2">Đang xử lý...</Text>
-          </View>
-        )}
-      </View> */}
 
-      {( isValidating) && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#ffffff" />
-          <Text className="text-3xl" style={styles.loadingText}>Đang xử lý...</Text>
+      {/* {isProcessing || isLoadingQr && (
+        <View className="absolute inset-0  flex justify-center items-center z-[1000]">
+          <ActivityIndicator size="large" color="red" />
+          <Text className="text-red text-3xl mt-2">Đang xử lý...</Text>
         </View>
-      )}
+      )} */}
     </SafeAreaView>
   );
 };
 export default UserDetail;
 
 const styles = StyleSheet.create({
- 
-  loadingContainer: {
+  loadingCentered: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
+    backgroundColor: "transparent",  
   },
   loadingText: {
-    color: "#ffffff",
+    color: "red",
+    fontSize: 20,
     marginTop: 10,
- 
   },
 });
+

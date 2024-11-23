@@ -14,12 +14,14 @@ import {
   Ionicons,
   FontAwesome5,
   FontAwesome6,
+  MaterialIcons,
 } from "@expo/vector-icons";
 import {
   useGetVisitorSessionsQuery,
   VisitorSession,
 } from "@/redux/services/visitorSession.service";
 import { Image } from "react-native";
+import { Building, Clock, ImageIcon, Phone, ShieldCheck, User, X } from "lucide-react-native";
 
 const History = () => {
   const [selectedSession, setSelectedSession] = useState<VisitorSession | null>(
@@ -107,7 +109,9 @@ const History = () => {
               </View>
               <View className="ml-4">
                 <Text className="text-[#1abc9c] font-bold text-lg">
-                  Chuyến thăm #{item.visitorSessionId}
+                  {/* Chuyến thăm #{item.visitorSessionId} */}
+
+                  {item.visitDetail.visitor.visitorName}
                 </Text>
                 <View className="flex-row items-center mt-1">
                   <MaterialCommunityIcons
@@ -133,264 +137,167 @@ const History = () => {
 
     return (
       <Modal
-        animationType="slide"
-        transparent={true}
-        visible={!!selectedSession}
-        onRequestClose={() => setSelectedSession(null)}
-      >
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white rounded-t-3xl max-h-[85%]">
-            <View className="px-6 py-4 border-b border-gray-100 flex-row justify-between items-center">
-              <View className="flex-row items-center">
-                <MaterialCommunityIcons
-                  name="card-account-details"
-                  size={24}
-                  color="#1abc9c"
-                />
-                <Text className="text-xl font-bold text-[#1abc9c] ml-2">
-                  Chi tiết chuyến thăm #{selectedSession.visitorSessionId}
+      animationType="slide"
+      transparent={true}
+      visible={!!selectedSession}
+      onRequestClose={() => setSelectedSession(null)}
+    >
+      <View className="flex-1 bg-black/50 justify-end">
+        <View className="bg-white rounded-t-3xl max-h-[90%] shadow-xl">
+ 
+          <View className="px-4 py-3 border-b border-gray-100 flex-row justify-between items-center">
+            <View className="flex-row items-center">
+              <ShieldCheck color="#1abc9c" size={24} />
+              <Text className="text-lg font-bold text-[#1abc9c] ml-2">
+                {selectedSession.visitDetail.visitor.visitorName}
+              </Text>
+            </View>
+            <Pressable 
+                onPress={() => setSelectedSession(null)}
+              className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center"
+            >
+              <X color="#4B5563" size={20} />
+            </Pressable>
+          </View>
+
+          <ScrollView className="px-4 py-3">
+ 
+            <View className="bg-emerald-50 rounded-xl p-4 mb-3">
+              <View className="flex-row items-center mb-3">
+                <User color="#059669" size={20} />
+                <Text className="text-emerald-800 font-bold text-base ml-2">
+                  Thông tin khách
                 </Text>
               </View>
-              <Pressable
-                onPress={() => setSelectedSession(null)}
-                className="w-9 h-9 rounded-full bg-gray-100 items-center justify-center active:bg-gray-200"
-              >
-                <Ionicons name="close" size={22} color="#4B5563" />
-              </Pressable>
+              <InfoRow
+                icon={<User color="#059669" size={18} />}
+                label="Họ tên"
+                value={selectedSession.visitDetail.visitor.visitorName}
+              />
+              <InfoRow
+                icon={<Building color="#059669" size={18} />}
+                label="Công ty"
+                value={selectedSession.visitDetail.visitor.companyName}
+              />
+              <InfoRow
+                icon={<Phone color="#059669" size={18} />}
+                label="Điện thoại"
+                value={selectedSession.visitDetail.visitor.phoneNumber}
+              />
             </View>
 
-            <ScrollView className="px-6 py-4">
-              <View className="bg-gradient-to-r from-emerald-50 to-emerald-100/30 rounded-2xl p-5 mb-4">
-                <View className="flex-row items-center mb-4">
-                  <View className="w-10 h-10 bg-emerald-200 rounded-full items-center justify-center">
-                    <FontAwesome5 name="user-alt" size={18} color="#059669" />
-                  </View>
-                  <Text className="text-emerald-800 font-bold text-lg ml-3">
-                    Thông tin khách
-                  </Text>
-                </View>
-                <View className="space-y-3">
-                  <InfoRow
-                    icon={
-                      <MaterialCommunityIcons
-                        name="account"
-                        size={20}
-                        color="#059669"
-                      />
-                    }
-                    label="Họ tên"
-                    value={selectedSession.visitDetail.visitor.visitorName}
-                  />
-                  <InfoRow
-                    icon={
-                      <MaterialCommunityIcons
-                        name="office-building"
-                        size={20}
-                        color="#059669"
-                      />
-                    }
-                    label="Công ty"
-                    value={selectedSession.visitDetail.visitor.companyName}
-                  />
-                  <InfoRow
-                    icon={
-                      <MaterialCommunityIcons
-                        name="phone"
-                        size={20}
-                        color="#059669"
-                      />
-                    }
-                    label="Điện thoại"
-                    value={selectedSession.visitDetail.visitor.phoneNumber}
-                  />
-                </View>
+ 
+            <View className="bg-blue-50 rounded-xl p-4 mb-3">
+              <View className="flex-row items-center mb-3">
+                <ShieldCheck color="#1d4ed8" size={20} />
+                <Text className="text-blue-800 font-bold text-base ml-2">
+                  Thông tin bảo vệ
+                </Text>
               </View>
-
-              <View className="bg-gradient-to-r from-blue-50 to-blue-100/30 rounded-2xl p-5 mb-4">
-                <View className="flex-row items-center mb-4">
-                  <View className="w-10 h-10 bg-blue-200 rounded-full items-center justify-center">
-                    <MaterialCommunityIcons
-                      name="shield-account"
-                      size={22}
-                      color="#1d4ed8"
-                    />
-                  </View>
-                  <Text className="text-blue-800 font-bold text-lg ml-3">
-                    Thông tin bảo vệ
-                  </Text>
-                </View>
-                <View className="space-y-4">
-                  <View className="bg-white/60 rounded-xl p-3">
-                    <View className="flex-row items-center mb-2">
-                      <Ionicons
-                        name="enter-outline"
-                        size={18}
-                        color="#2563eb"
-                      />
-                      <Text className="text-blue-600 font-medium ml-2">
-                        Bảo vệ vào
-                      </Text>
-                    </View>
-
-                    <View className="flex-row items-center">
-                      <MaterialCommunityIcons
-                        name="account-tie"
-                        size={20}
-                        color="#4B5563"
-                      />
-                      <Text className="ml-2 text-gray-700 font-medium">
-                        {selectedSession.securityIn.fullName}
-                      </Text>
-                      <Text className="mx-2 text-gray-400">|</Text>
-                      <MaterialCommunityIcons
-                        name="phone"
-                        size={18}
-                        color="#4B5563"
-                      />
-                      <Text className="ml-2 text-gray-700">
-                        {selectedSession.securityIn.phoneNumber}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View className="bg-white/60 rounded-xl p-3">
-                    <View className="flex-row items-center mb-2">
-                      <Ionicons name="exit-outline" size={18} color="#2563eb" />
-                      <Text className="text-blue-600 font-medium ml-2">
-                        Bảo vệ ra
-                      </Text>
-                    </View>
-                    <View className="flex-row items-center">
-                      <MaterialCommunityIcons
-                        name="account-tie"
-                        size={20}
-                        color="#4B5563"
-                      />
-                      <Text className="ml-2 text-gray-700 font-medium">
-                        {selectedSession.securityOut.fullName}
-                      </Text>
-                      <Text className="mx-2 text-gray-400">|</Text>
-                      <MaterialCommunityIcons
-                        name="phone"
-                        size={18}
-                        color="#4B5563"
-                      />
-                      <Text className="ml-2 text-gray-700">
-                        {selectedSession.securityOut.phoneNumber}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              </View>
-
-              <View className="bg-gradient-to-r from-amber-50 to-amber-100/30 rounded-2xl p-5 mb-4">
-                <View className="flex-row items-center mb-4">
-                  <View className="w-10 h-10 bg-amber-200 rounded-full items-center justify-center">
-                    <MaterialCommunityIcons
-                      name="gate"
-                      size={22}
-                      color="#b45309"
-                    />
-                  </View>
-                  <Text className="text-amber-800 font-bold text-lg ml-3">
-                    Thông tin cổng
-                  </Text>
-                </View>
-                <View className="flex-row space-x-4">
-                  <View className="flex-1 bg-white/60 rounded-xl p-3">
-                    <View className="flex-row items-center mb-2">
-                      <Ionicons
-                        name="enter-outline"
-                        size={18}
-                        color="#d97706"
-                      />
-                      <Text className="text-amber-600 ml-2">Vào</Text>
-                    </View>
-                    <View className="space-y-2">
-                      <View className="flex-row items-center">
-                        <FontAwesome5
-                          name="door-open"
-                          size={16}
-                          color="#4B5563"
-                        />
-                        <Text className="ml-2 text-gray-700">
-                          {selectedSession.gateIn.gateName}
-                        </Text>
-                      </View>
-                      <View className="flex-row items-center">
-                        <MaterialCommunityIcons
-                          name="clock-outline"
-                          size={18}
-                          color="#4B5563"
-                        />
-                        <Text className="ml-2 text-gray-700">
-                          {formatTime(selectedSession.checkinTime)}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  <View className="flex-1 bg-white/60 rounded-xl p-3">
-                    <View className="flex-row items-center mb-2">
-                      <Ionicons name="exit-outline" size={18} color="#d97706" />
-                      <Text className="text-amber-600 ml-2">Ra</Text>
-                    </View>
-                    <View className="space-y-2">
-                      <View className="flex-row items-center">
-                        <FontAwesome5
-                          name="door-open"
-                          size={16}
-                          color="#4B5563"
-                        />
-                        <Text className="ml-2 text-gray-700">
-                          {selectedSession.gateOut.gateName}
-                        </Text>
-                      </View>
-                      <View className="flex-row items-center">
-                        <MaterialCommunityIcons
-                          name="clock-outline"
-                          size={18}
-                          color="#4B5563"
-                        />
-                        <Text className="ml-2 text-gray-700">
-                          {formatTime(selectedSession.checkoutTime)}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-              </View>
-
-              {selectedSession.images.length > 0 && (
-                <View className="bg-gradient-to-r from-purple-50 to-purple-100/30 rounded-2xl p-5">
-                  <View className="flex-row items-center mb-4">
-                    <View className="w-10 h-10 bg-purple-200 rounded-full items-center justify-center">
-                      <MaterialCommunityIcons
-                        name="image-multiple"
-                        size={22}
-                        color="#7e22ce"
-                      />
-                    </View>
-                    <Text className="text-purple-800 font-bold text-lg ml-3">
-                      Hình ảnh
+              <View className="flex-row justify-between">
+                <View className="flex-1 bg-white rounded-lg p-3 mr-2">
+                  <View className="flex-row items-center mb-2">
+                    {/* <Enter color="#2563eb" size={18} /> */}
+                    <MaterialIcons name="security" size={18} color="#2563eb" />
+                    <Text className="text-blue-600 font-medium ml-2">
+                      Bảo vệ vào
                     </Text>
                   </View>
-                  <View className="flex-row flex-wrap -mx-1">
-                    {selectedSession.images.map((image) => (
-                      <View key={image.visitorSessionsImageId} className="p-1">
-                        <Image
-                          source={{ uri: image.imageURL }}
-                          className="w-32 h-32 rounded-xl"
-                        />
-                      </View>
-                    ))}
+                  <Text className="text-gray-700">
+                    {selectedSession.securityIn.fullName}
+                  </Text>
+                  <Text className="text-gray-500 text-sm">
+                    {selectedSession.securityIn.phoneNumber}
+                  </Text>
+                </View>
+                <View className="flex-1 bg-white rounded-lg p-3">
+                  <View className="flex-row items-center mb-2">
+                  <MaterialIcons name="security" size={18} color="#2563eb" />
+                    <Text className="text-blue-600 font-medium ml-2">
+                      Bảo vệ ra
+                    </Text>
+                  </View>
+                  <Text className="text-gray-700">
+                    {selectedSession.securityOut.fullName}
+                  </Text>
+                  <Text className="text-gray-500 text-sm">
+                    {selectedSession.securityOut.phoneNumber}
+                  </Text>
+                </View>
+              </View>
+            </View>
+ 
+            <View className="bg-amber-50 rounded-xl p-4 mb-3">
+              <View className="flex-row items-center mb-3">
+            
+                <MaterialCommunityIcons name="gate" size={20} color="#b45309" />
+                <Text className="text-amber-800 font-bold text-base ml-2">
+                  Thông tin cổng
+                </Text>
+              </View>
+              <View className="flex-row justify-between">
+                <View className="flex-1 bg-white rounded-lg p-3 mr-2">
+                  <View className="flex-row items-center mb-2">
+     
+                    <FontAwesome5 name="sign-in-alt" size={18} color="#4CAF50" />
+                    <Text className="text-[#4CAF50] ml-2">Vào</Text>
+                  </View>
+                  <View className="flex-row items-center">
+                    <Text className="text-gray-700">
+                      {selectedSession.gateIn.gateName}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center mt-1">
+                    <Clock color="#4B5563" size={16} />
+                    <Text className="ml-2 text-gray-500 text-sm">
+                      {formatTime(selectedSession.checkinTime)}
+                    </Text>
                   </View>
                 </View>
-              )}
-            </ScrollView>
-          </View>
+                <View className="flex-1 bg-white rounded-lg p-3">
+                  <View className="flex-row items-center mb-2">
+                   
+                    <FontAwesome5 name="sign-out-alt" size={14} color="#F44336" />
+                    <Text className="text-[#F44336] ml-2">Ra</Text>
+                  </View>
+                  <View className="flex-row items-center">
+                    <Text className="text-gray-700">
+                      {selectedSession.gateOut.gateName}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center mt-1">
+                    <Clock color="#4B5563" size={16} />
+                    <Text className="ml-2 text-gray-500 text-sm">
+                      {formatTime(selectedSession.checkoutTime)}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+ 
+            {selectedSession.images.length > 0 && (
+              <View className="bg-purple-50 rounded-xl p-4">
+                <View className="flex-row items-center mb-3">
+                  <ImageIcon color="#7e22ce" size={20} />
+                  <Text className="text-purple-800 font-bold text-base ml-2">
+                    Hình ảnh check in
+                  </Text>
+                </View>
+                <View className="flex-row flex-wrap -mx-1">
+                  {selectedSession.images.map((image) => (
+                    <Image
+                      key={image.visitorSessionsImageId}
+                      source={{ uri: image.imageURL }}
+                      className="w-24 h-24 rounded-lg m-1"
+                    />
+                  ))}
+                </View>
+              </View>
+            )}
+          </ScrollView>
         </View>
-      </Modal>
+      </View>
+    </Modal>
     );
   };
 
