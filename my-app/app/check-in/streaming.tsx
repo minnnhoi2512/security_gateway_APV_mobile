@@ -11,172 +11,25 @@ export enum ResizeMode {
   STRETCH = "stretch",
 }
 
-interface ImageData {
-  ImageType: "Shoe";
-  ImageURL: string | null;
-  ImageFile: string | null;
-}
-interface VideoPlayerProps {
-  onCaptureImage: (imageData: ImageData) => void;
-  autoCapture: boolean;
-}
 
+const VideoPlayer = ({
 
-
-const VideoPlayer: React.FC<VideoPlayerProps> = ({
-  onCaptureImage,
-  autoCapture,
 }) => {
   const videoRef = useRef<Video | null>(null);
-  const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+
+
   const [isVideoReady, setIsVideoReady] = useState(false);
-  const [index, setIndex] = useState(0);
-  const [videoSource, setVideoSource] = useState("");
-  const autoCaptureAttempted = useRef(false);
 
-  // Fetch initial file count
-  const getFileCount = async () => {
-    try {
-      const response = await fetch(
-        "https://security-gateway-camera.tools.kozow.com/count-files"
-      );
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const count = data.count > 0 ? data.count - 2 : 0;
-      setIndex(count);
-    } catch (error) {
-      console.error("Error fetching file count:", error);
-      // Set a default index if fetch fails
-      setIndex(0);
-    }
-  };
-
-  // Initial setup
-  useEffect(() => {
-    getFileCount();
-  }, []);
-
-  // Update video source when index changes
-  useEffect(() => {
-    if (index >= 0) {
-      const newSource = `https://security-gateway-camera.tools.kozow.com/video/output_${index - 1}.mp4`;
-      setVideoSource(newSource);
-      setIsVideoReady(false); // Reset video ready state
-      autoCaptureAttempted.current = false; // Reset auto-capture attempt flag
-    }
-  }, [index]);
-
-  // Handle video playback status updates
-  const onPlaybackStatusUpdate = useCallback(
-    (status: AVPlaybackStatus) => {
-      if (status.isLoaded) {
-        setCurrentTime(status.positionMillis);
-        if (status.didJustFinish) {
-          setIndex((prevIndex) => Math.min(prevIndex + 1, 999999));
-        }
-      }
-    },
-    [index]
-  );
-
-  // Generate thumbnail from video
-  const generateThumbnail = async (videoUri: string, timeMillis: number) => {
-    try {
-      const { uri } = await VideoThumbnails.getThumbnailAsync(videoUri, {
-        time: timeMillis,
-        quality: 1,
-      });
-      return uri;
-    } catch (error) {
-      // console.error("Failed to generate thumbnail:", error);
-      throw error;
-    }
-  };
-
-  // Process captured thumbnail
-  const processThumbnail = async (thumbnailUri: string) => {
-    try {
-      const base64 = await FileSystem.readAsStringAsync(thumbnailUri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
-      const path = `${FileSystem.documentDirectory}captured_frame_${Date.now()}.jpg`;
-      await FileSystem.writeAsStringAsync(path, base64, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
-      const imageData: ImageData = {
-        ImageType: "Shoe",
-        ImageURL:"",
-        ImageFile: path,
-      };
-      
-      setCapturedImage([imageData]); // Replace existing images instead of adding
-      onCaptureImage(imageData);
-
-      return path;
-    } catch (error) {
-      // console.error("Failed to process thumbnail:", error);
-      throw error;
-    }
-  };
-
-  // Handle capture functionality
-  const handleCapture = async () => {
-    if (!videoRef.current || !videoSource || isLoading) return;
-
-    setIsLoading(true);
-    try {
-      // Try with current video source first
-      const thumbnailUri = await generateThumbnail(videoSource, currentTime);
-      await processThumbnail(thumbnailUri);
-    } catch (error) {
-      // console.error("Failed to capture from primary source:", error);
-      try {
-        // Fallback to static video if primary source fails
-        const staticVideoUrl = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
-        const thumbnailUri = await generateThumbnail(staticVideoUrl, currentTime);
-        await processThumbnail(thumbnailUri);
-      } catch (fallbackError) {
-        // console.error("Failed to capture from fallback source:", fallbackError);
-        alert("Lấy ảnh thất bại!");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Handle auto-capture when video is ready
-  useEffect(() => {
-    if (isVideoReady && autoCapture && !autoCaptureAttempted.current && !isLoading) {
-      autoCaptureAttempted.current = true;
-      handleCapture();
-    }
-  }, [isVideoReady, autoCapture, isLoading]);
-
-  const handleNext = () => {
-    setIndex((prevIndex) => Math.min(prevIndex + 1, 999999));
-  };
-
-  const handlePrevious = () => {
-    setIndex((prevIndex) => Math.max(prevIndex - 1, 0));
-  };
 
   return (
     <View style={styles.container}>
       <Video
         ref={videoRef}
-        source={{ uri: videoSource }}
+        source={{ uri: "https://security-gateway-camera.tools.kozow.com/libs/index.m3u8" }}
         style={styles.video}
         useNativeControls
         resizeMode={ResizeMode.CONTAIN}
-        onPlaybackStatusUpdate={onPlaybackStatusUpdate}
         isLooping
         shouldPlay={true}
         onReadyForDisplay={() => {
@@ -187,21 +40,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         }}
       />
 
-    
-      
-      {capturedImage.map((image, index) => (
-        <Image
-          key={`${image.ImageFile}-${index}`}
-          source={{ uri: image.ImageFile || undefined }}
-          style={styles.capturedImage}
-          resizeMode="contain"
-        />
-      ))}
-
-      <View style={styles.buttonContainer}>
-        <Button title="Trở lại" onPress={handlePrevious} disabled={isLoading} />
-        <Button title="Tiếp theo" onPress={handleNext} disabled={isLoading} />
-      </View>
     </View>
   );
 };

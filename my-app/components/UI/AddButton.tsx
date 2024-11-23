@@ -11,10 +11,12 @@ const AddButton = () => {
     const handleScanPress = async () => {
         if (permission?.granted) {
           router.push("/createVisit/ScanQrCreate");
+          // router.push("/createVisit/FormCreate");
         } else {
           const { granted } = await requestPermission();
           if (granted) {
             router.push("/createVisit/ScanQrCreate");
+            // router.push("/createVisit/FormCreate");
           } else {
             // Handle permission denied
             console.log("Camera permission denied");
