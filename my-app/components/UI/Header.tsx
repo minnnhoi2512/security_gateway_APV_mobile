@@ -12,6 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useGetUserProfileQuery } from "@/redux/services/user.service";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
+import { Entypo } from "@expo/vector-icons";
 interface HeaderProps {
   name: string;
 }
@@ -81,11 +82,12 @@ const Header: React.FC<HeaderProps> = ({ name }) => {
           </View>
 
           <TouchableOpacity
-            onPress={() => router.push("/Notification")}
+            onPress={() => router.push("/chat")}
             className="relative"
           >
             <View className="bg-yellow-300 p-2 rounded-full">
-              <Fontisto name="bell-alt" size={22} color="#fff" />
+       
+              <Entypo name="chat" size={22} color="#fff" />
             </View>
             <View className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full items-center justify-center">
               <Text className="text-xs font-bold text-white">2</Text>

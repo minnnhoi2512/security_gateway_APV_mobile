@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import * as FileSystem from "expo-file-system";
 import Overlay from "./OverLay";
 import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service";
 import { useFocusEffect } from "@react-navigation/native";
@@ -50,7 +51,6 @@ const scanQr = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [credentialCardId, setCredentialCardId] = useState<string | null>(null);
   const [cardVerification, setCardVerification] = useState<string | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const selectedGateId = useSelector(
@@ -65,11 +65,7 @@ const scanQr = () => {
   } = useGetVisitByCredentialCardQuery(credentialCardId || "", {
     skip: !credentialCardId,
   });
-  const [validCheckInData, setValidCheckInData] = useState<ValidCheckIn>({
-    CredentialCard: null,
-    QrCardVerification: "",
-    ImageShoe: [],
-  });
+
   const [checkInData, setCheckInData] = useState<CheckInVer02>({
     CredentialCard: null,
     SecurityInId: 0,
@@ -77,6 +73,7 @@ const scanQr = () => {
     QrCardVerification: "",
     Images: [],
   });
+
   const {
     data: qrCardData,
     isLoading: isLoadingQr,
@@ -85,6 +82,106 @@ const scanQr = () => {
   } = useGetDataByCardVerificationQuery(cardVerification || "", {
     skip: !cardVerification,
   });
+
+  const fetchCaptureImage = async (): Promise<ImageData | null> => {
+    try {
+      const response = await fetch(
+        "https://security-gateway-camera.tools.kozow.com/camera-1/capture-image",
+        {
+          method: "GET",
+        }
+      );
+
+      if (!response.ok) {
+        console.error("HTTP Response Status:", response.status);
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const fileUri = `${FileSystem.cacheDirectory}captured-image.jpg`;
+
+      const fileSaved = await new Promise<string | null>((resolve, reject) => {
+        const fileReader = new FileReader();
+        fileReader.onloadend = async () => {
+          const base64data = fileReader.result?.toString().split(",")[1];
+          if (base64data) {
+            await FileSystem.writeAsStringAsync(fileUri, base64data, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            resolve(fileUri);
+          } else {
+            reject(null);
+          }
+        };
+        fileReader.readAsDataURL(blob);
+      });
+      console.log("file:", fileSaved);
+
+      return {
+        ImageType: "Shoe",
+        ImageURL: null,
+        ImageFile: fileSaved,
+      };
+    } catch (error) {
+      console.error("Failed to fetch capture image:", error);
+      Alert.alert("Error", "Failed to fetch the image. Please try again.");
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    const handleQrDataAndCapture = async () => {
+      if (qrCardData) {
+        console.log("QR Card Data received:", qrCardData);
+
+        // if (qrCardData.cardImage) {
+        //   setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
+        // }
+
+        if (qrCardData.cardVerification) {
+          console.log(
+            "Processing card verification:",
+            qrCardData.cardVerification
+          );
+
+          try {
+            const capturedImageData = await fetchCaptureImage();
+            console.log("Captured image data:", capturedImageData);
+
+            if (capturedImageData && capturedImageData.ImageFile) {
+              setCapturedImage([capturedImageData]);
+              const formattedImage = {
+                ImageType: "Shoe",
+                ImageURL: "",
+                Image: capturedImageData.ImageFile,
+              };
+
+              // console.log("Formatted image data:", formattedImage);
+              setCheckInData((prevData) => {
+                const newData = {
+                  ...prevData,
+                  QrCardVerification: qrCardData.cardVerification,
+                  Images: [formattedImage],
+                };
+                console.log("Updated checkInData:", newData);
+                return newData;
+              });
+            } else {
+              console.error("No image data captured");
+            }
+          } catch (error) {
+            console.error("Error in capture process:", error);
+            Alert.alert("Error", "Failed to capture and save image");
+          }
+        }
+      }
+    };
+
+    handleQrDataAndCapture().catch((error) => {
+      console.error("Error in handleQrDataAndCapture:", error);
+    });
+  }, [qrCardData]);
+
   useEffect(() => {
     const fetchUserId = async () => {
       try {
@@ -102,40 +199,9 @@ const scanQr = () => {
     };
     fetchUserId();
   }, []);
-  // useEffect(() => {
-  //   if (userId) {
-  //     setCheckInData((prevState) => ({
-  //       ...prevState,
-  //       SecurityInId: Number(userId) || 0,
-  //     }));
-  //   }
-  // }, [userId, selectedGateId]);
-  const [autoCapture, setAutoCapture] = useState(false);
-  const handleImageCapture = async (imageData: ImageData) => {
-    try {
-      setCapturedImage([imageData]);
-      const formattedImageData = {
-        ImageType: imageData.ImageType,
-        ImageURL: "",
-        Image: imageData.ImageFile || "",
-      };
-      setCheckInData((prev) => ({
-        ...prev,
-        Images: [formattedImageData],
-      }));
-      // const downloadUrl = await uploadToFirebase(
-      //   imageData.imageFile,
-      //   `${imageData.imageType}_${Date.now()}.jpg`
-      // );
-      // console.log("Image uploaded successfully:", downloadUrl);
-      // Update state or pass the URL as needed
-    } catch (error) {
-      Alert.alert("Upload Error", "Failed to upload image to Firebase");
-    }
-  };
+
   useEffect(() => {
     if (qrCardData) {
-      setAutoCapture(true);
       if (qrCardData.cardVerification) {
         setCheckInData((prevData) => ({
           ...prevData,
@@ -144,6 +210,7 @@ const scanQr = () => {
       }
     }
   }, [qrCardData]);
+
   const parseQRData = (qrData: string): ScanData | null => {
     const parts = qrData.split("|");
     if (parts.length === 7) {
@@ -153,9 +220,11 @@ const scanQr = () => {
     }
     return null;
   };
+
   const isCredentialCard = (data: string): boolean => {
     return data.includes("|");
   };
+
   const resetState = () => {
     console.log("Resetting state...");
     setScannedData("");
@@ -171,12 +240,7 @@ const scanQr = () => {
       return () => {};
     }, [])
   );
-  // useEffect(() => {
-  //   resetState();
-  //   redirected.current = false;
 
-  //   return () => {};
-  // }, []);
   useEffect(() => {
     if (scannedData) {
       if (isCredentialCard(scannedData)) {
@@ -261,7 +325,7 @@ const scanQr = () => {
               dataCheckIn: JSON.stringify(checkInData),
             },
           });
-          
+
           resetState();
         } else if (
           !isLoadingQr &&
@@ -317,22 +381,15 @@ const scanQr = () => {
     resetState();
     router.back();
   };
-  // console.log("CCCD: ", credentialCardId);
-  // console.log("Card id: ", cardVerification);
-  // console.log("Log lay anh ben scan: ", checkInData);
+
+  const handleGoToScanQr2 = () => {
+    router.replace("/check-in/scanQr2");
+  };
+  console.log("CCCD: ", credentialCardId);
+  console.log("Card id: ", cardVerification);
+  console.log("Log lay anh ben scan: ", checkInData);
   return (
     <SafeAreaView style={StyleSheet.absoluteFillObject}>
-      <View
-        style={{
-          opacity: isVisible ? 1 : 0,
-          height: isVisible ? "auto" : 0,
-        }}
-      >
-        <VideoPlayer
-          onCaptureImage={handleImageCapture}
-          autoCapture={autoCapture}
-        />
-      </View>
       <Stack.Screen
         options={{
           title: "Overview",
@@ -353,7 +410,7 @@ const scanQr = () => {
         isFetchingQr) && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#ffffff" />
-          <Text className="text-3xl" style={styles.loadingText}>
+          <Text className="text-xl" style={styles.loadingText}>
             Đang xử lý...
           </Text>
         </View>
@@ -368,6 +425,9 @@ const scanQr = () => {
         onPress={handleGoBack}
       >
         <Text className="text-white">Thoát Camera</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.switchButton} onPress={handleGoToScanQr2}>
+        <Text style={styles.switchButtonText}>Switch to Camera 2</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -401,5 +461,19 @@ const styles = StyleSheet.create({
   loadingText: {
     color: "#ffffff",
     marginTop: 10,
+  },
+  switchButton: {
+    position: "absolute",
+    bottom: 20,
+    left: "50%",
+    transform: [{ translateX: -75 }],
+    backgroundColor: "#0072C6",
+    padding: 15,
+    borderRadius: 8,
+  },
+  switchButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

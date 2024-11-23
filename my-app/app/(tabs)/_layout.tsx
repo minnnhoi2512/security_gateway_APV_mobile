@@ -150,13 +150,25 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
+
+      {/* <Tabs.Screen
         name="ChatForStaff"
         options={{
           title: "Trò chuyện",
           // href: role === "Security" ? null : "/(tabs)/ChatForStaff",
           tabBarIcon: ({ color, focused }) => (
             <Entypo name="chat" size={24} color={color} />
+          ),
+        }}
+      /> */}
+      <Tabs.Screen
+        name="notification"
+        options={{
+          title: "Thông báo",
+          // href: role === "Security" ? null : "/(tabs)/ChatForStaff",
+          tabBarIcon: ({ color, focused }) => (
+            // <Entypo name="chat" size={24} color={color} />
+            <Ionicons name="notifications" size={24} color={color} />
           ),
         }}
       />

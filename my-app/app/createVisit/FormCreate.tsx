@@ -8,38 +8,26 @@ import {
   ScrollView,
   Alert,
   Pressable,
-  Button,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Picker } from "@react-native-picker/picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
 import {
-  useGetAllStaffQuery,
-  useGetStaffByPhoneQuery,
-} from "@/redux/services/user.service";
+  ChevronLeft,
+  Calendar,
+  Clock,
+  User,
+  FileText,
+  Send,
+} from "lucide-react-native";
 import { useCreateVisitMutation } from "@/redux/services/visit.service";
-import { Staff } from "@/Types/user.type";
 import { useToast } from "@/components/Toast/ToastContext";
-
-interface ErrorResponse {
-  status: number;
-  data: {
-    type: string;
-    title: string;
-    status: number;
-    errors: {
-      [key: string]: string[];
-    };
-  };
-}
+import { useGetStaffByPhoneQuery } from "@/redux/services/user.service";
+import { FontAwesome5 } from "@expo/vector-icons";
 
 const FormCreate = () => {
   const [userId, setUserId] = useState<string | null>(null);
-  const [selectedStaffId, setSelectedStaffId] = useState<number>(0);
   const router = useRouter();
   const { visitorId } = useLocalSearchParams<{ visitorId: string }>();
-  // const visitorIdNumber = Number(visitorId);
   const visitorIdNumber = isNaN(Number(visitorId)) ? 0 : Number(visitorId);
   const [validationErrors, setValidationErrors] = useState<{
     [key: string]: string;
@@ -47,6 +35,9 @@ const FormCreate = () => {
   const [createVisit, { isLoading }] = useCreateVisitMutation();
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const [searchPhoneNumber, setSearchPhoneNumber] = useState("");
+  const { showToast } = useToast();
+
   const getCurrentTime = () => {
     const now = new Date();
     const hours = String(now.getHours()).padStart(2, "0");
@@ -54,24 +45,10 @@ const FormCreate = () => {
     const seconds = String(now.getSeconds()).padStart(2, "0");
     return `${hours}:${minutes}:${seconds}`;
   };
-  const [searchPhoneNumber, setSearchPhoneNumber] = useState("");
-  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
-  const { showToast } = useToast();
-  const {
-    data: staffList,
-    isLoading: isLoadingStaff,
-    isError: isErrorStaff,
-    isFetching: isFetchingStaff,
-  } = useGetAllStaffQuery({});
-  // console.log("List Staff: ", staffList);
 
-  const {
-    data: staffByPhone,
-    isLoading: isLoadingStaffByPhone,
-    isError: isErrorStaffByPhone,
-  } = useGetStaffByPhoneQuery(searchPhoneNumber, {
-    skip: searchPhoneNumber.length === 0,
-  });
+  const formatTimeDisplay = (time: string) => {
+    return time.slice(0, 5);
+  };
 
   const [visitData, setVisitData] = useState({
     visitName: "",
@@ -89,24 +66,10 @@ const FormCreate = () => {
       },
     ],
   });
-  // console.log("VISITOR ID ne 3: ", visitorId);
 
-  const clearValidationError = (field: string) => {
-    setValidationErrors((prev) => {
-      const newErrors = { ...prev };
-      delete newErrors[field];
-      return newErrors;
-    });
-  };
-
-  // useEffect(() => {
-  //   if (staffByPhone && staffByPhone.userId) {
-  //     setVisitData((prevState) => ({
-  //       ...prevState,
-  //       responsiblePersonId: staffByPhone.userId,
-  //     }));
-  //   }
-  // }, [staffByPhone]);
+  const { data: staffByPhone } = useGetStaffByPhoneQuery(searchPhoneNumber, {
+    skip: searchPhoneNumber.length === 0,
+  });
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -115,13 +78,10 @@ const FormCreate = () => {
         if (storedUserId) {
           const numericUserId = Number(storedUserId);
           setUserId(storedUserId);
-          console.log("User ID from AsyncStorage:", storedUserId);
           setVisitData((prevState) => ({
             ...prevState,
             createById: numericUserId,
           }));
-        } else {
-          console.log("No userId found in AsyncStorage");
         }
       } catch (error) {
         console.error("Error fetching userId from AsyncStorage:", error);
@@ -131,15 +91,14 @@ const FormCreate = () => {
     fetchUserId();
   }, []);
 
-  const validateTimeRange = (startTime: string, endTime: string): boolean => {
-    const [startHours, startMinutes] = startTime.split(":").map(Number);
-    const [endHours, endMinutes] = endTime.split(":").map(Number);
-
-    if (startHours > endHours) return false;
-    if (startHours === endHours && startMinutes >= endMinutes) return false;
-
-    return true;
-  };
+  useEffect(() => {
+    if (staffByPhone && staffByPhone.userId) {
+      setVisitData((prevState) => ({
+        ...prevState,
+        responsiblePersonId: staffByPhone.userId,
+      }));
+    }
+  }, [staffByPhone]);
 
   const handleInputChange = (field: string, value: any) => {
     setVisitData((prevState) => ({
@@ -154,29 +113,6 @@ const FormCreate = () => {
       visitDetail: [{ ...prevState.visitDetail[0], [field]: value }],
     }));
   };
-
-  // const handleStaffSelect = (itemValue: number) => {
-  //   setSelectedStaffId(itemValue);
-  //   setVisitData((prevState) => ({
-  //     ...prevState,
-  //     responsiblePersonId: itemValue,
-  //   }));
-  // };
-
-  // useEffect(() => {
-  //   if (staffByPhone && staffByPhone.length > 0) {
-  //     const firstStaff = staffByPhone[0];
-  //     setSelectedStaff(firstStaff);
-  //     handleStaffSelect(firstStaff.userId);
-  //   }
-  // }, [staffByPhone]);
-
-  // const handleStaffSelect = (userId: number) => {
-  //   setVisitData((prevState) => ({
-  //     ...prevState,
-  //     responsiblePersonId: userId,
-  //   }));
-  // };
 
   const handleTimeChange = (
     event: any,
@@ -197,38 +133,15 @@ const FormCreate = () => {
     }
   };
 
-  const showErrorAlert = (errors: { [key: string]: string[] }) => {
-    const errorMessages = Object.entries(errors).map(([key, messages]) => {
-      return `${key}: ${messages.join(", ")}`;
-    });
-
-    Alert.alert("Lỗi xác thực", errorMessages.join("\n"), [
-      {
-        text: "OK",
-        onPress: () => {
-          const formattedErrors = Object.entries(errors).reduce(
-            (acc, [key, messages]) => {
-              acc[key] = messages.join(", ");
-              return acc;
-            },
-            {} as { [key: string]: string }
-          );
-          setValidationErrors(formattedErrors);
-        },
-      },
-    ]);
-  };
-
   const handleSubmit = async () => {
     try {
-      setValidationErrors({});
       const submitData = {
         ...visitData,
         visitQuantity: Number(visitData.visitQuantity),
         expectedStartTime: `${visitData.expectedStartTime}T${visitData.visitDetail[0].expectedStartHour}`,
         expectedEndTime: `${visitData.expectedEndTime}T${visitData.visitDetail[0].expectedEndHour}`,
       };
-      // console.log("Submit Data:", submitData);
+
       const result = await createVisit(submitData).unwrap();
       showToast("Bạn vừa tạo lịch ghé thăm thành công!", "success");
       Alert.alert("Thành công", "Tạo lịch ghé thăm thành công!", [
@@ -239,45 +152,22 @@ const FormCreate = () => {
           },
         },
       ]);
-      console.log("Visit created:", result);
     } catch (error: any) {
-      // if (error?.status === 400) {
-      //   showErrorAlert(error.data.errors);
-      // } else {
-      //   Alert.alert(
-      //     "Lỗi",
-      //     "Đã có lỗi xảy ra khi tạo lịch ghé thăm. Vui lòng thử lại",
-      //     [{ text: "OK" }]
-      //   );
-      // }
       const errorMessage =
         error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
-      // console.error("Check-in error:", error);
-      // Alert.alert("Đã có lỗi xảy ra", errorMessage, [
-      //   {
-      //     text: "OK",
-      //     onPress: () => {
-      //       router.push("/(tabs)/createCustomer");
-      //     },
-      //   },
-      // ]);
+
       showToast("Đã có lỗi xảy ra", "error");
       Alert.alert("Đã có lỗi xảy ra", errorMessage);
     }
   };
 
-  const handleBackPress = () => {
-    router.push({
-      pathname: "/(tabs)",
+  const clearValidationError = (field: string) => {
+    setValidationErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[field];
+      return newErrors;
     });
   };
-
-  // useEffect(() => {
-  //   if (staffByPhone) {
-  //     setSearchPhoneNumber(`${staffByPhone.fullName}`);
-  //   }
-  // }, [staffByPhone]);
-
   useEffect(() => {
      
     if (staffByPhone) {
@@ -312,61 +202,62 @@ const FormCreate = () => {
   const getErrorMessage = (field: string) => {
     return validationErrors[field];
   };
+  const handleBackPress = () => {
+    router.push({
+      pathname: "/(tabs)",
+    });
+  };
 
-  console.log("Data create visit: ", visitData);
-  // console.log("Data staff lay dc: ", selectedStaff);
+  console.log("Crea5 da: ", visitData);
+  
 
   return (
-    <ScrollView className="flex-1 bg-gradient-to-b from-blue-50 to-white">
-      <Pressable
-        onPress={handleBackPress}
-        className="flex flex-row items-center mt-11 space-x-2 px-4 py-2 bg-gray-100 rounded-lg active:bg-gray-200"
-      >
-        <MaterialIcons name="arrow-back" size={24} color="#4B5563" />
-        <Text className="text-gray-600 font-medium">Quay về</Text>
-      </Pressable>
-      <View className="p-6">
-        <Text className="text-3xl font-bold mb-6 text-backgroundApp text-center">
-          Tạo mới lịch hẹn
-        </Text>
+    <ScrollView className="flex-1 bg-gradient-to-br from-blue-50 to-white">
+      <View className="px-4 pt-12 pb-6">
+        <Pressable
+          onPress={handleBackPress}
+          className="flex-row items-center mb-6 space-x-2"
+        >
+          <ChevronLeft size={24} color="#4A5568" />
+          <Text className="text-gray-600 text-base font-semibold">Quay về</Text>
+        </Pressable>
 
-        <View className="bg-backgroundApp rounded-xl shadow-lg p-6 mb-6">
+        <View className="bg-white rounded-2xl shadow-lg p-6">
+          <Text className="text-3xl font-bold mb-6 text-center text-colorTitleHeader">
+            Tạo mới lịch hẹn
+          </Text>
+
           <View className="mb-4">
-            <Text className="text-sm font-semibold text-white mb-2">
-              Tiêu đề
-            </Text>
+            <View className="flex-row items-center mb-2">
+              <FileText size={20} color="#4A5568" className="mr-2" />
+              <Text className="text-sm font-semibold text-gray-700">
+                Tiêu đề
+              </Text>
+            </View>
             <TextInput
-              className={`bg-gray-50 border ${
-                hasError("visitName") ? "border-red-500" : "border-gray-200"
-              } rounded-lg px-4 py-3 text-backgroundApp`}
+              className="bg-gray-100 border border-gray-200 rounded-lg px-4 py-3 text-gray-800"
               value={visitData.visitName}
               onChangeText={(text) => handleInputChange("visitName", text)}
               placeholder="Nhập tiêu đề chuyến thăm"
             />
-            {hasError("visitName") && (
-              <Text className="text-red-500 text-sm mt-1">
-                {getErrorMessage("visitName")}
-              </Text>
-            )}
           </View>
+
           <View className="mb-4">
-            <Text className="text-sm font-semibold text-white mb-2">Mô tả</Text>
+            <View className="flex-row items-center mb-2 ml-1">
+     
+              <FontAwesome5 name="sticky-note" size={18} color="#4A5568" />
+              <Text className="text-sm font-semibold text-gray-700"> Mô tả</Text>
+            </View>
             <TextInput
-              className={`bg-gray-50 border ${
-                hasError("description") ? "border-red-500" : "border-gray-200"
-              } rounded-lg px-4 py-3 text-backgroundApp`}
+              className="bg-gray-100 border border-gray-200 rounded-lg px-4 py-3 text-gray-800 min-h-[100px]"
               value={visitData.description}
               onChangeText={(text) => handleInputChange("description", text)}
-              placeholder="Nhập mô tả"
+              placeholder="Nhập mô tả chuyến thăm"
               multiline
               numberOfLines={4}
             />
-            {hasError("description") && (
-              <Text className="text-red-500 text-sm mt-1">
-                {getErrorMessage("description")}
-              </Text>
-            )}
           </View>
+
           <View className="mb-4">
             <Text className="text-sm font-semibold text-white mb-2">
               Chọn nhân viên theo số điện thoại
@@ -443,21 +334,27 @@ const FormCreate = () => {
             </View>
           )} */}
 
-          <View className="mb-4">
-            <Text className="text-sm font-semibold text-white mb-2">
-              Thời gian bắt đầu
-            </Text>
-            <TouchableOpacity className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
-              <Text className="text-gray-700">
-                {visitData.visitDetail[0].expectedStartHour}
-              </Text>
-            </TouchableOpacity>
-            {hasError("visitDetail[0].expectedStartHour") && (
-              <Text className="text-red-500 text-sm mt-1">
-                {getErrorMessage("visitDetail[0].expectedStartHour")}
-              </Text>
-            )}
-            {showStartPicker && (
+          <View className="flex-row gap-2">
+            <View className="mb-4">
+              <View className="flex-row items-center mb-2">
+                <Clock size={20} color="#4A5568" className="mr-2" />
+                <Text className="text-sm font-semibold text-gray-700">
+                  Bắt đầu
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowStartPicker(true)}
+                className="bg-gray-100 border border-gray-200 rounded-lg px-4 py-3 flex-row items-center"
+              >
+                <Calendar size={20} color="#4A5568" className="mr-2" />
+                <Text className="text-gray-800">
+                  {/* {visitData.visitDetail[0].expectedStartHour} */}
+                  {formatTimeDisplay(
+                    visitData.visitDetail[0].expectedStartHour
+                  )}
+                </Text>
+              </TouchableOpacity>
+              {/* {showStartPicker && (
               <DateTimePicker
                 value={
                   new Date(
@@ -471,90 +368,51 @@ const FormCreate = () => {
                   handleTimeChange(event, selectedDate, true)
                 }
               />
-            )}
-          </View>
-          <View className="mb-4">
-            <Text className="text-sm font-semibold text-white mb-2">
-              Thời gian kết thúc
-            </Text>
-            <TouchableOpacity
-              className={`bg-gray-50 border ${
-                hasError("visitDetail[0].expectedEndHour")
-                  ? "border-red-500"
-                  : "border-gray-200"
-              } rounded-lg px-4 py-3`}
-              onPress={() => setShowEndPicker(true)}
-            >
-              <Text className="text-gray-700">
-                {visitData.visitDetail[0].expectedEndHour}
-              </Text>
-            </TouchableOpacity>
-            {hasError("visitDetail[0].expectedEndHour") && (
-              <Text className="text-red-500 text-sm mt-1">
-                {getErrorMessage("visitDetail[0].expectedEndHour")}
-              </Text>
-            )}
-            {showEndPicker && (
-              <DateTimePicker
-                value={
-                  new Date(
-                    `2000-01-01T${visitData.visitDetail[0].expectedEndHour}`
-                  )
-                }
-                mode="time"
-                is24Hour={true}
-                display="default"
-                onChange={(event, selectedDate) =>
-                  handleTimeChange(event, selectedDate, false)
-                }
-              />
-            )}
-          </View>
-
-          {/* <View className="mb-4">
-            <Text className="text-sm font-semibold text-white mb-2">
-              Chọn nhân viên phụ trách
-            </Text>
-            <View
-              className={`border ${
-                hasError("responsiblePersonId")
-                  ? "border-red-500"
-                  : "border-gray-200"
-              } rounded-lg`}
-            >
-              <Picker
-                selectedValue={selectedStaffId}
-                onValueChange={(itemValue) => handleStaffSelect(itemValue)}
-                style={{
-                  backgroundColor: "#f0f0f0",
-                  borderRadius: 8,
-                  padding: 10,
-                  color: "#333",
-                }}
-              >
-                <Picker.Item label="Chọn nhân viên" value={null} />
-                {staffList?.map((staff: Staff) => (
-                  <Picker.Item
-                    key={staff.userId}
-                    label={staff.userName}
-                    value={staff.userId}
-                  />
-                ))}
-              </Picker>
+            )} */}
             </View>
-            {hasError("responsiblePersonId") && (
-              <Text className="text-red-500 text-sm mt-1">
-                {getErrorMessage("responsiblePersonId")}
-              </Text>
-            )}
-          </View> */}
+
+            <View className="mb-6">
+              <View className="flex-row items-center mb-2">
+                <Clock size={20} color="#4A5568" className="mr-2" />
+                <Text className="text-sm font-semibold text-gray-700">
+                  Kết thúc
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowEndPicker(true)}
+                className="bg-gray-100 border border-gray-200 rounded-lg px-4 py-3 flex-row items-center"
+              >
+                <Calendar size={20} color="#4A5568" className="mr-2" />
+                <Text className="text-gray-800">
+                  {/* {visitData.visitDetail[0].expectedEndHour} */}
+                  {formatTimeDisplay(visitData.visitDetail[0].expectedEndHour)}
+                </Text>
+              </TouchableOpacity>
+              {showEndPicker && (
+                <DateTimePicker
+                  value={
+                    new Date(
+                      `2000-01-01T${visitData.visitDetail[0].expectedEndHour}`
+                    )
+                  }
+                  mode="time"
+                  is24Hour={true}
+                  display="default"
+                  onChange={(event, selectedDate) =>
+                    handleTimeChange(event, selectedDate, false)
+                  }
+                />
+              )}
+            </View>
+          </View>
 
           <TouchableOpacity
-            className="bg-buttonColors rounded-lg py-4 px-6 shadow-md"
             onPress={handleSubmit}
             disabled={isLoading}
+            className="bg-backgroundApp rounded-lg py-4 flex-row justify-center items-center"
           >
-            <Text className="text-white text-center font-bold text-lg bg-buttonGreen p-4 w-[250px] rounded-md">
+            <Send size={24} color="white" className="mr-2" />
+            <Text className="text-white text-base font-bold">
               {isLoading ? "Đang xử lý..." : "Tạo mới"}
             </Text>
           </TouchableOpacity>
