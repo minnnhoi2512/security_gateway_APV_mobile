@@ -1,5 +1,5 @@
 import { Tabs, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
@@ -9,12 +9,18 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import Entypo from "@expo/vector-icons/Entypo";
 import { View } from "react-native";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
-
-import { useSelector } from "react-redux";
+import SetSignalR from '../../hooks/signalR';
+import { useDispatch, useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import UserConnectionHubType from "@/Types/userConnectionHubType";
 export default function TabLayout() {
   const [role, setRole] = useState<string | null>(null);
   const colorScheme = useColorScheme();
+  const connection = useRef<signalR.HubConnection | null>(null);
+  const dispatch = useDispatch();
+  const connectionExist = useSelector<any>(
+    (s) => s.hubConnection.connection
+  ) as React.MutableRefObject<signalR.HubConnection | null>;
   // const role = useSelector((state: any) => state.auth.role);
   // console.log("ROLE NE: ", role);
   const router = useRouter();
@@ -23,6 +29,16 @@ export default function TabLayout() {
     const fetchRole = async () => {
       const storedRole = await AsyncStorage.getItem("userRole");
       setRole(storedRole);
+      if(!connectionExist){
+        const userId = await AsyncStorage.getItem("userId");
+        if (storedRole) {
+        const user: UserConnectionHubType = {
+          userId: Number(userId),
+          role: storedRole
+        }
+        SetSignalR.SetSignalR(user, connection, dispatch)
+        }
+      }
       // if (storedRole === "Staff") {
       //   router.replace("/(tabs)/VisitForStaff");
       // }
