@@ -82,6 +82,9 @@ const CheckInOverall = () => {
     (state: RootState) => state.gate.selectedGateId
   );
 
+
+  
+
   // const [checkInData, setCheckInData] = useState<CheckInVer02>({
   //   CredentialCard: null,
   //   SecurityInId: 0,
@@ -179,6 +182,8 @@ const CheckInOverall = () => {
 
         const response = await checkIn(formData).unwrap();
         setResultData(response);
+        // console.log("response: ", response);
+        
         setCheckInStatus("success");
         setCheckInMessage("Bạn vừa check in thành công!");
         showToast("Bạn vừa check in thành công!", "success");
