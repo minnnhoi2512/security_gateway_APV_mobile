@@ -86,7 +86,7 @@ const scanQr = () => {
   const fetchCaptureImage = async (): Promise<ImageData | null> => {
     try {
       const response = await fetch(
-        "https://security-gateway-camera.tools.kozow.com/camera-1/capture-image",
+        "https://security-gateway-camera-1.tools.kozow.com/capture-image",
         {
           method: "GET",
         }
@@ -427,7 +427,7 @@ const scanQr = () => {
         <Text className="text-white">Thoát Camera</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.switchButton} onPress={handleGoToScanQr2}>
-        <Text style={styles.switchButtonText}>Switch to Camera 2</Text>
+        <Text style={styles.switchButtonText}>Check in với xe</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
   switchButton: {
     position: "absolute",
     bottom: 20,
-    left: "50%",
+    left: "51%",
     transform: [{ translateX: -75 }],
     backgroundColor: "#0072C6",
     padding: 15,

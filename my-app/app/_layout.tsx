@@ -120,11 +120,20 @@ export default function RootLayout() {
               options={{ headerShown: false }}
             />
             <Stack.Screen
-              name="chat"
+              name="check-in/ListVisitLicensePlate"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen name="chat" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="check-in/UserDetail"
               options={{ headerShown: false }}
             />
             <Stack.Screen
-              name="check-in/UserDetail"
+              name="check-in/CheckLicensePlate"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="check-in/CheckLicensePlateCard"
               options={{ headerShown: false }}
             />
             <Stack.Screen
@@ -138,6 +147,10 @@ export default function RootLayout() {
             <Stack.Screen
               name="check-out/CheckOutCard"
               options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="check-out/CheckOutLicensePlate"
+              options={{ animation: "fade", headerShown: false }}
             />
             <Stack.Screen
               name="profile/ProfileDetail"

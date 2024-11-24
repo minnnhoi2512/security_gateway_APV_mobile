@@ -9,18 +9,19 @@ import {
   Pressable,
   StyleSheet,
 } from "react-native";
+import { EvilIcons, MaterialIcons } from "@expo/vector-icons";
+import { ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { CheckInVer02, ValidCheckIn } from "@/Types/checkIn.type";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { CheckInVerWithLP } from "@/Types/checkIn.type";
 import {
   useCheckInMutation,
   useValidCheckInMutation,
 } from "@/redux/services/checkin.service";
 import { uploadToFirebase } from "@/firebase-config";
-import { EvilIcons, MaterialIcons } from "@expo/vector-icons";
-import { ActivityIndicator } from "react-native";
 import { useToast } from "@/components/Toast/ToastContext";
 
 interface Visitor {
@@ -59,57 +60,54 @@ interface ResultData {
   cardRes: Card;
 }
 
-interface ImageData {
-  imageType: "Shoe";
-  imageFile: string | null;
-}
-
 const CheckInOverall = () => {
-  const { validData, dataCheckIn } = useLocalSearchParams();
-  const [resultData, setResultData] = useState<ResultData | null>(null);
+  const { dataCheckIn } = useLocalSearchParams();
   const [checkInStatus, setCheckInStatus] = useState<
     "pending" | "success" | "error"
   >("pending");
-  const [isValidating, setIsValidating] = useState(true);
-  const [checkInMessage, setCheckInMessage] = useState<string>("");
+
   const [checkIn, { isLoading: isCheckingIn }] = useCheckInMutation();
-  const [validCheckIn, { isLoading: isValidCheckingIn }] =
-    useValidCheckInMutation();
   const router = useRouter();
   const { showToast } = useToast();
-  const [userId, setUserId] = useState<string | null>(null);
+  const [resultData, setResultData] = useState<ResultData | null>(null);
+  const [checkInMessage, setCheckInMessage] = useState<string>("");
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
 
-
-  
-
-  // const [checkInData, setCheckInData] = useState<CheckInVer02>({
-  //   CredentialCard: null,
-  //   SecurityInId: 0,
-  //   GateInId: Number(selectedGateId) || 0,
-  //   QrCardVerification: "",
-  //   Images: [],
-  // });
   const parsedDataCheckIn = useMemo(() => {
     try {
-      return typeof dataCheckIn === "string"
-        ? JSON.parse(dataCheckIn)
-        : dataCheckIn;
+      if (typeof dataCheckIn === "string") {
+        const parsed = JSON.parse(dataCheckIn);
+        if (parsed.__type === "CheckInVerWithLP") {
+          delete parsed.__type;
+          return {
+            ...parsed,
+            VehicleSession: parsed.VehicleSession || {
+              LicensePlate: "",
+              vehicleImages: [],
+            },
+          };
+        }
+        return parsed;
+      }
+      return dataCheckIn;
     } catch (error) {
       console.error("Error parsing dataCheckIn:", error);
-      // console.error("Error parsing dataCheckIn:", error);
       return null;
     }
   }, [dataCheckIn]);
 
-  const [checkInData, setCheckInData] = useState<CheckInVer02>({
+  const [checkInData, setCheckInData] = useState<CheckInVerWithLP>({
     CredentialCard: parsedDataCheckIn?.CredentialCard || null,
     SecurityInId: parsedDataCheckIn?.SecurityInId || 0,
     GateInId: parsedDataCheckIn?.GateInId || Number(selectedGateId) || 0,
     QrCardVerification: parsedDataCheckIn?.QrCardVerification || "",
     Images: parsedDataCheckIn?.Images || [],
+    VehicleSession: parsedDataCheckIn?.VehicleSession || {
+      LicensePlate: "",
+      vehicleImages: [],
+    },
   });
 
   useEffect(() => {
@@ -117,7 +115,6 @@ const CheckInOverall = () => {
       try {
         const storedUserId = await AsyncStorage.getItem("userId");
         if (storedUserId) {
-          setUserId(storedUserId);
           setCheckInData((prevState) => ({
             ...prevState,
             SecurityInId: Number(storedUserId) || 0,
@@ -130,15 +127,6 @@ const CheckInOverall = () => {
 
     fetchUserId();
   }, []);
-
-  // useEffect(() => {
-  //   if (userId) {
-  //     setCheckInData((prevState) => ({
-  //       ...prevState,
-  //       SecurityInId: Number(userId) || 0,
-  //     }));
-  //   }
-  // }, [userId, selectedGateId]);
 
   useEffect(() => {
     const performCheckIn = async () => {
@@ -156,6 +144,7 @@ const CheckInOverall = () => {
         }
 
         const formData = new FormData();
+
         formData.append(
           "CredentialCard",
           checkInData.CredentialCard
@@ -166,34 +155,63 @@ const CheckInOverall = () => {
         formData.append("GateInId", checkInData.GateInId.toString());
         formData.append("QrCardVerification", checkInData.QrCardVerification);
 
-        const image = checkInData.Images[0];
-        const { downloadUrl } = await uploadToFirebase(
-          image.Image,
-          `${image.ImageType}_${Date.now()}.jpg`
+        const shoeImage = checkInData.Images[0];
+        const { downloadUrl: shoeImageUrl } = await uploadToFirebase(
+          shoeImage.Image,
+          `shoe_${Date.now()}.jpg`
         );
 
-        formData.append("Images[0].ImageType", image.ImageType);
-        formData.append("Images[0].ImageURL", downloadUrl.replace(/"/g, ""));
+        formData.append("Images[0].ImageType", shoeImage.ImageType);
+        formData.append("Images[0].ImageURL", shoeImageUrl.replace(/"/g, ""));
         formData.append("Images[0].Image", {
-          uri: image.Image,
-          name: image.Image.split("/").pop() || "default.jpg",
+          uri: shoeImage.Image,
+          name: shoeImage.Image.split("/").pop() || "default.jpg",
           type: "image/jpeg",
         } as any);
 
+        if (
+          checkInData.VehicleSession &&
+          checkInData.VehicleSession.LicensePlate &&
+          checkInData.VehicleSession.vehicleImages &&
+          checkInData.VehicleSession.vehicleImages.length > 0
+        ) {
+          formData.append(
+            "VehicleSession.LicensePlate",
+            checkInData.VehicleSession.LicensePlate
+          );
+
+          const vehicleImage = checkInData.VehicleSession.vehicleImages[0];
+
+          if (vehicleImage && vehicleImage.Image) {
+            const { downloadUrl: licensePlateImageUrl } =
+              await uploadToFirebase(
+                vehicleImage.Image,
+                `license_plate_${Date.now()}.jpg`
+              );
+
+            formData.append(
+              "VehicleSession.VehicleImages[0].ImageType",
+              "LicensePlate_In"
+            );
+            formData.append(
+              "VehicleSession.VehicleImages[0].ImageURL",
+              licensePlateImageUrl.replace(/"/g, "")
+            );
+          }
+        }
+
+        console.log("Form data being sent:", formData);
+
         const response = await checkIn(formData).unwrap();
         setResultData(response);
-        // console.log("response: ", response);
-        
         setCheckInStatus("success");
         setCheckInMessage("Bạn vừa check in thành công!");
         showToast("Bạn vừa check in thành công!", "success");
       } catch (error: any) {
+        console.log("err check in:", error);
         setCheckInStatus("error");
-        // console.log("ER: ", error);
-
         const errorMessage =
           error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
-        // Alert.alert("Đã có lỗi xảy ra", errorMessage);
         showToast("Đã có lỗi xảy ra", "error");
         Alert.alert("Đã có lỗi xảy ra", errorMessage, [
           {
@@ -208,7 +226,6 @@ const CheckInOverall = () => {
 
     performCheckIn();
   }, []);
-
   const handleGoBack = () => {
     router.back();
   };
@@ -218,14 +235,6 @@ const CheckInOverall = () => {
       pathname: "/(tabs)/checkin",
     });
   };
-
-  // useEffect(() => {
-  //   const timer = setTimeout(() => {
-  //     handleNext();
-  //   }, 30000);
-
-  //   return () => clearTimeout(timer);
-  // }, []);
 
   const InfoRow = ({
     label,
@@ -328,22 +337,12 @@ const CheckInOverall = () => {
       </View>
       <View className="flex-1 mt-[5%]">
         <View className="p-4">
-          {/* <View className="align-middle justify-center">
-            {checkInStatus === "success" && (
-              <>
-                <Text className="text-green-500 text-3xl">
-                  {checkInMessage}
-                </Text>
-              </>
-            )}
-          </View> */}
           <Section title="Thông tin cơ bản">
             <View className="flex-row items-center mb-4">
               <Text className="text-gray-600 text-lg">
                 Hôm nay, {resultData.expectedStartHour}
               </Text>
             </View>
-            {/* <InfoRow label="Mã chi tiết thăm" value={data.visitDetailId} /> */}
             <InfoRow label="Giờ bắt đầu" value={resultData.expectedStartHour} />
             <InfoRow label="Giờ kết thúc" value={resultData.expectedEndHour} />
             <InfoRow label="Tên cuộc thăm" value={resultData.visit.visitName} />
@@ -363,56 +362,15 @@ const CheckInOverall = () => {
               label="CMND/CCCD"
               value={resultData.visitor.credentialsCard}
             />
-            {/* <InfoRow
-            label="Trạng thái"
-            value={data.status  ? "Hoạt động" : "Không hoạt động"}
-          /> */}
           </Section>
-          {/* <SectionDropDown
-            title="Thông tin thăm"
-            icon={<View className="w-6 h-6 bg-purple-500 rounded-full" />}
-          >
-            <InfoRow label="Tên cuộc thăm" value={resultData.visit.visitName} />
-            <InfoRow label="Số lượng" value={resultData.visit.visitQuantity} />
-            <InfoRow
-              label="Loại lịch"
-              value={resultData.visit.scheduleTypeName}
-            />
-          </SectionDropDown> */}
-          {/* <SectionDropDown
-            title="Thông tin khách"
-            icon={<View className="w-6 h-6 bg-blue-500 rounded-full" />}
-          >
-            <InfoRow label="Tên khách" value={resultData.visitor.visitorName} />
-            <InfoRow label="Công ty" value={resultData.visitor.companyName} />
-            <InfoRow
-              label="Số điện thoại"
-              value={resultData.visitor.phoneNumber}
-            />
-            <InfoRow
-              label="CMND/CCCD"
-              value={resultData.visitor.credentialsCard}
-            />
-            <InfoRow
-            label="Trạng thái"
-            value={resultData.visitor.status === "Active" ? "Hoạt động" : "Không hoạt động"}
-          />
-          </SectionDropDown> */}
-
           <SectionDropDown
             title="Thông tin thẻ"
             icon={<View className="w-6 h-6 bg-green-500 rounded-full" />}
           >
-            {/* <InfoRow label="Mã thẻ" value={data.cardRes.cardId} /> */}
             <InfoRow
               label="Mã xác thực"
               value={resultData.cardRes.cardVerification}
             />
-            {/* <InfoRow label="Trạng thái thẻ" value={data.cardRes.cardStatus} /> */}
-            {/* <InfoRow
-            label="Trạng thái"
-            value={data.cardRes.cardStatus === "Active" ? "Hoạt động" : "Không hoạt động"}
-          /> */}
 
             {resultData.cardRes.cardImage && (
               <View className="mt-4 items-center">
@@ -427,6 +385,7 @@ const CheckInOverall = () => {
               </View>
             )}
           </SectionDropDown>
+
           <SectionDropDown
             title="Hình ảnh giày"
             icon={<View className="w-6 h-6 bg-yellow-500 rounded-full" />}
@@ -444,20 +403,57 @@ const CheckInOverall = () => {
               />
             )}
           </SectionDropDown>
+
+          {checkInData.VehicleSession?.vehicleImages?.[0]?.Image && (
+            <SectionDropDown
+              title="Hình ảnh biển số xe"
+              icon={<View className="w-6 h-6 bg-blue-500 rounded-full" />}
+            >
+              <View>
+                {checkInData.VehicleSession.LicensePlate && (
+                  <View className="mb-4 p-3 bg-gray-100 rounded-lg">
+                    <Text className="text-gray-800 text-center text-lg font-semibold">
+                      Biển số: {checkInData.VehicleSession.LicensePlate}
+                    </Text>
+                  </View>
+                )}
+
+                <View className="relative">
+                  <Image
+                    source={{
+                      uri: checkInData.VehicleSession.vehicleImages[0].Image,
+                    }}
+                    className="w-full h-48 rounded-lg"
+                    resizeMode="contain"
+                  />
+
+                  <View className="absolute top-2 left-2 bg-blue-500 px-2 py-1 rounded-full flex-row items-center">
+                    <MaterialIcons
+                      name="directions-car"
+                      size={12}
+                      color="white"
+                    />
+                    <Text className="text-white text-xs ml-1">Ảnh biển số</Text>
+                  </View>
+                </View>
+              </View>
+            </SectionDropDown>
+          )}
           <TouchableOpacity
             onPress={handleNext}
             className="p-4 mb-4 bg-white rounded-full flex-row items-center justify-center"
           >
             <Text className="text-lg mr-2">Xong</Text>
             <EvilIcons name="arrow-right" size={30} color="black" />
-            {/* Change 'black' to your desired color */}
           </TouchableOpacity>
         </View>
       </View>
       {isCheckingIn && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#ffffff" />
-          <Text className="text-3xl" style={styles.loadingText}>Đang xử lý...</Text>
+          <Text className="text-3xl" style={styles.loadingText}>
+            Đang xử lý...
+          </Text>
         </View>
       )}
     </ScrollView>

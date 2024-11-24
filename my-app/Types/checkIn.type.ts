@@ -27,6 +27,26 @@ export interface CheckInVer02 {
   }>;
 }
 
+export interface CheckInVerWithLP {
+  CredentialCard: number | null;
+  SecurityInId: number; 
+  GateInId: number;
+  QrCardVerification: string;
+  Images: Array<{
+    ImageType: string;
+    ImageURL: string;
+    Image: string;
+  }>;
+  VehicleSession: {
+    LicensePlate: string;
+    vehicleImages: Array<{
+      ImageType: string;
+      ImageURL: string;
+      Image: string;
+    }>;
+  };
+}
+
 export interface ValidCheckIn {
   CredentialCard: number | null;
   QrCardVerification: string;

@@ -26,7 +26,7 @@ const VideoPlayer = ({
     <View style={styles.container}>
       <Video
         ref={videoRef}
-        source={{ uri: "https://security-gateway-camera.tools.kozow.com/libs/index.m3u8" }}
+        source={{ uri: "https://security-gateway-camera-1.tools.kozow.com/libs/index.m3u8" }}
         style={styles.video}
         useNativeControls
         resizeMode={ResizeMode.CONTAIN}

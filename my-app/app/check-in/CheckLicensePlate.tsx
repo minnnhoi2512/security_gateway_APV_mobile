@@ -16,18 +16,20 @@ import {
   TouchableOpacity,
 } from "react-native-gesture-handler";
 import * as FileSystem from "expo-file-system";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Camera, CameraView, useCameraPermissions } from "expo-camera";
+import { CameraView } from "expo-camera";
+import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import Overlay from "./OverLay";
-import { CheckInVer02 } from "@/Types/checkIn.type";
+import { CheckInVer02, CheckInVerWithLP } from "@/Types/checkIn.type";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
-import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
+import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
+import { uploadToFirebase } from "@/firebase-config";
 
 interface ImageData {
   ImageType: "Shoe";
@@ -35,15 +37,9 @@ interface ImageData {
   ImageFile: string | null;
 }
 
-const UserDetail = () => {
+const CheckLicensePlate = () => {
   const { visitId } = useLocalSearchParams<{ visitId: string }>();
-  const { data } = useLocalSearchParams<{ data: string }>();
-  const selectedGateId = useSelector(
-    (state: RootState) => state.gate.selectedGateId
-  );
-
   const router = useRouter();
-  const [permission, requestPermission] = useCameraPermissions();
   const qrLock = useRef(false);
 
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
@@ -51,27 +47,37 @@ const UserDetail = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [qrImage, setQrImage] = useState<string | null>(null);
-  const [hasNavigated, setHasNavigated] = useState(false);
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
-  const [autoCapture, setAutoCapture] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  // RTK QUERY
+  const [hasNavigated, setHasNavigated] = useState(false);
+  const selectedGateId = useSelector(
+    (state: RootState) => state.gate.selectedGateId
+  );
 
-  const {
-    data: visitDetail,
-    isLoading,
-    isError,
-  } = useGetVisitDetailByIdQuery(visitId);
+  // Check camera permissions
+  useEffect(() => {
+    (async () => {
+      const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
+      setIsPermissionGranted(cameraStatus.status === "granted");
+    })();
+  }, []);
 
-  //CHECKIN DATA
-  const [checkInData, setCheckInData] = useState<CheckInVer02>({
+  const [checkInData, setCheckInData] = useState<CheckInVerWithLP>({
     CredentialCard: null,
     SecurityInId: 0,
     GateInId: Number(selectedGateId) || 0,
     QrCardVerification: "",
     Images: [],
+    VehicleSession: {
+      LicensePlate: "",
+      vehicleImages: [],
+    },
   });
-  // https://security-gateway-camera.tools.kozow.com/camera-1/capture-image
+  const {
+    data: visitDetail,
+    isLoading,
+    isError,
+  } = useGetVisitDetailByIdQuery(visitId);
   const fetchCaptureImage = async (): Promise<ImageData | null> => {
     try {
       const response = await fetch(
@@ -129,7 +135,7 @@ const UserDetail = () => {
       try {
         const storedUserId = await AsyncStorage.getItem("userId");
         if (storedUserId) {
-          setUserId(storedUserId);
+          // setUserId(storedUserId);
           setCheckInData((prevState) => ({
             ...prevState,
             SecurityInId: Number(storedUserId) || 0,
@@ -159,31 +165,11 @@ const UserDetail = () => {
     }
   }, [visitDetail]);
 
-  //PERMISSION
-  useEffect(() => {
-    if (permission?.granted) {
-      setIsPermissionGranted(true);
-    }
-  }, [permission]);
-
-  useEffect(() => {
-    const checkPermissions = async () => {
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      setIsPermissionGranted(status === "granted");
-    };
-
-    checkPermissions();
-  }, []);
-  //PERMISSION
-  const handleGoBack = () => {
-    router.back();
-  };
-
   useEffect(() => {
     const handleQrDataAndCapture = async () => {
       if (qrCardData) {
         console.log("QR Card Data received:", qrCardData);
-        setAutoCapture(true);
+       
 
         if (qrCardData.cardImage) {
           setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
@@ -233,22 +219,7 @@ const UserDetail = () => {
     });
   }, [qrCardData]);
 
-  useEffect(() => {
-    if (qrCardData) {
-      // setAutoCapture(true);
-      setIsProcessing(true);
-      if (qrCardData.cardVerification) {
-        setCheckInData((prevData) => ({
-          ...prevData,
-          QrCardVerification: qrCardData.cardVerification,
-        }));
-      } else {
-        setIsCameraActive(true);
-      }
-    } else {
-      setIsCameraActive(true);
-    }
-  }, [data]);
+ 
 
   useEffect(() => {
     if (qrCardData) {
@@ -267,21 +238,97 @@ const UserDetail = () => {
     }
   }, [qrCardData]);
 
-  // const handleBarCodeScanned = async ({ data }: { data: string }) => {
-  //   if (data && !qrLock.current) {
-  //     qrLock.current = true;
-  //     setIsScanning(true);
-  //     console.log("Scanned QR Code Data:", data);
+  const uploadImageToAPI = async (imageUri: string) => {
+    try {
+      setIsProcessing(true);
 
-  //     setCheckInData((prevData) => ({
-  //       ...prevData,
-  //       QrCardVerification: data,
-  //     }));
+      // Tạo FormData object
+      const formData = new FormData();
 
-  //     setIsCameraActive(false);
-  //     // setAutoCapture(true);
-  //   }
-  // };
+      // Thêm file ảnh vào FormData
+      formData.append("file", {
+        uri: imageUri,
+        type: "image/jpeg",
+        name: "photo.jpg",
+      } as any);
+
+      // Gọi API nhận dạng biển số
+      const response = await fetch(
+        "https://security-gateway-detect.tools.kozow.com/licensePlate",
+        {
+          method: "POST",
+          body: formData,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const result = await response.json();
+      console.log("API Response:", result);
+
+      // Upload ảnh lên Firebase
+      const fileName = `license_plate_${Date.now()}`;  
+      const uploadResult = await uploadToFirebase(
+        imageUri, 
+        fileName,
+        (progress: any) => {
+          console.log('Upload progress:', progress);
+        }
+      );
+
+      // Cập nhật state với URL từ Firebase
+      // setCheckInData((prevData) => ({
+      //   ...prevData,
+      //   VehicleSession: {
+      //     LicensePlate: result.licensePlate || "", 
+      //     vehicleImages: [{
+      //       ImageType: "LicensePlate_In",
+      //       ImageURL: uploadResult.downloadUrl,
+      //     }]
+      //   }
+      // }));
+
+      // Hiển thị kết quả
+      Alert.alert(
+        "Kết quả nhận dạng",
+        `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
+        [{ text: "OK" }]
+      );
+    } catch (error) {
+      console.error("Error processing image:", error);
+      Alert.alert("Lỗi", "Không thể xử lý ảnh. Vui lòng thử lại.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const takePhoto = async () => {
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: "images",
+        quality: 0.8,
+        allowsEditing: false,
+        base64: false,
+        exif: false,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        // Upload ảnh và xử lý nhận dạng biển số
+        await uploadImageToAPI(result.assets[0].uri);
+        Alert.alert("Thành công", "Đã xử lý ảnh thành công!");
+      }
+    } catch (error) {
+      console.error("Failed to take picture:", error);
+      Alert.alert("Lỗi", "Không thể chụp ảnh. Vui lòng thử lại.");
+    }
+  };
+ 
+
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
     if (data && !qrLock.current) {
       qrLock.current = true;
@@ -338,54 +385,38 @@ const UserDetail = () => {
     validateAndNavigate();
   }, [checkInData, hasNavigated]);
 
-  // console.log("DATA CI: ", checkInData);
-  // console.log("DATA DTV: ", visitDetail);
-
-  //PERMISSION VIEW
   if (!isPermissionGranted) {
     return (
       <View className="flex-1 justify-center items-center">
-        <Text className="text-gray-800 mb-4">Permission not granted</Text>
-        <Button title="Request permission" onPress={requestPermission}></Button>
+        <Text className="text-gray-800 mb-4">Chưa cấp quyền camera</Text>
+        <Button
+          title="Yêu cầu quyền camera"
+          onPress={async () => {
+            const { status } =
+              await ImagePicker.requestCameraPermissionsAsync();
+            setIsPermissionGranted(status === "granted");
+          }}
+        />
       </View>
     );
   }
 
-  // if (isLoadingQr) {
-  //   return (
-  //     <View className="flex-1 justify-center items-center bg-gray-100">
-  //       <Text className="text-xl font-semibold text-backgroundApp">
-  //         Đang tải...
-  //       </Text>
-  //     </View>
-  //   );
-  // }
-
-  // if (isProcessing || isLoadingQr) {
-  //   return (
-  //     <View style={styles.loadingCentered}>
-  //       <ActivityIndicator size="large" color="red" />
-  //       <Text style={styles.loadingText}>Hệ thống đang xử lý QR Code...</Text>
-  //     </View>
-  //   );
-  // }
-
-  if (isProcessing || isLoadingQr) {
+  if (isProcessing) {
     return (
       <View className="flex-1 items-center justify-center bg-backgroundApp">
         <ActivityIndicator size="large" color="#ffffff" />
-        <Text className="text-white mt-4">Đang xử lý mã QR Code...</Text>
+        <Text className="text-white mt-4">Đang xử lý...</Text>
       </View>
     );
   }
-  
-  
+
+  console.log("check in dâtta: ", checkInData);
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
       <View>
         <Pressable
-          onPress={handleGoBack}
+          onPress={() => router.back()}
           className="flex flex-row items-center space-x-2 px-4 py-2 bg-gray-100 rounded-lg active:bg-gray-200"
         >
           <MaterialIcons name="arrow-back" size={24} color="#4B5563" />
@@ -395,7 +426,51 @@ const UserDetail = () => {
 
       <ScrollView>
         <GestureHandlerRootView className="flex-1 p-5">
-          {/* MODAL VIEW IMAGE */}
+          {/* Camera Capture Button */}
+          <View className="mb-4">
+            <TouchableOpacity
+              className="flex-row items-center justify-center space-x-2 bg-blue-500 p-4 rounded-lg"
+              onPress={takePhoto}
+            >
+              <Ionicons name="camera" size={24} color="white" />
+              <Text className="text-white font-medium">Chụp ảnh</Text>
+            </TouchableOpacity>
+
+            {capturedImage.length > 0 && (
+              <View className="mt-4">
+                <Text className="text-gray-700 mb-2">Ảnh đã chụp:</Text>
+                <TouchableOpacity
+                  onPress={() =>
+                    setSelectedImage(capturedImage[0].ImageFile || null)
+                  }
+                >
+                  <Image
+                    source={{ uri: capturedImage[0].ImageFile || "" }}
+                    className="w-full h-40 rounded-lg"
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* QR Scanner */}
+          <View className=" aspect-[2/4] relative mb-4">
+            <CameraView
+              style={StyleSheet.absoluteFillObject}
+              facing="back"
+              onBarcodeScanned={handleBarCodeScanned}
+            />
+            <Overlay />
+
+            <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
+              <Text className="text-green-700 text-sm font-semibold">
+                Quét QR Code
+              </Text>
+            </View>
+          </View>
+
+          {/* Modal for viewing images */}
           <Modal
             visible={!!selectedImage}
             transparent={true}
@@ -411,62 +486,17 @@ const UserDetail = () => {
                 />
               )}
               <TouchableOpacity
-                className="m-1 bg-white p-y-2 p-x-1 rounded-md"
+                className="mt-4 bg-white px-4 py-2 rounded-md"
                 onPress={() => setSelectedImage(null)}
               >
-                <Text className="text-red text-xl font-bold">✕</Text>
+                <Text className="text-red-500 font-bold">Đóng</Text>
               </TouchableOpacity>
             </View>
           </Modal>
-
-          <View className="w-full aspect-[2/4] relative mb-4">
-            <CameraView
-              className="flex-1 w-full h-full"
-              onBarcodeScanned={handleBarCodeScanned}
-            />
-            <Overlay />
-
-            <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
-              <Text className="text-green-700 text-sm font-semibold">
-                Camera Checkin
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
-              onPress={() => setIsCameraActive(false)}
-            ></TouchableOpacity>
-          </View>
         </GestureHandlerRootView>
       </ScrollView>
-
-      {/* {isProcessing || isLoadingQr && (
-        <View className="absolute inset-0  flex justify-center items-center z-[1000]">
-          <ActivityIndicator size="large" color="red" />
-          <Text className="text-red text-3xl mt-2">Đang xử lý...</Text>
-        </View>
-      )} */}
     </SafeAreaView>
   );
 };
-export default UserDetail;
 
-const styles = StyleSheet.create({
-  loadingCentered: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1000,
-    backgroundColor: "transparent",  
-  },
-  loadingText: {
-    color: "red",
-    fontSize: 20,
-    marginTop: 10,
-  },
-});
-
+export default CheckLicensePlate;

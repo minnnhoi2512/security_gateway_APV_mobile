@@ -6,48 +6,284 @@ import {
   Platform,
   StatusBar,
   StyleSheet,
+  AppState,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { CameraView } from "expo-camera";
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
+
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store/store";
+import { CheckInVer02 } from "@/Types/checkIn.type";
+import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service";
+import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
+import Overlay from "./OverLay";
+
+interface ScanData {
+  id: string;
+  nationalId: string;
+  name: string;
+  dateOfBirth: string;
+  gender: string;
+  address: string;
+  issueDate: string;
+}
 
 const ScanQr2 = () => {
-  const router = useRouter();
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const qrLock = useRef(false);
+  const appState = useRef(AppState.currentState);
+  const router = useRouter();
+  const [scannedData, setScannedData] = useState<string>("");
+  const visitNotFoundShown = useRef(false);
+  const redirected = useRef(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [credentialCardId, setCredentialCardId] = useState<string | null>(null);
+  const [cardVerification, setCardVerification] = useState<string | null>(null);
+
+  const selectedGateId = useSelector(
+    (state: RootState) => state.gate.selectedGateId
+  );
+
+  const {
+    data: visitOfUser,
+    isLoading: isLoadingVisit,
+    error: isError,
+    isFetching: isFetchingVisit,
+  } = useGetVisitByCredentialCardQuery(credentialCardId || "", {
+    skip: !credentialCardId,
+  });
+
+  const [checkInData, setCheckInData] = useState<CheckInVer02>({
+    CredentialCard: null,
+    SecurityInId: 0,
+    GateInId: Number(selectedGateId) || 0,
+    QrCardVerification: "",
+    Images: [],
+  });
+
+  const {
+    data: qrCardData,
+    isLoading: isLoadingQr,
+    isError: isErrorQr,
+    isFetching: isFetchingQr,
+  } = useGetDataByCardVerificationQuery(cardVerification || "", {
+    skip: !cardVerification,
+  });
 
   useFocusEffect(
     useCallback(() => {
-      
       setIsCameraActive(true);
-
       return () => {
-   
         setIsCameraActive(false);
       };
     }, [])
   );
 
+  const parseQRData = (qrData: string): ScanData | null => {
+    const parts = qrData.split("|");
+    if (parts.length === 7) {
+      const [id, nationalId, name, dateOfBirth, gender, address, issueDate] =
+        parts;
+      return { id, nationalId, name, dateOfBirth, gender, address, issueDate };
+    }
+    return null;
+  };
+
+  const isCredentialCard = (data: string): boolean => {
+    return data.includes("|");
+  };
+
+  const resetState = () => {
+    console.log("Resetting state...");
+    setScannedData("");
+    setCredentialCardId(null);
+    setCardVerification(null);
+    setIsProcessing(false);
+    qrLock.current = false;
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      resetState();
+      redirected.current = false;
+      return () => {};
+    }, [])
+  );
+
+  useEffect(() => {
+    if (scannedData) {
+      if (isCredentialCard(scannedData)) {
+        const parsedData = parseQRData(scannedData);
+        if (parsedData) {
+          setCredentialCardId(parsedData.id);
+          setIsProcessing(true);
+        } else {
+          Alert.alert("Lỗi", "Mã QR không hợp lệ");
+          resetState();
+        }
+      } else {
+        setCardVerification(scannedData);
+        setCheckInData((prevData) => ({
+          ...prevData,
+          QrCardVerification: scannedData,
+        }));
+        setIsProcessing(true);
+      }
+    }
+  }, [scannedData]);
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === "active"
+      ) {
+        resetState();
+      }
+      appState.current = nextAppState;
+    });
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+  const handleVisitNotFound = () => {
+    setIsProcessing(false);
+    Alert.alert(
+      "Không tìm thấy dữ liệu",
+      "Không tìm thấy dữ liệu cho ID này. Bạn sẽ được chuyển hướng đến tạo mới lịch hẹn",
+      [
+        {
+          text: "OK",
+          onPress: () => {
+            router.push({
+              pathname: "/(tabs)/createCustomer",
+            });
+            resetState();
+            visitNotFoundShown.current = false;
+          },
+        },
+        {
+          text: "Hủy",
+          onPress: () => {
+            resetState();
+            visitNotFoundShown.current = false;
+          },
+        },
+      ]
+    );
+  };
+
+  useEffect(() => {
+    const handleNavigation = async () => {
+      if (isLoadingVisit || isFetchingVisit) return;
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      if (cardVerification && !redirected.current) {
+        qrLock.current = true;
+        if (qrCardData && !isLoadingQr && !isFetchingQr && !isErrorQr) {
+          redirected.current = true;
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          router.push({
+            pathname: "/check-in/CheckLicensePlateCard",
+            params: {
+              card: cardVerification,
+            },
+          });
+
+          resetState();
+        } else if (
+          !isLoadingQr &&
+          !isFetchingQr &&
+          (isErrorQr || !qrCardData)
+        ) {
+          Alert.alert("Lỗi", "Mã xác thực không hợp lệ");
+          resetState();
+        }
+      } else if (credentialCardId && !redirected.current) {
+        qrLock.current = true;
+        if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
+          redirected.current = true;
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          router.push({
+            pathname: "/check-in/ListVisitLicensePlate",
+            params: { credentialCardId: credentialCardId },
+          });
+          resetState();
+        } else if (
+          !isLoadingVisit &&
+          !isFetchingVisit &&
+          !visitNotFoundShown.current
+        ) {
+          visitNotFoundShown.current = true;
+
+          handleVisitNotFound();
+        }
+      }
+    };
+    handleNavigation();
+  }, [
+    visitOfUser,
+    isLoadingVisit,
+    isFetchingVisit,
+    credentialCardId,
+    qrCardData,
+    isLoadingQr,
+    isFetchingQr,
+    cardVerification,
+    checkInData,
+  ]);
+  
+  const handleBarCodeScanned = ({ data }: { data: string }) => {
+    if (data && !qrLock.current) {
+      qrLock.current = true;
+      setScannedData(data);
+      setIsProcessing(true);
+      console.log("Scanned QR Code Data:", data);
+    }
+  };
+
   const handleGoToScanQr1 = () => {
-    router.replace("/check-in/scanQr");  
+    router.replace("/check-in/scanQr");
   };
 
   const handleGoBack = () => {
-    router.back(); 
+    router.back();
   };
 
   return (
     <SafeAreaView style={StyleSheet.absoluteFillObject}>
+      <Stack.Screen
+        options={{
+          title: "Overview",
+          headerShown: false,
+        }}
+      />
       {Platform.OS === "android" ? <StatusBar hidden /> : null}
-      {isCameraActive && (
-        <CameraView
-          style={StyleSheet.absoluteFillObject}
-          facing="back"
-          // Logic scan QR cho màn hình này
-        />
+      <CameraView
+        style={StyleSheet.absoluteFillObject}
+        facing="back"
+        onBarcodeScanned={handleBarCodeScanned}
+      />
+      <Overlay />
+      {(isProcessing ||
+        isLoadingVisit ||
+        isFetchingVisit ||
+        isLoadingQr ||
+        isFetchingQr) && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text className="text-xl" style={styles.loadingText}>
+            Đang xử lý...
+          </Text>
+        </View>
       )}
       <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
-        <Text className="text-green-700 text-sm font-semibold">Camera Checkin 2222</Text>
+        <Text className="text-green-700 text-sm font-semibold">
+          Camera Checkin 2
+        </Text>
       </View>
       <TouchableOpacity
         className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
@@ -56,7 +292,7 @@ const ScanQr2 = () => {
         <Text className="text-white">Thoát Camera</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.switchButton} onPress={handleGoToScanQr1}>
-        <Text style={styles.switchButtonText}>Switch to Camera 1</Text>
+        <Text style={styles.switchButtonText}>Check in bình thường</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -65,10 +301,25 @@ const ScanQr2 = () => {
 export default ScanQr2;
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  loadingText: {
+    color: "#ffffff",
+    marginTop: 10,
+  },
   switchButton: {
     position: "absolute",
     bottom: 20,
-    left: "50%",
+    left: "44%",
     transform: [{ translateX: -75 }],
     backgroundColor: "#0072C6",
     padding: 15,
