@@ -123,6 +123,10 @@ export default function RootLayout() {
               name="chat"
               options={{ headerShown: false }}
             />
+             <Stack.Screen
+              name="chat/chatDetail"
+              options={{ headerShown: false }}
+            />
             <Stack.Screen
               name="check-in/UserDetail"
               options={{ headerShown: false }}
