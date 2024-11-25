@@ -259,7 +259,7 @@ const FormCreate = () => {
           </View>
 
           <View className="mb-4">
-            <Text className="text-sm font-semibold text-white mb-2">
+            <Text className="text-sm font-semibold text-gray-800  mb-2">
               Chọn nhân viên theo số điện thoại
             </Text>
             <TextInput

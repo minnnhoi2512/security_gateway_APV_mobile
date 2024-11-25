@@ -82,13 +82,13 @@ export default function HomeScreen() {
     );
   }
 
-  if (isError) {
-    return (
-      <SafeAreaView className="flex-1 justify-center items-center bg-white">
-        <Text className="text-red-500">Error fetching visits!</Text>
-      </SafeAreaView>
-    );
-  }
+  // if (isError) {
+  //   return (
+  //     <SafeAreaView className="flex-1 justify-center items-center bg-white">
+  //       <Text className="text-red-500">Error fetching visits!</Text>
+  //     </SafeAreaView>
+  //   );
+  // }
 
   // console.log("vs: ", visits);
 
