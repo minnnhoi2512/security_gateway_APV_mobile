@@ -164,6 +164,10 @@ export default function RootLayout() {
               name="check-in/CheckInOverall"
               options={{ headerShown: false }}
             />
+             <Stack.Screen
+              name="check-in/streaming"
+              options={{ headerShown: false }}
+            />
             <Stack.Screen
               name="Notification"
               options={{ headerShown: false }}

@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -26,6 +27,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   useCheckOutWithCardMutation,
   useCheckOutWithCredentialCardMutation,
+  useGetVisitorImageByVisitorSessionIdQuery,
 } from "@/redux/services/checkout.service";
 import { uploadToFirebase } from "@/firebase-config";
 
@@ -37,6 +39,7 @@ interface CheckoutResponse {
   visitCard: {
     card: {
       cardId: number;
+      cardImage: string;
       cardStatus: string;
       cardVerification: string;
       qrCardTypename: string;
@@ -64,6 +67,7 @@ const CheckOutNormal = () => {
     (state: RootState) => state.gate.selectedGateId
   );
 
+
   const [checkoutResponse, setCheckoutResponse] =
     useState<CheckoutResponse | null>(null);
   const [checkoutData, setCheckoutData] = useState<CheckOut>({
@@ -72,8 +76,20 @@ const CheckOutNormal = () => {
   });
 
   const [checkOutWithCard, { isLoading }] = useCheckOutWithCardMutation();
-
-  // Fetch userId khi component mount
+  const {
+    data: dataVisitorSessionImage,
+    error: errorVisitorSessionImage,
+    refetch,
+    isFetching: isFetchingVisitorSessionImage,
+    isLoading: isLoadingVisitorSessionImage,
+  } = useGetVisitorImageByVisitorSessionIdQuery(
+    checkoutResponse?.visitorSessionId as number,
+    {
+      skip: !checkoutResponse, 
+    }
+  );
+  
+ 
   useEffect(() => {
     const fetchUserId = async () => {
       try {
@@ -131,16 +147,28 @@ const CheckOutNormal = () => {
     router.back();
   };
 
+
+
   const InfoRow = ({
     label,
     value,
+    isImage = false,
   }: {
     label: string;
     value: string | number;
+    isImage?: boolean;
   }) => (
-    <View className="flex-row justify-between py-2">
-      <Text className="text-gray-500 text-sm">{label}</Text>
-      <Text className="text-black text-sm font-medium">{value}</Text>
+    <View className="py-2">
+      <Text className="text-gray-500 text-sm mb-1">{label}</Text>
+      {isImage && typeof value === "string" && value ? (
+        <Image
+          source={{ uri: `data:image/jpeg;base64,${value}` }}
+          className="w-full h-48 rounded-lg"
+          resizeMode="contain"
+        />
+      ) : (
+        <Text className="text-black text-sm font-medium">{value}</Text>
+      )}
     </View>
   );
 
@@ -222,52 +250,36 @@ const CheckOutNormal = () => {
       <ScrollView>
         <GestureHandlerRootView className="flex-1 p-5">
           {isLoading ? (
-            // Loading state
             <View className="flex-1 justify-center items-center p-4">
               <ActivityIndicator size="large" color="#3B82F6" />
               <Text className="text-gray-600 mt-4">Đang xử lý checkout...</Text>
             </View>
           ) : checkoutResponse ? (
-            // Success state với thông tin response
-            <View className="bg-white p-4 rounded-lg shadow">
+            <View className="bg-backgroundApp p-4 rounded-lg shadow">
               <View className="mb-4 bg-green-50 p-3 rounded-lg">
                 <Text className="text-green-600 font-bold text-center text-lg mb-2">
                   Checkout thành công
                 </Text>
-                <Text className="text-green-600 text-center">
-                  Tự động quay lại sau 3 giây...
-                </Text>
               </View>
               <View className="p-4">
                 <Section
-                  icon={
-                    <MaterialIcons
-                      name="check-circle"
-                      size={24}
-                      color="#3B82F6"
-                    />
-                  }
+                  icon={<View className="w-6 h-6 bg-purple-500 rounded-full" />}
                   title="Trạng thái Checkout"
                 >
-                  <InfoRow label="Trạng thái" value={checkoutResponse.status} />
                   <InfoRow
                     label="Thời gian check-in"
                     value={formatDate(checkoutResponse.checkinTime)}
                   />
-                  <InfoRow
+                  <InfoRow label="Trạng thái" value={checkoutResponse.status} />
+
+                  {/* <InfoRow
                     label="ID phiên"
                     value={checkoutResponse.visitorSessionId}
-                  />
+                  /> */}
                 </Section>
 
                 <SectionDropDown
-                  icon={
-                    <MaterialIcons
-                      name="credit-card"
-                      size={24}
-                      color="#3B82F6"
-                    />
-                  }
+                  icon={<View className="w-6 h-6 bg-green-500 rounded-full" />}
                   title="Thông tin thẻ"
                 >
                   <InfoRow
@@ -279,27 +291,18 @@ const CheckOutNormal = () => {
                     value={checkoutResponse.visitCard.card.cardVerification}
                   />
                   <InfoRow
-                    label="ID thẻ"
-                    value={checkoutResponse.visitCard.card.cardId}
-                  />
-                  <InfoRow
                     label="Trạng thái thẻ"
                     value={checkoutResponse.visitCard.card.cardStatus}
                   />
                   <InfoRow
-                    label="ID thẻ thăm"
-                    value={checkoutResponse.visitCard.visitCardId}
-                  />
-                  <InfoRow
-                    label="Trạng thái thẻ thăm"
-                    value={checkoutResponse.visitCard.visitCardStatus}
+                    label="Hình ảnh thẻ"
+                    value={checkoutResponse.visitCard.card.cardImage}
+                    isImage={true}
                   />
                 </SectionDropDown>
 
                 <SectionDropDown
-                  icon={
-                    <Ionicons name="time-outline" size={24} color="#3B82F6" />
-                  }
+                   icon={<View className="w-6 h-6 bg-orange-500 rounded-full" />}
                   title="Thời gian hiệu lực"
                 >
                   <InfoRow
@@ -321,34 +324,37 @@ const CheckOutNormal = () => {
                 </SectionDropDown>
 
                 <SectionDropDown
-                  icon={
-                    <FontAwesome5 name="user-clock" size={20} color="#3B82F6" />
-                  }
-                  title="Chi tiết thăm"
-                >
-                  <InfoRow
-                    label="ID chi tiết thăm"
-                    value={checkoutResponse.visitDetail.visitDetailId}
-                  />
-                  <InfoRow
-                    label="ID thăm"
-                    value={checkoutResponse.visitDetail.visitId}
-                  />
-                  <InfoRow
-                    label="ID khách"
-                    value={checkoutResponse.visitDetail.visitorId}
-                  />
-                </SectionDropDown>
+            title="Hình ảnh giày"
+            icon={<View className="w-6 h-6 bg-yellow-500 rounded-full" />}
+          >
+            {dataVisitorSessionImage &&
+              dataVisitorSessionImage.map(
+                (
+                  image: { imageURL: string; imageType: string },
+                  index: number
+                ) => (
+                  <View key={index}>
+                    <Image
+                      source={{ uri: image.imageURL }}
+                      style={{
+                        width: "100%",
+                        height: 200,
+                        borderRadius: 10,
+                        marginVertical: 10,
+                      }}
+                      resizeMode="contain"
+                    />
+                    {/* <Text className="text-xl">
+                      {image.imageType === "Shoe" ? "Giày" : "Ảnh khách hàng"}
+                    </Text> */}
+                  </View>
+                )
+              )}
+          </SectionDropDown>
 
                 {(checkoutResponse.gateIn || checkoutResponse.securityIn) && (
                   <Section
-                    icon={
-                      <MaterialIcons
-                        name="security"
-                        size={24}
-                        color="#3B82F6"
-                      />
-                    }
+                  icon={<View className="w-6 h-6 bg-blue-500 rounded-full" />}
                     title="Thông tin bảo vệ"
                   >
                     {checkoutResponse.gateIn && (
@@ -366,12 +372,12 @@ const CheckOutNormal = () => {
                   </Section>
                 )}
                 <TouchableOpacity
-                    onPress={handleNext}
-                    className="p-4 mb-4 bg-white rounded-full flex-row items-center justify-center"
-                  >
-                    <Text className="text-lg mr-2">Xong</Text>
-                    <EvilIcons name="arrow-right" size={30} color="black" />
-                  </TouchableOpacity>
+                  onPress={handleNext}
+                  className="p-4 mb-4 bg-white rounded-full flex-row items-center justify-center"
+                >
+                  <Text className="text-lg mr-2">Xong</Text>
+                  <EvilIcons name="arrow-right" size={30} color="black" />
+                </TouchableOpacity>
               </View>
             </View>
           ) : null}

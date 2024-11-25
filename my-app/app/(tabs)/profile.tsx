@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Image, TouchableOpacity, ScrollView } from "react-native";
-import { Entypo, Feather } from "@expo/vector-icons";
+import { Entypo, Feather, MaterialIcons } from "@expo/vector-icons";
 import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -83,7 +83,7 @@ const Profile: React.FC = () => {
           <Text className="text-white">
             {profile?.email} | {profile?.phoneNumber}
           </Text>
-          {/* Optional: Add a visual indicator that this is clickable */}
+
           <View className="flex-row items-center mt-2">
             <Text className="text-white text-sm mr-1">Xem chi tiết</Text>
             <Feather name="chevron-right" size={16} color="white" />
@@ -103,11 +103,24 @@ const Profile: React.FC = () => {
           className="flex-row items-center bg-[#34495e] p-4 rounded-lg mb-5"
         >
           <View className="bg-gray-200 p-2 rounded-full mr-4">
-          
             <Entypo name="video-camera" size={24} color="#4B5563" />
           </View>
           <View className="flex-1">
             <Text className="text-lg text-white font-semibold">Xem camera</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={async () => {
+            router.push("/PickGate");
+          }}
+          className="flex-row items-center bg-[#34495e] p-4 rounded-lg mb-5"
+        >
+          <View className="bg-gray-200 p-2 rounded-full mr-4">
+            <MaterialIcons name="change-circle" size={24} color="#4B5563" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-lg text-white font-semibold">Thay đổi cổng</Text>
           </View>
         </TouchableOpacity>
 

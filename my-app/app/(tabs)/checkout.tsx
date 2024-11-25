@@ -11,7 +11,7 @@ import { useRouter } from "expo-router";
 import Header from "@/components/UI/Header";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ButtonSingleTextMainColor from "../../components/UI/ButtonSingleTextMainColor";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import {
   useGetVissitorSessionByCardverifiedQuery,
   useGetVissitorSessionByCredentialIdQuery,
@@ -211,23 +211,16 @@ const Checkout = () => {
         // Lấy phần tử đầu tiên trước dấu |
         const credentialId = data.split("|")[0];
         console.log("Extracted Credential ID:", credentialId);
-        
+
         // Set credential ID vào state để trigger query
         setCredentialCard(credentialId);
         setIsCameraActive(false); // Tắt camera sau khi quét thành công
-        
       } catch (error) {
         console.error("Error processing CCCD:", error);
-        Alert.alert(
-          "Lỗi",
-          "Định dạng CCCD không hợp lệ. Vui lòng thử lại."
-        );
+        Alert.alert("Lỗi", "Định dạng CCCD không hợp lệ. Vui lòng thử lại.");
       }
     } else {
-      Alert.alert(
-        "Lỗi",
-        "Vui lòng quét đúng mã CCCD"
-      );
+      Alert.alert("Lỗi", "Vui lòng quét đúng mã CCCD");
     }
   }, []);
 
@@ -254,8 +247,6 @@ const Checkout = () => {
       Alert.alert("Lỗi", "Không tìm thấy phiên khách với CCCD đã nhập.");
     }
   };
-  
- 
 
   const handlePress = () => {
     setCameraType("QR");
@@ -334,7 +325,11 @@ const Checkout = () => {
 
             <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
               <Text className="text-green-700 text-sm font-semibold">
-                {activeCamera === "QR" ? "Quét mã QR" : activeCamera === "LICENSE" ? "Quét mã QR với xe" : "Quét CCCD"}
+                {activeCamera === "QR"
+                  ? "Quét mã QR"
+                  : activeCamera === "LICENSE"
+                  ? "Quét mã QR với xe"
+                  : "Quét CCCD"}
               </Text>
             </View>
 
@@ -382,14 +377,8 @@ const Checkout = () => {
                 onPress={() => setActiveCamera("CCCD")}
               >
                 <View className="flex-row justify-center items-center space-x-2">
-                  <MaterialIcons
-                    name="directions-car"
-                    size={24}
-                    color="white"
-                  />
-                  <Text className="text-white font-semibold">
-                    Quét CCCD
-                  </Text>
+                  <AntDesign name="idcard" size={24} color="white" />
+                  <Text className="text-white font-semibold">Quét CCCD</Text>
                 </View>
               </TouchableOpacity>
             </View>

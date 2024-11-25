@@ -92,7 +92,7 @@ const PickGate: React.FC = () => {
           ))}
         </ScrollView>
 
-        <View className="flex-1 mt-4">
+        <View className="mb-16">
           <TouchableOpacity
             onPress={handleNext}
             className={`rounded-xl py-4 items-center ${selectedGate ? 'bg-white' : 'bg-gray-300'}`}
