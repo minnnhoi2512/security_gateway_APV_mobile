@@ -29,7 +29,6 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
 import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
-import { uploadToFirebase } from "@/firebase-config";
 
 interface ImageData {
   ImageType: "Shoe";
@@ -50,17 +49,13 @@ const CheckLicensePlate = () => {
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasNavigated, setHasNavigated] = useState(false);
+  const [hasScannedQR, setHasScannedQR] = useState(false);
+  const [hasPhotoTaken, setHasPhotoTaken] = useState(false);
+  const [isCameraLaunched, setIsCameraLaunched] = useState(false);
+
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
-
-  // Check camera permissions
-  useEffect(() => {
-    (async () => {
-      const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
-      setIsPermissionGranted(cameraStatus.status === "granted");
-    })();
-  }, []);
 
   const [checkInData, setCheckInData] = useState<CheckInVerWithLP>({
     CredentialCard: null,
@@ -73,11 +68,65 @@ const CheckLicensePlate = () => {
       vehicleImages: [],
     },
   });
+
+  // API queries
   const {
     data: visitDetail,
     isLoading,
     isError,
   } = useGetVisitDetailByIdQuery(visitId);
+
+  const {
+    data: qrCardData,
+    isLoading: isLoadingQr,
+    isError: isErrorQr,
+  } = useGetDataByCardVerificationQuery(checkInData.QrCardVerification);
+
+  // Check camera permissions
+  useEffect(() => {
+    (async () => {
+      const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
+      setIsPermissionGranted(cameraStatus.status === "granted");
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (isPermissionGranted && !isCameraLaunched) {
+      setIsCameraLaunched(true);
+      takePhoto();
+    }
+  }, [isPermissionGranted, isCameraLaunched]);
+
+  // Fetch user ID
+  useEffect(() => {
+    const fetchUserId = async () => {
+      try {
+        const storedUserId = await AsyncStorage.getItem("userId");
+        if (storedUserId) {
+          setCheckInData((prevState) => ({
+            ...prevState,
+            SecurityInId: Number(storedUserId) || 0,
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching userId from AsyncStorage:", error);
+      }
+    };
+
+    fetchUserId();
+  }, []);
+
+  // Handle visit detail data
+  useEffect(() => {
+    if (visitDetail && Array.isArray(visitDetail) && visitDetail.length > 0) {
+      const credentialCard = visitDetail[0]?.visitor?.credentialsCard;
+      setCheckInData((prevData) => ({
+        ...prevData,
+        CredentialCard: credentialCard,
+      }));
+    }
+  }, [visitDetail]);
+
   const fetchCaptureImage = async (): Promise<ImageData | null> => {
     try {
       const response = await fetch(
@@ -124,56 +173,14 @@ const CheckLicensePlate = () => {
     }
   };
 
-  const {
-    data: qrCardData,
-    isLoading: isLoadingQr,
-    isError: isErrorQr,
-  } = useGetDataByCardVerificationQuery(checkInData.QrCardVerification);
-
-  useEffect(() => {
-    const fetchUserId = async () => {
-      try {
-        const storedUserId = await AsyncStorage.getItem("userId");
-        if (storedUserId) {
-          // setUserId(storedUserId);
-          setCheckInData((prevState) => ({
-            ...prevState,
-            SecurityInId: Number(storedUserId) || 0,
-          }));
-          console.log("User ID from AsyncStorage:", storedUserId);
-        } else {
-          console.log("No userId found in AsyncStorage");
-        }
-      } catch (error) {
-        console.error("Error fetching userId from AsyncStorage:", error);
-      }
-    };
-
-    fetchUserId();
-  }, []);
-
-  useEffect(() => {
-    if (visitDetail && Array.isArray(visitDetail) && visitDetail.length > 0) {
-      const credentialCard = visitDetail[0]?.visitor?.credentialsCard;
-
-      console.log("Original Credential Card:", credentialCard);
-
-      setCheckInData((prevData) => ({
-        ...prevData,
-        CredentialCard: credentialCard,
-      }));
-    }
-  }, [visitDetail]);
-
   useEffect(() => {
     const handleQrDataAndCapture = async () => {
       if (qrCardData) {
         console.log("QR Card Data received:", qrCardData);
-       
 
-        if (qrCardData.cardImage) {
-          setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
-        }
+        // if (qrCardData.cardImage) {
+        //   setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
+        // }
 
         if (qrCardData.cardVerification) {
           console.log(
@@ -219,40 +226,34 @@ const CheckLicensePlate = () => {
     });
   }, [qrCardData]);
 
- 
-
+  // Handle QR data
   useEffect(() => {
     if (qrCardData) {
       setIsProcessing(true);
-      // setAutoCapture(true);
       if (qrCardData.cardImage) {
         setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
       }
-
       if (qrCardData.cardVerification) {
         setCheckInData((prevData) => ({
           ...prevData,
           QrCardVerification: qrCardData.cardVerification,
         }));
+        setHasScannedQR(true);
       }
+      setIsProcessing(false);
     }
   }, [qrCardData]);
 
   const uploadImageToAPI = async (imageUri: string) => {
     try {
       setIsProcessing(true);
-
-      // Tạo FormData object
       const formData = new FormData();
-
-      // Thêm file ảnh vào FormData
       formData.append("file", {
         uri: imageUri,
         type: "image/jpeg",
         name: "photo.jpg",
       } as any);
 
-      // Gọi API nhận dạng biển số
       const response = await fetch(
         "https://security-gateway-detect.tools.kozow.com/licensePlate",
         {
@@ -269,35 +270,32 @@ const CheckLicensePlate = () => {
       }
 
       const result = await response.json();
-      console.log("API Response:", result);
 
-      // Upload ảnh lên Firebase
-      const fileName = `license_plate_${Date.now()}`;  
-      const uploadResult = await uploadToFirebase(
-        imageUri, 
-        fileName,
-        (progress: any) => {
-          console.log('Upload progress:', progress);
-        }
-      );
+      setCheckInData((prevData) => ({
+        ...prevData,
+        VehicleSession: {
+          LicensePlate: result.licensePlate || "",
+          vehicleImages: [
+            {
+              ImageType: "LicensePlate_In",
+              ImageURL: "",
+              Image: imageUri,
+            },
+          ],
+        },
+      }));
 
-      // Cập nhật state với URL từ Firebase
-      // setCheckInData((prevData) => ({
-      //   ...prevData,
-      //   VehicleSession: {
-      //     LicensePlate: result.licensePlate || "", 
-      //     vehicleImages: [{
-      //       ImageType: "LicensePlate_In",
-      //       ImageURL: uploadResult.downloadUrl,
-      //     }]
-      //   }
-      // }));
-
-      // Hiển thị kết quả
+      setHasPhotoTaken(true);
       Alert.alert(
         "Kết quả nhận dạng",
         `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
-        [{ text: "OK" }]
+        [{ 
+          text: "OK",
+          onPress: () => Alert.alert(
+            "Hướng dẫn",
+            "Vui lòng quét mã QR để tiếp tục"
+          )
+        }]
       );
     } catch (error) {
       console.error("Error processing image:", error);
@@ -318,16 +316,13 @@ const CheckLicensePlate = () => {
       });
 
       if (!result.canceled && result.assets[0]) {
-        // Upload ảnh và xử lý nhận dạng biển số
         await uploadImageToAPI(result.assets[0].uri);
-        Alert.alert("Thành công", "Đã xử lý ảnh thành công!");
       }
     } catch (error) {
       console.error("Failed to take picture:", error);
       Alert.alert("Lỗi", "Không thể chụp ảnh. Vui lòng thử lại.");
     }
   };
- 
 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
     if (data && !qrLock.current) {
@@ -335,14 +330,12 @@ const CheckLicensePlate = () => {
       setIsProcessing(true);
 
       try {
-        console.log("Scanned QR Code Data:", data);
-
         setCheckInData((prevData) => ({
           ...prevData,
           QrCardVerification: data,
         }));
-
         setIsCameraActive(false);
+        setHasScannedQR(true);
       } catch (error) {
         console.error("Error handling QR Code:", error);
         Alert.alert("Error", "Failed to process QR code. Please try again.");
@@ -353,32 +346,51 @@ const CheckLicensePlate = () => {
     }
   };
 
+  // Navigation logic
   useEffect(() => {
     const validateAndNavigate = async () => {
-      if (
-        !checkInData.QrCardVerification ||
-        checkInData.Images.length !== 1 ||
-        hasNavigated
-      ) {
+      // Kiểm tra đầy đủ các điều kiện cần thiết
+      const isDataComplete = 
+        checkInData.CredentialCard !== null && // Đã có thông tin credential
+        checkInData.SecurityInId !== 0 && // Đã có ID bảo vệ
+        checkInData.GateInId !== 0 && // Đã có ID cổng
+        checkInData.QrCardVerification !== "" && // Đã có mã QR
+        checkInData.Images.length > 0 && // Đã có ảnh giày
+        checkInData.VehicleSession.LicensePlate !== "" && // Đã có biển số xe
+        checkInData.VehicleSession.vehicleImages.length > 0; // Đã có ảnh xe
+
+      console.log("Validation status:", {
+        hasCredential: checkInData.CredentialCard !== null,
+        hasSecurityId: checkInData.SecurityInId !== 0,
+        hasGateId: checkInData.GateInId !== 0,
+        hasQrCode: checkInData.QrCardVerification !== "",
+        hasImages: checkInData.Images.length > 0,
+        hasLicensePlate: checkInData.VehicleSession.LicensePlate !== "",
+        hasVehicleImages: checkInData.VehicleSession.vehicleImages.length > 0
+      });
+
+      if (!isDataComplete || hasNavigated) {
         return;
       }
 
       try {
-        if (!hasNavigated) {
-          setHasNavigated(true);
-          router.push({
-            pathname: "/check-in/CheckInOverall",
-            params: {
-              dataCheckIn: JSON.stringify(checkInData),
-            },
-          });
-        }
+        setHasNavigated(true);
+        const dataToSend = {
+          ...checkInData,
+          __type: 'CheckInVerWithLP'
+        };
+        
+        router.push({
+          pathname: "/check-in/CheckInOverall",
+          params: {
+            dataCheckIn: JSON.stringify(dataToSend),
+          },
+        });
       } catch (error: any) {
         console.log("ERR", error);
-
-        const errorMessage =
-          error.data?.message || "Please ensure all requirements are met.";
+        const errorMessage = error.data?.message || "Vui lòng đảm bảo đã có đầy đủ thông tin";
         Alert.alert("Đã xảy ra lỗi", errorMessage);
+        setHasNavigated(false);
       }
     };
 
@@ -392,8 +404,7 @@ const CheckLicensePlate = () => {
         <Button
           title="Yêu cầu quyền camera"
           onPress={async () => {
-            const { status } =
-              await ImagePicker.requestCameraPermissionsAsync();
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
             setIsPermissionGranted(status === "granted");
           }}
         />
@@ -410,7 +421,8 @@ const CheckLicensePlate = () => {
     );
   }
 
-  console.log("check in dâtta: ", checkInData);
+  console.log("check in data thuong: ", checkInData);
+  
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
@@ -440,9 +452,7 @@ const CheckLicensePlate = () => {
               <View className="mt-4">
                 <Text className="text-gray-700 mb-2">Ảnh đã chụp:</Text>
                 <TouchableOpacity
-                  onPress={() =>
-                    setSelectedImage(capturedImage[0].ImageFile || null)
-                  }
+                  onPress={() => setSelectedImage(capturedImage[0].ImageFile || null)}
                 >
                   <Image
                     source={{ uri: capturedImage[0].ImageFile || "" }}
@@ -455,7 +465,7 @@ const CheckLicensePlate = () => {
           </View>
 
           {/* QR Scanner */}
-          <View className=" aspect-[2/4] relative mb-4">
+          <View className="aspect-[2/4] relative mb-4">
             <CameraView
               style={StyleSheet.absoluteFillObject}
               facing="back"
@@ -467,6 +477,19 @@ const CheckLicensePlate = () => {
               <Text className="text-green-700 text-sm font-semibold">
                 Quét QR Code
               </Text>
+            </View>
+          </View>
+
+          {/* Status Indicators */}
+          <View className="mt-4 p-4 bg-white rounded-lg">
+            <Text className="text-lg font-semibold mb-2">Trạng thái:</Text>
+            <View className="flex-row items-center space-x-2">
+              <View className={`w-3 h-3 rounded-full ${hasPhotoTaken ? 'bg-green-500' : 'bg-red-500'}`} />
+              <Text className="text-gray-700">Chụp ảnh: {hasPhotoTaken ? 'Đã hoàn thành' : 'Chưa hoàn thành'}</Text>
+            </View>
+            <View className="flex-row items-center space-x-2 mt-2">
+              <View className={`w-3 h-3 rounded-full ${hasScannedQR ? 'bg-green-500' : 'bg-red-500'}`} />
+              <Text className="text-gray-700">Quét QR: {hasScannedQR ? 'Đã hoàn thành' : 'Chưa hoàn thành'}</Text>
             </View>
           </View>
 

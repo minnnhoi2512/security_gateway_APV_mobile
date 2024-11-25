@@ -283,26 +283,51 @@ const UserDetail = () => {
   //   }
   // };
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
-    if (data && !qrLock.current) {
+    if (!data) {
+      Alert.alert("Lỗi", "Không thể đọc được mã QR. Vui lòng thử lại.");
+      return;
+    }
+  
+    if (qrLock.current) {
+      return;
+    }
+  
+    try {
       qrLock.current = true;
       setIsProcessing(true);
-
-      try {
-        console.log("Scanned QR Code Data:", data);
-
-        setCheckInData((prevData) => ({
-          ...prevData,
-          QrCardVerification: data,
-        }));
-
-        setIsCameraActive(false);
-      } catch (error) {
-        console.error("Error handling QR Code:", error);
-        Alert.alert("Error", "Failed to process QR code. Please try again.");
-      } finally {
-        setIsProcessing(false);
-        qrLock.current = false;
-      }
+      console.log("Scanned QR Code Data:", data);
+  
+      // Validate QR code format trước khi xử lý
+ 
+  
+      setCheckInData((prevData) => ({
+        ...prevData,
+        QrCardVerification: data,
+      }));
+  
+      setIsCameraActive(false);
+  
+    } catch (error: any) {
+      console.error("Error handling QR Code:", error);
+      
+      // Hiển thị thông báo lỗi cụ thể
+      Alert.alert(
+        "Lỗi quét mã",
+        error.message || "Đã có lỗi xảy ra khi xử lý mã QR. Vui lòng thử lại.",
+        [
+          {
+            text: "Thử lại",
+            onPress: () => {
+              qrLock.current = false;
+              setIsProcessing(false);
+              setIsCameraActive(true);
+            }
+          }
+        ]
+      );
+    } finally {
+      setIsProcessing(false);
+      qrLock.current = false;
     }
   };
 

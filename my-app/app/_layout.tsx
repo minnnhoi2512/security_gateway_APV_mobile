@@ -152,6 +152,10 @@ export default function RootLayout() {
               name="check-out/CheckOutLicensePlate"
               options={{ animation: "fade", headerShown: false }}
             />
+             <Stack.Screen
+              name="check-out/CheckOutNormal"
+              options={{  headerShown: false }}
+            />
             <Stack.Screen
               name="profile/ProfileDetail"
               options={{ headerShown: false }}

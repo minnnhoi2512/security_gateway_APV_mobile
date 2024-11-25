@@ -14,9 +14,14 @@ import { useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 
-import { CheckOutVerWithLP } from "@/Types/checkout.type";
+import { CheckOut, CheckOutVerWithLP } from "@/Types/checkout.type";
 import { RootState } from "@/redux/store/store";
-import { EvilIcons, FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import {
+  EvilIcons,
+  FontAwesome5,
+  Ionicons,
+  MaterialIcons,
+} from "@expo/vector-icons";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   useCheckOutWithCardMutation,
@@ -52,28 +57,23 @@ interface CheckoutResponse {
   visitorSessionId: number;
 }
 
-const CheckOutLicensePlate = () => {
+const CheckOutNormal = () => {
   const { data } = useLocalSearchParams();
-  console.log("qr cảd: ", data);
-  const [checkoutResponse, setCheckoutResponse] =
-    useState<CheckoutResponse | null>(null);
+  const router = useRouter();
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
-  const router = useRouter();
-  const [fileImage, setFileImage] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
-  const [checkoutData, setCheckoutData] = useState<CheckOutVerWithLP>({
+
+  const [checkoutResponse, setCheckoutResponse] =
+    useState<CheckoutResponse | null>(null);
+  const [checkoutData, setCheckoutData] = useState<CheckOut>({
     securityOutId: 0,
     gateOutId: Number(selectedGateId) || 0,
-    vehicleSession: {
-      licensePlate: "",
-      vehicleImages: [],
-    },
   });
 
   const [checkOutWithCard, { isLoading }] = useCheckOutWithCardMutation();
 
+  // Fetch userId khi component mount
   useEffect(() => {
     const fetchUserId = async () => {
       try {
@@ -91,150 +91,44 @@ const CheckOutLicensePlate = () => {
     fetchUserId();
   }, []);
 
-  const uploadImageToAPI = async (imageUri: string) => {
-    try {
-      // setIsProcessing(true);
+  // Tự động checkout khi có đủ dữ liệu
+  useEffect(() => {
+    const autoCheckout = async () => {
+      if (checkoutData.securityOutId && checkoutData.gateOutId) {
+        try {
+          const response = await checkOutWithCard({
+            qrCardVerifi: data,
+            checkoutData: checkoutData,
+          }).unwrap();
 
-      const formData = new FormData();
+          setCheckoutResponse(response);
+          console.log("Response checkout: ", response);
+          Alert.alert("Check out thành công");
+          // Tự động chuyển về trang chính sau 3 giây
+          // setTimeout(() => {
+          //   router.push("/(tabs)/checkin");
+          // }, 3000);
+        } catch (error: any) {
+          const errorMessage =
+            error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
 
-      formData.append("file", {
-        uri: imageUri,
-        type: "image/jpeg",
-        name: "photo.jpg",
-      } as any);
-
-      const response = await fetch(
-        "https://security-gateway-detect.tools.kozow.com/licensePlate",
-        {
-          method: "POST",
-          body: formData,
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      const result = await response.json();
-      console.log("API Response:", result);
-      setFileImage(imageUri);
-      setCheckoutData((prevData) => ({
-        ...prevData,
-        vehicleSession: {
-          licensePlate: result.licensePlate || "",
-          vehicleImages: [
+          Alert.alert("Đã có lỗi xảy ra", errorMessage, [
             {
-              imageType: "LicensePlate_Out",
-              imageURL: "",
+              text: "OK",
+              onPress: () => {
+                router.push("/(tabs)/checkin");
+              },
             },
-          ],
-        },
-      }));
-
-      Alert.alert(
-        "Kết quả nhận dạng",
-        `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
-        [{ text: "OK" }]
-      );
-    } catch (error) {
-      console.error("Error processing image:", error);
-      Alert.alert("Lỗi", "Không thể xử lý ảnh. Vui lòng thử lại.");
-    } finally {
-      // setIsProcessing(false);
-    }
-  };
-
-  const handleNext = () => {
-    router.push({
-      pathname: "/(tabs)/checkout",
-    });
-  };
-
-  const takePhoto = async () => {
-    try {
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: "images",
-        quality: 0.8,
-        allowsEditing: false,
-        base64: false,
-        exif: false,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        await uploadImageToAPI(result.assets[0].uri);
-        Alert.alert("Thành công", "Đã xử lý ảnh thành công!");
-      }
-    } catch (error) {
-      console.error("Failed to take picture:", error);
-      Alert.alert("Lỗi", "Không thể chụp ảnh. Vui lòng thử lại.");
-    }
-  };
-
-  const handleCheckout = async () => {
-    try {
-      setIsUploading(true);
-
-      if (!fileImage) {
-        Alert.alert("Lỗi", "Vui lòng chụp ảnh biển số trước khi checkout");
-        return;
-      }
-
-      const fileName = `license_plate_${Date.now()}`;
-      const uploadResult = await uploadToFirebase(
-        fileImage,
-        fileName,
-        (progress: any) => {
-          console.log("Upload progress:", progress);
+          ]);
         }
-      );
+      }
+    };
 
-      setCheckoutData((prevData) => ({
-        ...prevData,
-        vehicleSession: {
-          ...prevData.vehicleSession,
-          vehicleImages: [
-            {
-              imageType: "LicensePlate_Out",
-              imageURL: uploadResult.downloadUrl,
-            },
-          ],
-        },
-      }));
+    autoCheckout();
+  }, [checkoutData.securityOutId, checkoutData.gateOutId]);
 
-      const response = await checkOutWithCard({
-        qrCardVerifi: data,
-        checkoutData: checkoutData,
-      }).unwrap();
-
-      console.log("Checkout response:", response);
-      setCheckoutResponse(response);
-      // Alert.alert("Thành công", "Đã checkout thành công!", [
-      //   { text: "OK", onPress: () => {
-      //     // Có thể thêm navigation sau 3 giây
-      //     setTimeout(() => {
-      //       router.back();
-      //     }, 3000);
-      //   }}
-      // ]);
-    } catch (error: any) {
-      // console.error("Checkout error:", error);
-      const errorMessage =
-          error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
- 
-        Alert.alert("Đã có lỗi xảy ra", errorMessage, [
-          {
-            text: "OK",
-            onPress: () => {
-              router.push("/(tabs)/checkin");
-            },
-          },
-        ]);
-    } finally {
-      setIsUploading(false);
-    }
+  const handleBack = () => {
+    router.back();
   };
 
   const InfoRow = ({
@@ -296,6 +190,11 @@ const CheckOutLicensePlate = () => {
       </View>
     );
   };
+  const handleNext = () => {
+    router.push({
+      pathname: "/(tabs)/checkout",
+    });
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -308,13 +207,13 @@ const CheckOutLicensePlate = () => {
     });
   };
 
-  console.log("Check out data: ", checkoutData);
-  console.log("File ảnh: ", fileImage);
-
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
       <View>
-        <Pressable className="flex flex-row items-center space-x-2 px-4 py-2 bg-gray-100 rounded-lg active:bg-gray-200">
+        <Pressable
+          onPress={handleBack}
+          className="flex flex-row items-center space-x-2 px-4 py-2 bg-gray-100 rounded-lg active:bg-gray-200"
+        >
           <MaterialIcons name="arrow-back" size={24} color="#4B5563" />
           <Text className="text-gray-600 font-medium">Quay về</Text>
         </Pressable>
@@ -322,7 +221,14 @@ const CheckOutLicensePlate = () => {
 
       <ScrollView>
         <GestureHandlerRootView className="flex-1 p-5">
-          {checkoutResponse ? (
+          {isLoading ? (
+            // Loading state
+            <View className="flex-1 justify-center items-center p-4">
+              <ActivityIndicator size="large" color="#3B82F6" />
+              <Text className="text-gray-600 mt-4">Đang xử lý checkout...</Text>
+            </View>
+          ) : checkoutResponse ? (
+            // Success state với thông tin response
             <View className="bg-white p-4 rounded-lg shadow">
               <View className="mb-4 bg-green-50 p-3 rounded-lg">
                 <Text className="text-green-600 font-bold text-center text-lg mb-2">
@@ -332,7 +238,6 @@ const CheckOutLicensePlate = () => {
                   Tự động quay lại sau 3 giây...
                 </Text>
               </View>
-
               <View className="p-4">
                 <Section
                   icon={
@@ -461,57 +366,19 @@ const CheckOutLicensePlate = () => {
                   </Section>
                 )}
                 <TouchableOpacity
-                  onPress={handleNext}
-                  className="p-4 mb-4 bg-white rounded-full flex-row items-center justify-center"
-                >
-                  <Text className="text-lg mr-2">Xong</Text>
-                  <EvilIcons name="arrow-right" size={30} color="black" />
-                </TouchableOpacity>
+                    onPress={handleNext}
+                    className="p-4 mb-4 bg-white rounded-full flex-row items-center justify-center"
+                  >
+                    <Text className="text-lg mr-2">Xong</Text>
+                    <EvilIcons name="arrow-right" size={30} color="black" />
+                  </TouchableOpacity>
               </View>
             </View>
-          ) : (
-            <View className="space-y-4">
-              <View className="mb-4">
-                <TouchableOpacity
-                  className="flex-row items-center justify-center space-x-2 bg-blue-500 p-4 rounded-lg"
-                  onPress={takePhoto}
-                >
-                  <Ionicons name="camera" size={24} color="white" />
-                  <Text className="text-white font-medium">Chụp ảnh</Text>
-                </TouchableOpacity>
-              </View>
-
-              <TouchableOpacity
-                className="flex-row items-center justify-center space-x-2 bg-green-500 p-4 rounded-lg"
-                onPress={handleCheckout}
-                disabled={isLoading || isUploading || !fileImage}
-              >
-                <MaterialIcons name="check-circle" size={24} color="white" />
-                <Text className="text-white font-medium">
-                  {isUploading
-                    ? "Đang tải ảnh lên..."
-                    : isLoading
-                    ? "Đang xử lý..."
-                    : "Checkout"}
-                </Text>
-              </TouchableOpacity>
-
-              {(isUploading || isLoading) && (
-                <View className="flex items-center space-y-2 mt-4">
-                  <ActivityIndicator size="large" color="#3B82F6" />
-                  <Text className="text-gray-600">
-                    {isUploading
-                      ? "Đang tải ảnh lên..."
-                      : "Đang xử lý checkout..."}
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
+          ) : null}
         </GestureHandlerRootView>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-export default CheckOutLicensePlate;
+export default CheckOutNormal;

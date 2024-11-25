@@ -10,3 +10,8 @@ export interface CheckOutVerWithLP {
     }>;
   };
 }
+
+export interface CheckOut {
+  securityOutId: number;
+  gateOutId: number;
+}

@@ -25,7 +25,9 @@ const Checkout = () => {
   const router = useRouter();
   const [isModalVisible, setModalVisible] = useState(false);
   const [cameraType, setCameraType] = useState<CameraType>("OTHER_TYPE");
-  const [activeCamera, setActiveCamera] = useState<'QR' | 'LICENSE'>('QR');
+  const [activeCamera, setActiveCamera] = useState<"QR" | "LICENSE" | "CCCD">(
+    "QR"
+  );
   const [creadentialCard, setCredentialCard] = useState<string | null>(null);
   const [visitorSessionData, setVisitorSessionData] = useState([]);
   const [qrCardVerified, setQrCardVerified] = useState<string | null>(null);
@@ -131,9 +133,8 @@ const Checkout = () => {
       !isFetchinByCredentialCard &&
       !isLoadingByCredentialCard
     ) {
-      console.log("Check useEffect credentailCard", dataByCredentialCard);
-      console.log("Check useEffect credentailCard", errorByCredentialCard);
       if (dataByCredentialCard && !errorByCredentialCard) {
+        // Nếu có dữ liệu trả về và không có lỗi
         router.push({
           pathname: "/check-out/CheckOutCard",
           params: {
@@ -141,11 +142,12 @@ const Checkout = () => {
             qrCardVerifiedProps: null,
           },
         });
-        console.log("Oke");
+        console.log("Checkout data:", dataByCredentialCard);
       } else if (errorByCredentialCard) {
-        Alert.alert("Lỗi", "Không tìm thấy phiên khách với mã CCCD đã quét.");
-        // setQrCardVerified(null);
+        // Nếu có lỗi
+        Alert.alert("Lỗi", "Không tìm thấy phiên khách với CCCD đã quét.");
       }
+      // Reset credential card state sau khi xử lý xong
       setCredentialCard(null);
     }
   }, [creadentialCard, dataByCredentialCard, errorByCredentialCard]);
@@ -171,29 +173,70 @@ const Checkout = () => {
     }
   }, [qrCardVerified, dataByCardVerifided, errorByCardVerifided]);
 
-
   const handleLicensePlateScanned = useCallback(
     async ({ data }: { data: string }) => {
       if (data) {
         setIsCameraActive(false);
-      
+
         router.push({
           pathname: "/check-out/CheckOutLicensePlate",
           params: {
-            data: data
-          }
+            data: data,
+          },
         });
       }
     },
     []
   );
 
+  const handleLicensePlateScanned2 = useCallback(
+    async ({ data }: { data: string }) => {
+      if (data) {
+        setIsCameraActive(false);
+
+        router.push({
+          pathname: "/check-out/CheckOutNormal",
+          params: {
+            data: data,
+          },
+        });
+      }
+    },
+    []
+  );
+
+  const handleBarCodeScannedCCCD = useCallback(({ data }: { data: string }) => {
+    if (data && data.includes("|")) {
+      try {
+        // Lấy phần tử đầu tiên trước dấu |
+        const credentialId = data.split("|")[0];
+        console.log("Extracted Credential ID:", credentialId);
+        
+        // Set credential ID vào state để trigger query
+        setCredentialCard(credentialId);
+        setIsCameraActive(false); // Tắt camera sau khi quét thành công
+        
+      } catch (error) {
+        console.error("Error processing CCCD:", error);
+        Alert.alert(
+          "Lỗi",
+          "Định dạng CCCD không hợp lệ. Vui lòng thử lại."
+        );
+      }
+    } else {
+      Alert.alert(
+        "Lỗi",
+        "Vui lòng quét đúng mã CCCD"
+      );
+    }
+  }, []);
+
   const handleSeachVisitSessionBCredentialCard = () => {
     if (isLoadingByCredentialCard) {
       console.log("Đang tải dữ liệu...");
       return;
     }
- 
+
     if (
       !isLoadingByCredentialCard &&
       !isFetchinByCredentialCard &&
@@ -211,10 +254,8 @@ const Checkout = () => {
       Alert.alert("Lỗi", "Không tìm thấy phiên khách với CCCD đã nhập.");
     }
   };
-
-  // const handleGoToCheckout2 = () => {
-  //   router.replace("/check-out/CheckOutLicensePlate");
-  // };
+  
+ 
 
   const handlePress = () => {
     setCameraType("QR");
@@ -257,90 +298,113 @@ const Checkout = () => {
           />
         </View>
         <Modal
-      visible={isCameraActive}
-      animationType="slide"
-      transparent={true}
-    >
-      <View className="flex-1 bg-black justify-center items-center">
-        {activeCamera === 'QR' ? (
-         
-          <CameraView
-            className="flex-1 w-full h-full"
-            onBarcodeScanned={handleBarCodeScanned}
-          />
-        ) : (
-         
-          <CameraView
-            className="flex-1 w-full h-full"
-            onBarcodeScanned={handleLicensePlateScanned}
-          />
-        )}
-        <Overlay />
-        
-      
-        <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
-          <Text className="text-green-700 text-sm font-semibold">
-            {activeCamera === 'QR' ? 'Quét mã QR' : 'Quét mã QR với xe'}
-          </Text>
-        </View>
-
-       
-        <TouchableOpacity
-          className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
-          onPress={() => setIsCameraActive(false)}
+          visible={isCameraActive}
+          animationType="slide"
+          transparent={true}
         >
-          <Text className="text-white">Thoát Camera</Text>
-        </TouchableOpacity>
+          <View className="flex-1 bg-black justify-center items-center">
+            {(() => {
+              switch (activeCamera) {
+                case "QR":
+                  return (
+                    <CameraView
+                      className="flex-1 w-full h-full"
+                      onBarcodeScanned={handleLicensePlateScanned2}
+                    />
+                  );
+                case "CCCD":
+                  return (
+                    <CameraView
+                      className="flex-1 w-full h-full"
+                      onBarcodeScanned={handleBarCodeScannedCCCD}
+                    />
+                  );
+                case "LICENSE":
+                  return (
+                    <CameraView
+                      className="flex-1 w-full h-full"
+                      onBarcodeScanned={handleLicensePlateScanned}
+                    />
+                  );
+                default:
+                  return null;
+              }
+            })()}
+            <Overlay />
 
-    
-        <View className="absolute bottom-20 flex-row justify-center space-x-4 w-full px-4">
-          <TouchableOpacity
-            className={`flex-1 py-3 px-4 rounded-lg ${
-              activeCamera === 'QR' ? 'bg-blue-500' : 'bg-gray-500'
-            }`}
-            onPress={() => setActiveCamera('QR')}
-          >
-            <View className="flex-row justify-center items-center space-x-2">
-              <Ionicons 
-                name="qr-code" 
-                size={24} 
-                color="white" 
-              />
-              <Text className="text-white font-semibold">
-                Quét QR
+            <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
+              <Text className="text-green-700 text-sm font-semibold">
+                {activeCamera === "QR" ? "Quét mã QR" : activeCamera === "LICENSE" ? "Quét mã QR với xe" : "Quét CCCD"}
               </Text>
             </View>
-          </TouchableOpacity>
 
-          <TouchableOpacity
-            className={`flex-1 py-3 px-4 rounded-lg ${
-              activeCamera === 'LICENSE' ? 'bg-blue-500' : 'bg-gray-500'
-            }`}
-            onPress={() => setActiveCamera('LICENSE')}
-          >
-            <View className="flex-row justify-center items-center space-x-2">
-              <MaterialIcons 
-                name="directions-car" 
-                size={24} 
-                color="white" 
-              />
-              <Text className="text-white font-semibold">
-                Quét mã QR với xe
+            <TouchableOpacity
+              className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
+              onPress={() => setIsCameraActive(false)}
+            >
+              <Text className="text-white">Thoát Camera</Text>
+            </TouchableOpacity>
+
+            <View className="absolute bottom-20 flex-row justify-center space-x-4 w-full px-4">
+              <TouchableOpacity
+                className={`flex-1 py-3 px-4 rounded-lg ${
+                  activeCamera === "QR" ? "bg-blue-500" : "bg-gray-500"
+                }`}
+                onPress={() => setActiveCamera("QR")}
+              >
+                <View className="flex-row justify-center items-center space-x-2">
+                  <Ionicons name="qr-code" size={24} color="white" />
+                  <Text className="text-white font-semibold">Quét QR</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className={`flex-1 py-3 px-4 rounded-lg ${
+                  activeCamera === "LICENSE" ? "bg-blue-500" : "bg-gray-500"
+                }`}
+                onPress={() => setActiveCamera("LICENSE")}
+              >
+                <View className="flex-row justify-center items-center space-x-2">
+                  <MaterialIcons
+                    name="directions-car"
+                    size={24}
+                    color="white"
+                  />
+                  <Text className="text-white font-semibold">
+                    Quét mã QR với xe
+                  </Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`flex-1 py-3 px-4 rounded-lg ${
+                  activeCamera === "CCCD" ? "bg-blue-500" : "bg-gray-500"
+                }`}
+                onPress={() => setActiveCamera("CCCD")}
+              >
+                <View className="flex-row justify-center items-center space-x-2">
+                  <MaterialIcons
+                    name="directions-car"
+                    size={24}
+                    color="white"
+                  />
+                  <Text className="text-white font-semibold">
+                    Quét CCCD
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            <View className="absolute bottom-8 w-full">
+              <Text className="text-white text-center">
+                {activeCamera === "QR"
+                  ? "Đưa mã QR vào khung hình để quét"
+                  : activeCamera === "CCCD"
+                  ? "Đưa CCCD vào khung hình để quét"
+                  : "Đưa biển số xe vào khung hình để quét"}
               </Text>
             </View>
-          </TouchableOpacity>
-        </View>
-
- 
-        <View className="absolute bottom-8 w-full">
-          <Text className="text-white text-center">
-            {activeCamera === 'QR' 
-              ? 'Đưa mã QR vào khung hình để quét' 
-              : 'Đưa biển số xe vào khung hình để quét'}
-          </Text>
-        </View>
-      </View>
-    </Modal>
+          </View>
+        </Modal>
         <View>
           <ModalSearch
             isVisible={isModalVisible}
@@ -359,7 +423,6 @@ const Checkout = () => {
 };
 
 export default Checkout;
-
 
 const styles = StyleSheet.create({
   backButton: {

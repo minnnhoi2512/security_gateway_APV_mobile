@@ -49,6 +49,12 @@ export const checkOutApi = createApi({
       query: (visitorSessionId: number) =>
         `VisitorSession/Images/${visitorSessionId}`,
     }),
+    lostCard: builder.mutation({
+      query: (visitDetailId: number) => ({
+        url: `Card/LostCard/${visitDetailId}`,
+        method: "POST",
+      }),
+    }),
   }),
 });
 
@@ -59,4 +65,5 @@ export const {
   useGetVissitorSessionByCredentialIdQuery,
   useGetVissitorSessionByCardverifiedQuery,
   useGetVisitorImageByVisitorSessionIdQuery,
+  useLostCardMutation,
 } = checkOutApi;
