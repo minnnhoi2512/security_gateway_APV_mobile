@@ -68,7 +68,7 @@ export const checkinApi = createApi({
           formData.append("CredentialCard", data.CredentialCard?.toString() || "");
     
            
-          formData.append("QrCardVerification", data.QrCardVerification || "");
+          formData.append("QrCardVerification", data.QRCardVerification || "");
     
           if (data.ImageShoe && data.ImageShoe.length === 1) {
             const image = data.ImageShoe[0]; 

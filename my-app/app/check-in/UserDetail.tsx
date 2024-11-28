@@ -23,7 +23,7 @@ import { Camera, CameraView, useCameraPermissions } from "expo-camera";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import Overlay from "./OverLay";
-import { CheckInVer02 } from "@/Types/checkIn.type";
+import { CheckInVer02, ValidCheckIn } from "@/Types/checkIn.type";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
@@ -71,11 +71,18 @@ const UserDetail = () => {
     QrCardVerification: "",
     Images: [],
   });
+
+  const [validCheckInData, setValidCheckInData] = useState<ValidCheckIn>({
+    CredentialCard: null,
+    QRCardVerification: "",
+    ImageShoe: [],
+  });
+
   // https://security-gateway-camera.tools.kozow.com/camera-1/capture-image
   const fetchCaptureImage = async (): Promise<ImageData | null> => {
     try {
       const response = await fetch(
-        "https://security-gateway-camera-1.tools.kozow.com/capture-image-2",
+        "https://security-gateway-camera-3.tools.kozow.com/capture-image",
         {
           method: "GET",
         }
@@ -156,6 +163,10 @@ const UserDetail = () => {
         ...prevData,
         CredentialCard: credentialCard,
       }));
+      setValidCheckInData((prevData) => ({
+        ...prevData,
+        CredentialCard: credentialCard,
+      }));
     }
   }, [visitDetail]);
 
@@ -182,7 +193,7 @@ const UserDetail = () => {
   useEffect(() => {
     const handleQrDataAndCapture = async () => {
       if (qrCardData) {
-        console.log("QR Card Data received:", qrCardData);
+        // console.log("QR Card Data received:", qrCardData);
         setAutoCapture(true);
 
         if (qrCardData.cardImage) {
@@ -215,6 +226,16 @@ const UserDetail = () => {
                   Images: [formattedImage],
                 };
                 console.log("Updated checkInData:", newData);
+                return newData;
+              });
+
+              setValidCheckInData((prevData) => {
+                const newData = {
+                  ...prevData,
+                  QRCardVerification: qrCardData.cardVerification,
+                  ImageShoe: capturedImageData.ImageFile,
+                };
+
                 return newData;
               });
             } else {
@@ -287,29 +308,27 @@ const UserDetail = () => {
       Alert.alert("Lỗi", "Không thể đọc được mã QR. Vui lòng thử lại.");
       return;
     }
-  
+
     if (qrLock.current) {
       return;
     }
-  
+
     try {
       qrLock.current = true;
       setIsProcessing(true);
       console.log("Scanned QR Code Data:", data);
-  
+
       // Validate QR code format trước khi xử lý
- 
-  
+
       setCheckInData((prevData) => ({
         ...prevData,
         QrCardVerification: data,
       }));
-  
+
       setIsCameraActive(false);
-  
     } catch (error: any) {
       console.error("Error handling QR Code:", error);
-      
+
       // Hiển thị thông báo lỗi cụ thể
       Alert.alert(
         "Lỗi quét mã",
@@ -321,8 +340,8 @@ const UserDetail = () => {
               qrLock.current = false;
               setIsProcessing(false);
               setIsCameraActive(true);
-            }
-          }
+            },
+          },
         ]
       );
     } finally {
@@ -345,9 +364,11 @@ const UserDetail = () => {
         if (!hasNavigated) {
           setHasNavigated(true);
           router.push({
-            pathname: "/check-in/CheckInOverall",
+            pathname: "/check-in/ValidCheckInScreen",
             params: {
               dataCheckIn: JSON.stringify(checkInData),
+              dataValid: JSON.stringify(validCheckInData),
+              
             },
           });
         }
@@ -376,24 +397,7 @@ const UserDetail = () => {
     );
   }
 
-  // if (isLoadingQr) {
-  //   return (
-  //     <View className="flex-1 justify-center items-center bg-gray-100">
-  //       <Text className="text-xl font-semibold text-backgroundApp">
-  //         Đang tải...
-  //       </Text>
-  //     </View>
-  //   );
-  // }
-
-  // if (isProcessing || isLoadingQr) {
-  //   return (
-  //     <View style={styles.loadingCentered}>
-  //       <ActivityIndicator size="large" color="red" />
-  //       <Text style={styles.loadingText}>Hệ thống đang xử lý QR Code...</Text>
-  //     </View>
-  //   );
-  // }
+ 
 
   if (isProcessing || isLoadingQr) {
     return (
@@ -403,8 +407,6 @@ const UserDetail = () => {
       </View>
     );
   }
-  
-  
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
@@ -465,12 +467,7 @@ const UserDetail = () => {
         </GestureHandlerRootView>
       </ScrollView>
 
-      {/* {isProcessing || isLoadingQr && (
-        <View className="absolute inset-0  flex justify-center items-center z-[1000]">
-          <ActivityIndicator size="large" color="red" />
-          <Text className="text-red text-3xl mt-2">Đang xử lý...</Text>
-        </View>
-      )} */}
+ 
     </SafeAreaView>
   );
 };
@@ -486,7 +483,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
-    backgroundColor: "transparent",  
+    backgroundColor: "transparent",
   },
   loadingText: {
     color: "red",
@@ -494,4 +491,3 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
 });
-

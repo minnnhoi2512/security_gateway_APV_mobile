@@ -49,7 +49,7 @@ export interface CheckInVerWithLP {
 
 export interface ValidCheckIn {
   CredentialCard: number | null;
-  QrCardVerification: string;
+  QRCardVerification: string;
   ImageShoe: any
 }
 

@@ -129,6 +129,10 @@ export default function RootLayout() {
               options={{ headerShown: false }}
             />
             <Stack.Screen
+              name="check-in/ValidCheckInScreen"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
               name="check-in/CheckLicensePlate"
               options={{ headerShown: false }}
             />

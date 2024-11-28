@@ -130,7 +130,7 @@ const CheckLicensePlate = () => {
   const fetchCaptureImage = async (): Promise<ImageData | null> => {
     try {
       const response = await fetch(
-        "https://security-gateway-camera-1.tools.kozow.com/capture-image-2",
+        "https://security-gateway-camera-3.tools.kozow.com/capture-image",
         {
           method: "GET",
         }
@@ -176,7 +176,7 @@ const CheckLicensePlate = () => {
   useEffect(() => {
     const handleQrDataAndCapture = async () => {
       if (qrCardData) {
-        console.log("QR Card Data received:", qrCardData);
+        // console.log("QR Card Data received:", qrCardData);
 
         // if (qrCardData.cardImage) {
         //   setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);

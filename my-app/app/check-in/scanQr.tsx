@@ -20,7 +20,7 @@ import Overlay from "./OverLay";
 import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service";
 import { useFocusEffect } from "@react-navigation/native";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
-import { CheckInVer02} from "@/Types/checkIn.type";
+import { CheckInVer02, ValidCheckIn} from "@/Types/checkIn.type";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -72,6 +72,12 @@ const scanQr = () => {
     Images: [],
   });
 
+  const [validCheckInData, setValidCheckInData] = useState<ValidCheckIn>({
+    CredentialCard: null,
+    QRCardVerification: "",
+    ImageShoe: [],
+  });
+
   const {
     data: qrCardData,
     isLoading: isLoadingQr,
@@ -84,7 +90,7 @@ const scanQr = () => {
   const fetchCaptureImage = async (): Promise<ImageData | null> => {
     try {
       const response = await fetch(
-        "https://security-gateway-camera-1.tools.kozow.com/capture-image-2",
+        "https://security-gateway-camera-3.tools.kozow.com/capture-image",
         {
           method: "GET",
         }
@@ -162,6 +168,16 @@ const scanQr = () => {
                   Images: [formattedImage],
                 };
                 console.log("Updated checkInData:", newData);
+                return newData;
+              });
+
+              setValidCheckInData((prevData) => {
+                const newData = {
+                  ...prevData,
+                  QRCardVerification: qrCardData.cardVerification,
+                  ImageShoe: capturedImageData.ImageFile,
+                };
+            
                 return newData;
               });
             } else {
@@ -318,9 +334,10 @@ const scanQr = () => {
           redirected.current = true;
           await new Promise((resolve) => setTimeout(resolve, 500));
           router.push({
-            pathname: "/check-in/CheckInOverall",
+            pathname: "/check-in/ValidCheckInScreen",
             params: {
               dataCheckIn: JSON.stringify(checkInData),
+              dataValid: JSON.stringify(validCheckInData)
             },
           });
 
