@@ -141,7 +141,7 @@ const CreateVisitor = () => {
         {
           text: "OK",
           onPress: () => {
-            router.push("/(tabs)/createCustomer");
+            router.push("/(tabs)");
           },
         },
       ]);
@@ -150,6 +150,8 @@ const CreateVisitor = () => {
       //   "Failed to create visitor:",
       //   JSON.stringify(error, null, 2)
       // );
+      console.log("tạo visitor kh đc: ", error);
+      
       const errors = error?.data?.errors;
       if (errors) {
         let errorMessage =

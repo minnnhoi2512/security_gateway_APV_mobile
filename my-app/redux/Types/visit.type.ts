@@ -44,5 +44,6 @@ export interface Visit2 {
   visitDetailEndTime?: string;
   visitorSessionCheckedOutCount?: number;
   visitorSessionCheckedInCount?: number;
+  visitorCheckkInCount?: number;
   visitorCheckOutedCount?: number;
 }

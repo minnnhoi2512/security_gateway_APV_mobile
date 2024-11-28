@@ -15,7 +15,7 @@ import { useRouter } from "expo-router";
 import { useCameraPermissions } from "expo-camera";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Header from "@/components/UI/Header";
- 
+
 import { Visit2 } from "@/redux/Types/visit.type";
 import VisitItem from "../home/VisitItem";
 import { useGetAllVisitsByCurrentDateQuery } from "@/redux/services/visit.service";
@@ -35,7 +35,6 @@ const Checkin: React.FC = () => {
       refetchOnMountOrArgChange: true,
     }
   );
- 
 
   const handleScanPress = async () => {
     if (permission?.granted) {
@@ -73,8 +72,10 @@ const Checkin: React.FC = () => {
       <View className="flex-1 bg-black/50">
         <View className="flex-1 mt-20 bg-white rounded-t-3xl">
           <View className="flex-row justify-between items-center p-4 border-b border-gray-100">
-            <Text className="text-xl font-bold text-colorTitleHeader">Lịch hẹn</Text>
-            <TouchableOpacity 
+            <Text className="text-xl font-bold text-colorTitleHeader">
+              Lịch hẹn
+            </Text>
+            <TouchableOpacity
               onPress={() => setModalVisible(false)}
               className="w-8 h-8 items-center justify-center rounded-full bg-gray-100"
             >
@@ -90,10 +91,10 @@ const Checkin: React.FC = () => {
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={() => (
               <View className="flex-1 items-center justify-center p-8">
-                <MaterialCommunityIcons 
-                  name="calendar-blank" 
-                  size={48} 
-                  color="#9CA3AF" 
+                <MaterialCommunityIcons
+                  name="calendar-blank"
+                  size={48}
+                  color="#9CA3AF"
                 />
                 <Text className="text-gray-500 text-center mt-4">
                   Không có lịch hẹn nào
@@ -111,19 +112,18 @@ const Checkin: React.FC = () => {
       <View className="flex-1 bg-gray-50">
         <StatusBar barStyle="dark-content" />
         <Header name="Đặng Dương" />
-        
-        <View className="flex-1 px-4 pt-6">
- 
-          <View className="mb-6">
+
+        <View className="flex-1 px-4 pt-6 mt-8">
+          {/* <View className="mb-6">
             <Text className="text-3xl font-bold text-colorTitleHeader">
               Chào ngày mới! 👋
             </Text>
             <Text className="text-gray-500 mt-2">
               Hãy bắt đầu ngày mới với năng lượng tích cực
             </Text>
-          </View>
+          </View> */}
 
-          <TouchableOpacity  onPress={handleScanPress2}><Text>Here</Text></TouchableOpacity>
+          {/* <TouchableOpacity  onPress={handleScanPress2}><Text>Here</Text></TouchableOpacity> */}
 
           <View className="items-center mb-4">
             <TouchableOpacity
@@ -134,9 +134,7 @@ const Checkin: React.FC = () => {
                 <View className="bg-white/10 rounded-2xl p-6 mb-4">
                   <Ionicons name="qr-code" size={90} color="white" />
                 </View>
-                <Text className="text-white font-bold text-2xl">
-                  Quét QR
-                </Text>
+                <Text className="text-white font-bold text-2xl">Quét QR</Text>
                 <View className="flex-row items-center mt-3">
                   <Feather name="camera" size={16} color="white" />
                   <Text className="text-white/90 text-sm ml-2">
@@ -154,25 +152,36 @@ const Checkin: React.FC = () => {
           <View className="flex-row justify-between px-2">
             <TouchableOpacity className="bg-white rounded-2xl p-4 shadow-sm flex-1 mr-4">
               <View className="w-12 h-12 rounded-xl bg-purple-50 items-center justify-center mb-3">
-                <MaterialCommunityIcons name="history" size={24} color="#7C3AED" />
+                <MaterialCommunityIcons
+                  name="history"
+                  size={24}
+                  color="#7C3AED"
+                />
               </View>
               <Text className="text-gray-800 font-medium">Lịch sử</Text>
-              <Text className="text-gray-500 text-xs mt-1">Xem các lần check-in</Text>
+              <Text className="text-gray-500 text-xs mt-1">
+                Xem các lần check-in
+              </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               className="bg-white rounded-2xl p-4 shadow-sm flex-1"
               onPress={() => setModalVisible(true)}
             >
               <View className="w-12 h-12 rounded-xl bg-orange-50 items-center justify-center mb-3">
-                <MaterialCommunityIcons name="calendar-month" size={24} color="#EA580C" />
+                <MaterialCommunityIcons
+                  name="calendar-month"
+                  size={24}
+                  color="#EA580C"
+                />
               </View>
               <Text className="text-gray-800 font-medium">Lịch làm việc</Text>
-              <Text className="text-gray-500 text-xs mt-1">Xem ca làm việc</Text>
+              <Text className="text-gray-500 text-xs mt-1">
+                Xem ca làm việc
+              </Text>
             </TouchableOpacity>
           </View>
 
- 
           <ScheduleModal />
         </View>
       </View>

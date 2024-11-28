@@ -43,17 +43,16 @@ const VisitItem: React.FC<VisitCardProps> = ({ visit }) => {
       </View>
 
       <View className="flex-1 border-l border-gray-200 pl-4">
-        <View className="flex-row items-center justify-between">
+        <View className="flex-row items-center justify-between mb-2">
           <Text className="text-lg font-bold text-[#1a5276]">
             {visit.visitName}
           </Text>
-          {(visit.visitorSessionCheckedInCount || 0) > 0 && (
-            <View className="bg-green-100 px-2 py-1 rounded">
-              <Text className="text-sm text-green-600">Đã có khách vào</Text>
-            </View>
-          )}
         </View>
-
+        {(visit.visitorSessionCheckedInCount || 0) > 0 && (
+          <View className="bg-green-100 px-2 py-1 rounded items-center">
+            <Text className="text-sm text-green-600">Đã có khách vào</Text>
+          </View>
+        )}
         <View className="flex-row items-baseline mt-2">
           <View className="flex-row items-center">
             <FontAwesome5 name="user-friends" size={14} color="#e67e22" />
@@ -82,14 +81,14 @@ const VisitItem: React.FC<VisitCardProps> = ({ visit }) => {
           <View className="flex-row items-center">
             <FontAwesome5 name="sign-in-alt" size={14} color="#4CAF50" />
             <Text className="text-sm text-gray-600 ml-2">
-              Vào: {visit.visitorSessionCheckedInCount}
+              Vào: {visit.visitorCheckkInCount}
             </Text>
           </View>
 
           <View className="flex-row items-center">
             <FontAwesome5 name="sign-out-alt" size={14} color="#F44336" />
             <Text className="text-sm text-gray-600 ml-2">
-              Ra: {visit.visitorSessionCheckedOutCount}
+              Ra: {visit.visitorCheckOutedCount}
             </Text>
           </View>
         </View>

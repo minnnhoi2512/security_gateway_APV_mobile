@@ -20,9 +20,7 @@ import Overlay from "./OverLay";
 import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service";
 import { useFocusEffect } from "@react-navigation/native";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
-import { CheckInVer02, ValidCheckIn } from "@/Types/checkIn.type";
-import VideoPlayer from "./streaming";
-import { uploadToFirebase } from "@/firebase-config";
+import { CheckInVer02} from "@/Types/checkIn.type";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -86,7 +84,7 @@ const scanQr = () => {
   const fetchCaptureImage = async (): Promise<ImageData | null> => {
     try {
       const response = await fetch(
-        "https://security-gateway-camera.tools.kozow.com/camera-1/capture-image",
+        "https://security-gateway-camera-1.tools.kozow.com/capture-image-2",
         {
           method: "GET",
         }
@@ -132,7 +130,7 @@ const scanQr = () => {
   useEffect(() => {
     const handleQrDataAndCapture = async () => {
       if (qrCardData) {
-        console.log("QR Card Data received:", qrCardData);
+        // console.log("QR Card Data received:", qrCardData);
 
         // if (qrCardData.cardImage) {
         //   setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
@@ -427,7 +425,7 @@ const scanQr = () => {
         <Text className="text-white">Thoát Camera</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.switchButton} onPress={handleGoToScanQr2}>
-        <Text style={styles.switchButtonText}>Switch to Camera 2</Text>
+        <Text style={styles.switchButtonText}>Check in với xe</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -465,7 +463,7 @@ const styles = StyleSheet.create({
   switchButton: {
     position: "absolute",
     bottom: 20,
-    left: "50%",
+    left: "51%",
     transform: [{ translateX: -75 }],
     backgroundColor: "#0072C6",
     padding: 15,

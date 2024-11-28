@@ -82,13 +82,13 @@ export default function HomeScreen() {
     );
   }
 
-  if (isError) {
-    return (
-      <SafeAreaView className="flex-1 justify-center items-center bg-white">
-        <Text className="text-red-500">Error fetching visits!</Text>
-      </SafeAreaView>
-    );
-  }
+  // if (isError) {
+  //   return (
+  //     <SafeAreaView className="flex-1 justify-center items-center bg-white">
+  //       <Text className="text-red-500">Error fetching visits!</Text>
+  //     </SafeAreaView>
+  //   );
+  // }
 
   // console.log("vs: ", visits);
 
@@ -100,7 +100,7 @@ export default function HomeScreen() {
         <FlatList
           ListHeaderComponent={
             <>
-              <View className="mb-6">
+              <View className="mb-6 mt-5">
                 <View className="px-6 mb-4 flex-row justify-between items-center">
                   <Text className="text-xl font-bold text-[#d35400]">
                     Nhân viên trực

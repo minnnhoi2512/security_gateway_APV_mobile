@@ -5,12 +5,13 @@ import {
   TouchableOpacity,
   Alert,
   Modal,
+  StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
 import Header from "@/components/UI/Header";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ButtonSingleTextMainColor from "../../components/UI/ButtonSingleTextMainColor";
-import { Ionicons } from "@expo/vector-icons";
+import { AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import {
   useGetVissitorSessionByCardverifiedQuery,
   useGetVissitorSessionByCredentialIdQuery,
@@ -18,12 +19,15 @@ import {
 import ModalSearch from "@/components/UI/ModalSearch";
 import { CameraView } from "expo-camera";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import  Overlay  from "../check-in/OverLay";
+import Overlay from "../check-in/OverLay";
 type CameraType = "QR" | "CREDENTIAL_CARD" | "OTHER_TYPE";
 const Checkout = () => {
   const router = useRouter();
   const [isModalVisible, setModalVisible] = useState(false);
   const [cameraType, setCameraType] = useState<CameraType>("OTHER_TYPE");
+  const [activeCamera, setActiveCamera] = useState<"QR" | "LICENSE" | "CCCD">(
+    "QR"
+  );
   const [creadentialCard, setCredentialCard] = useState<string | null>(null);
   const [visitorSessionData, setVisitorSessionData] = useState([]);
   const [qrCardVerified, setQrCardVerified] = useState<string | null>(null);
@@ -129,9 +133,8 @@ const Checkout = () => {
       !isFetchinByCredentialCard &&
       !isLoadingByCredentialCard
     ) {
-      console.log("Check useEffect credentailCard", dataByCredentialCard);
-      console.log("Check useEffect credentailCard", errorByCredentialCard);
       if (dataByCredentialCard && !errorByCredentialCard) {
+        // Nếu có dữ liệu trả về và không có lỗi
         router.push({
           pathname: "/check-out/CheckOutCard",
           params: {
@@ -139,11 +142,12 @@ const Checkout = () => {
             qrCardVerifiedProps: null,
           },
         });
-        console.log("Oke");
+        console.log("Checkout data:", dataByCredentialCard);
       } else if (errorByCredentialCard) {
-        Alert.alert("Lỗi", "Không tìm thấy phiên khách với mã CCCD đã quét.");
-        // setQrCardVerified(null);
+        // Nếu có lỗi
+        Alert.alert("Lỗi", "Không tìm thấy phiên khách với CCCD đã quét.");
       }
+      // Reset credential card state sau khi xử lý xong
       setCredentialCard(null);
     }
   }, [creadentialCard, dataByCredentialCard, errorByCredentialCard]);
@@ -168,13 +172,64 @@ const Checkout = () => {
       setQrCardVerified(null);
     }
   }, [qrCardVerified, dataByCardVerifided, errorByCardVerifided]);
+
+  const handleLicensePlateScanned = useCallback(
+    async ({ data }: { data: string }) => {
+      if (data) {
+        setIsCameraActive(false);
+
+        router.push({
+          pathname: "/check-out/CheckOutLicensePlate",
+          params: {
+            data: data,
+          },
+        });
+      }
+    },
+    []
+  );
+
+  const handleLicensePlateScanned2 = useCallback(
+    async ({ data }: { data: string }) => {
+      if (data) {
+        setIsCameraActive(false);
+
+        router.push({
+          pathname: "/check-out/CheckOutNormal",
+          params: {
+            data: data,
+          },
+        });
+      }
+    },
+    []
+  );
+
+  const handleBarCodeScannedCCCD = useCallback(({ data }: { data: string }) => {
+    if (data && data.includes("|")) {
+      try {
+        // Lấy phần tử đầu tiên trước dấu |
+        const credentialId = data.split("|")[0];
+        console.log("Extracted Credential ID:", credentialId);
+
+        // Set credential ID vào state để trigger query
+        setCredentialCard(credentialId);
+        setIsCameraActive(false); // Tắt camera sau khi quét thành công
+      } catch (error) {
+        console.error("Error processing CCCD:", error);
+        Alert.alert("Lỗi", "Định dạng CCCD không hợp lệ. Vui lòng thử lại.");
+      }
+    } else {
+      Alert.alert("Lỗi", "Vui lòng quét đúng mã CCCD");
+    }
+  }, []);
+
   const handleSeachVisitSessionBCredentialCard = () => {
     if (isLoadingByCredentialCard) {
       console.log("Đang tải dữ liệu...");
       return;
     }
 
-    // Khi có dữ liệu trả về
     if (
       !isLoadingByCredentialCard &&
       !isFetchinByCredentialCard &&
@@ -199,7 +254,6 @@ const Checkout = () => {
     isQrCardSet.current = false;
     setQrCardVerified(null);
   };
-
 
   return (
     <SafeAreaProvider className="flex-1 bg-backgroundApp">
@@ -240,15 +294,42 @@ const Checkout = () => {
           transparent={true}
         >
           <View className="flex-1 bg-black justify-center items-center">
-            <CameraView
-              className="flex-1 w-full h-full"
-              onBarcodeScanned={handleBarCodeScanned}
-            />
+            {(() => {
+              switch (activeCamera) {
+                case "QR":
+                  return (
+                    <CameraView
+                      className="flex-1 w-full h-full"
+                      onBarcodeScanned={handleLicensePlateScanned2}
+                    />
+                  );
+                case "CCCD":
+                  return (
+                    <CameraView
+                      className="flex-1 w-full h-full"
+                      onBarcodeScanned={handleBarCodeScannedCCCD}
+                    />
+                  );
+                case "LICENSE":
+                  return (
+                    <CameraView
+                      className="flex-1 w-full h-full"
+                      onBarcodeScanned={handleLicensePlateScanned}
+                    />
+                  );
+                default:
+                  return null;
+              }
+            })()}
             <Overlay />
-            {/* <View className="absolute top-1/3 left-1/4 w-2/4 h-1/3 border-2 border-yellow-500 rounded-lg shadow-lg" /> */}
+
             <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
               <Text className="text-green-700 text-sm font-semibold">
-                Camera Checkout
+                {activeCamera === "QR"
+                  ? "Quét mã QR"
+                  : activeCamera === "LICENSE"
+                  ? "Quét mã QR với xe"
+                  : "Quét CCCD"}
               </Text>
             </View>
 
@@ -258,6 +339,59 @@ const Checkout = () => {
             >
               <Text className="text-white">Thoát Camera</Text>
             </TouchableOpacity>
+
+            <View className="absolute bottom-20 flex-row justify-center space-x-4 w-full px-4">
+              <TouchableOpacity
+                className={`flex-1 py-3 px-4 rounded-lg ${
+                  activeCamera === "QR" ? "bg-blue-500" : "bg-gray-500"
+                }`}
+                onPress={() => setActiveCamera("QR")}
+              >
+                <View className="flex-row justify-center items-center space-x-2">
+                  <Ionicons name="qr-code" size={24} color="white" />
+                  <Text className="text-white font-semibold">Quét QR</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className={`flex-1 py-3 px-4 rounded-lg ${
+                  activeCamera === "LICENSE" ? "bg-blue-500" : "bg-gray-500"
+                }`}
+                onPress={() => setActiveCamera("LICENSE")}
+              >
+                <View className="flex-row justify-center items-center space-x-2">
+                  <MaterialIcons
+                    name="directions-car"
+                    size={24}
+                    color="white"
+                  />
+                  <Text className="text-white font-semibold">
+                    Quét mã QR với xe
+                  </Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`flex-1 py-3 px-4 rounded-lg ${
+                  activeCamera === "CCCD" ? "bg-blue-500" : "bg-gray-500"
+                }`}
+                onPress={() => setActiveCamera("CCCD")}
+              >
+                <View className="flex-row justify-center items-center space-x-2">
+                  <AntDesign name="idcard" size={24} color="white" />
+                  <Text className="text-white font-semibold">Quét CCCD</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            <View className="absolute bottom-8 w-full">
+              <Text className="text-white text-center">
+                {activeCamera === "QR"
+                  ? "Đưa mã QR vào khung hình để quét"
+                  : activeCamera === "CCCD"
+                  ? "Đưa CCCD vào khung hình để quét"
+                  : "Đưa biển số xe vào khung hình để quét"}
+              </Text>
+            </View>
           </View>
         </Modal>
         <View>
@@ -278,3 +412,46 @@ const Checkout = () => {
 };
 
 export default Checkout;
+
+const styles = StyleSheet.create({
+  backButton: {
+    position: "absolute",
+    top: 60,
+    left: 20,
+    padding: 10,
+    backgroundColor: "black",
+    borderRadius: 5,
+  },
+  backButtonText: {
+    color: "white",
+  },
+  loadingContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  loadingText: {
+    color: "#ffffff",
+    marginTop: 10,
+  },
+  switchButton: {
+    position: "absolute",
+    bottom: 20,
+    left: "50%",
+    transform: [{ translateX: -75 }],
+    backgroundColor: "#0072C6",
+    padding: 15,
+    borderRadius: 8,
+  },
+  switchButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+});

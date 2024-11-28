@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Image, TouchableOpacity, ScrollView } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Entypo, Feather, MaterialIcons } from "@expo/vector-icons";
 import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -19,7 +19,7 @@ const Profile: React.FC = () => {
     isLoading,
     error,
     refetch,
-  } = useGetUserProfileQuery(userId ? { userId } : { userId: '' }, {
+  } = useGetUserProfileQuery(userId ? { userId } : { userId: "" }, {
     skip: !userId,
   });
   useEffect(() => {
@@ -51,9 +51,9 @@ const Profile: React.FC = () => {
     // { icon: "bell", title: "Notifications", rightText: "ON" },
     { icon: "globe", title: "Ngôn ngữ", rightText: "Tiếng Việt" },
     { icon: "shield", title: "Bảo mật" },
-    { icon: "help-circle", title: "Hỗ trợ" },
-    { icon: "message-square", title: "Liên lạc với chúng tôi" },
-    { icon: "lock", title: "Điều khoản" },
+    // { icon: "help-circle", title: "Hỗ trợ" },
+    // { icon: "message-square", title: "Liên lạc với chúng tôi" },
+    // { icon: "lock", title: "Điều khoản" },
   ];
 
   const handleNavigateToUserDetail = () => {
@@ -70,14 +70,20 @@ const Profile: React.FC = () => {
           <View className="bg-blue-200 rounded-full p-1">
             <Image
               source={{
-                uri: profile?.image || "https://cdn-icons-png.flaticon.com/512/5301/5301945.png",
+                uri:
+                  profile?.image ||
+                  "https://cdn-icons-png.flaticon.com/512/5301/5301945.png",
               }}
               className="w-24 h-24 rounded-full"
             />
           </View>
-          <Text className="text-xl text-white font-bold mt-2">{profile?.fullName}</Text>
-          <Text className="text-white">{profile?.email} | {profile?.phoneNumber}</Text>
-          {/* Optional: Add a visual indicator that this is clickable */}
+          <Text className="text-xl text-white font-bold mt-2">
+            {profile?.fullName}
+          </Text>
+          <Text className="text-white">
+            {profile?.email} | {profile?.phoneNumber}
+          </Text>
+
           <View className="flex-row items-center mt-2">
             <Text className="text-white text-sm mr-1">Xem chi tiết</Text>
             <Feather name="chevron-right" size={16} color="white" />
@@ -92,8 +98,35 @@ const Profile: React.FC = () => {
 
         <TouchableOpacity
           onPress={async () => {
+            router.push("/check-in/streaming");
+          }}
+          className="flex-row items-center bg-[#34495e] p-4 rounded-lg mb-5"
+        >
+          <View className="bg-gray-200 p-2 rounded-full mr-4">
+            <Entypo name="video-camera" size={24} color="#4B5563" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-lg text-white font-semibold">Xem camera</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={async () => {
+            router.push("/PickGate");
+          }}
+          className="flex-row items-center bg-[#34495e] p-4 rounded-lg mb-5"
+        >
+          <View className="bg-gray-200 p-2 rounded-full mr-4">
+            <MaterialIcons name="change-circle" size={24} color="#4B5563" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-lg text-white font-semibold">Thay đổi cổng</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={async () => {
             try {
-              
               await AsyncStorage.removeItem("userToken");
               await AsyncStorage.removeItem("userId");
               await AsyncStorage.removeItem("userRole");

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -34,12 +34,12 @@ interface Visit {
   };
 }
 
-const ListVisit: React.FC = () => {
+const ListVisitLicensePlate: React.FC = () => {
   const { credentialCardId } = useLocalSearchParams<{
     credentialCardId: string;
   }>();
   const router = useRouter();
-  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const {
     data: visitOfUser,
     isLoading: isLoadingVisit,
@@ -49,17 +49,6 @@ const ListVisit: React.FC = () => {
   } = useGetVisitByCredentialCardQuery(credentialCardId || "", {
     skip: !credentialCardId,
   });
-
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    try {
-      await refetch();
-    } catch (error) {
-      console.error('Refresh error:', error);
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [refetch]);
 
   const isTimeToStart = (expectedStartHour: string): boolean => {
     const now = new Date();
@@ -71,7 +60,7 @@ const ListVisit: React.FC = () => {
 
   const handlePress = (visitId: number) => {
     router.push({
-      pathname: "/check-in/UserDetail",
+      pathname: "/check-in/CheckLicensePlate",
       params: { visitId },
     });
   };
@@ -220,8 +209,6 @@ const ListVisit: React.FC = () => {
             data={visitOfUser}
             keyExtractor={(item) => item.visitDetailId.toString()}
             renderItem={renderVisit}
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
             ListEmptyComponent={
               <View className="flex-1 justify-center items-center mt-10">
                 <MaterialIcons
@@ -232,21 +219,8 @@ const ListVisit: React.FC = () => {
                 <Text className="text-center mt-4 text-lg text-gray-500 dark:text-gray-400">
                   Không có chuyến thăm nào.
                 </Text>
-                <TouchableOpacity 
-                  onPress={handleRefresh}
-                  className="mt-4 bg-blue-500 px-6 py-2 rounded-full"
-                >
-                  <Text className="text-white font-medium">Tải lại</Text>
-                </TouchableOpacity>
               </View>
             }
-            showsVerticalScrollIndicator={false}
- 
-            removeClippedSubviews={true}
-            maxToRenderPerBatch={10}
-            updateCellsBatchingPeriod={50}
-            initialNumToRender={8}
-            windowSize={5}
           />
         )}
       </View>
@@ -254,4 +228,4 @@ const ListVisit: React.FC = () => {
   );
 };
 
-export default ListVisit;
+export default ListVisitLicensePlate;
