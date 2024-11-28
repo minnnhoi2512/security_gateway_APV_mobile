@@ -84,7 +84,7 @@ const scanQr = () => {
   const fetchCaptureImage = async (): Promise<ImageData | null> => {
     try {
       const response = await fetch(
-        "https://security-gateway-camera-1.tools.kozow.com/capture-image",
+        "https://security-gateway-camera-1.tools.kozow.com/capture-image-2",
         {
           method: "GET",
         }
@@ -130,7 +130,7 @@ const scanQr = () => {
   useEffect(() => {
     const handleQrDataAndCapture = async () => {
       if (qrCardData) {
-        console.log("QR Card Data received:", qrCardData);
+        // console.log("QR Card Data received:", qrCardData);
 
         // if (qrCardData.cardImage) {
         //   setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
