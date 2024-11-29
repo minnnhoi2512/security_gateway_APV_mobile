@@ -24,7 +24,11 @@ import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import Overlay from "./OverLay";
-import { CheckInVer02, CheckInVerWithLP } from "@/Types/checkIn.type";
+import {
+  CheckInVer02,
+  CheckInVerWithLP,
+  ValidCheckIn,
+} from "@/Types/checkIn.type";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
@@ -67,6 +71,12 @@ const CheckLicensePlate = () => {
       LicensePlate: "",
       vehicleImages: [],
     },
+  });
+
+  const [validCheckInData, setValidCheckInData] = useState<ValidCheckIn>({
+    CredentialCard: null,
+    QRCardVerification: "",
+    ImageShoe: [],
   });
 
   // API queries
@@ -121,6 +131,10 @@ const CheckLicensePlate = () => {
     if (visitDetail && Array.isArray(visitDetail) && visitDetail.length > 0) {
       const credentialCard = visitDetail[0]?.visitor?.credentialsCard;
       setCheckInData((prevData) => ({
+        ...prevData,
+        CredentialCard: credentialCard,
+      }));
+      setValidCheckInData((prevData) => ({
         ...prevData,
         CredentialCard: credentialCard,
       }));
@@ -210,6 +224,21 @@ const CheckLicensePlate = () => {
                 console.log("Updated checkInData:", newData);
                 return newData;
               });
+
+              setValidCheckInData((prevData) => {
+                const newData = {
+                  ...prevData,
+                  QRCardVerification: qrCardData.cardVerification,
+                  Images: [formattedImage],
+                };
+                console.log("Updated checkInData:", newData);
+                return newData;
+              });
+
+              setValidCheckInData((prevData) => ({
+                ...prevData,
+                ImageShoe: capturedImageData.ImageFile,
+              }));
             } else {
               console.error("No image data captured");
             }
@@ -289,13 +318,13 @@ const CheckLicensePlate = () => {
       Alert.alert(
         "Kết quả nhận dạng",
         `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
-        [{ 
-          text: "OK",
-          onPress: () => Alert.alert(
-            "Hướng dẫn",
-            "Vui lòng quét mã QR để tiếp tục"
-          )
-        }]
+        [
+          {
+            text: "OK",
+            onPress: () =>
+              Alert.alert("Hướng dẫn", "Vui lòng quét mã QR để tiếp tục"),
+          },
+        ]
       );
     } catch (error) {
       console.error("Error processing image:", error);
@@ -346,28 +375,25 @@ const CheckLicensePlate = () => {
     }
   };
 
-  // Navigation logic
   useEffect(() => {
     const validateAndNavigate = async () => {
-      // Kiểm tra đầy đủ các điều kiện cần thiết
-      const isDataComplete = 
-        checkInData.CredentialCard !== null && // Đã có thông tin credential
-        checkInData.SecurityInId !== 0 && // Đã có ID bảo vệ
-        checkInData.GateInId !== 0 && // Đã có ID cổng
-        checkInData.QrCardVerification !== "" && // Đã có mã QR
-        checkInData.Images.length > 0 && // Đã có ảnh giày
-        checkInData.VehicleSession.LicensePlate !== "" && // Đã có biển số xe
-        checkInData.VehicleSession.vehicleImages.length > 0; // Đã có ảnh xe
-
-      console.log("Validation status:", {
-        hasCredential: checkInData.CredentialCard !== null,
-        hasSecurityId: checkInData.SecurityInId !== 0,
-        hasGateId: checkInData.GateInId !== 0,
-        hasQrCode: checkInData.QrCardVerification !== "",
-        hasImages: checkInData.Images.length > 0,
-        hasLicensePlate: checkInData.VehicleSession.LicensePlate !== "",
-        hasVehicleImages: checkInData.VehicleSession.vehicleImages.length > 0
-      });
+      const isDataComplete =
+        checkInData.CredentialCard !== null &&
+        checkInData.SecurityInId !== 0 &&
+        checkInData.GateInId !== 0 &&
+        checkInData.QrCardVerification !== "" &&
+        checkInData.Images.length > 0 &&
+        checkInData.VehicleSession.LicensePlate !== "" &&
+        checkInData.VehicleSession.vehicleImages.length > 0;
+      // console.log("Validation status:", {
+      //   hasCredential: checkInData.CredentialCard !== null,
+      //   hasSecurityId: checkInData.SecurityInId !== 0,
+      //   hasGateId: checkInData.GateInId !== 0,
+      //   hasQrCode: checkInData.QrCardVerification !== "",
+      //   hasImages: checkInData.Images.length > 0,
+      //   hasLicensePlate: checkInData.VehicleSession.LicensePlate !== "",
+      //   hasVehicleImages: checkInData.VehicleSession.vehicleImages.length > 0,
+      // });
 
       if (!isDataComplete || hasNavigated) {
         return;
@@ -377,18 +403,20 @@ const CheckLicensePlate = () => {
         setHasNavigated(true);
         const dataToSend = {
           ...checkInData,
-          __type: 'CheckInVerWithLP'
+          __type: "CheckInVerWithLP",
         };
-        
+
         router.push({
-          pathname: "/check-in/CheckInOverall",
+          pathname: "/check-in/ValidCheckInScreen",
           params: {
             dataCheckIn: JSON.stringify(dataToSend),
+            dataValid: JSON.stringify(validCheckInData),
           },
         });
       } catch (error: any) {
         console.log("ERR", error);
-        const errorMessage = error.data?.message || "Vui lòng đảm bảo đã có đầy đủ thông tin";
+        const errorMessage =
+          error.data?.message || "Vui lòng đảm bảo đã có đầy đủ thông tin";
         Alert.alert("Đã xảy ra lỗi", errorMessage);
         setHasNavigated(false);
       }
@@ -404,7 +432,8 @@ const CheckLicensePlate = () => {
         <Button
           title="Yêu cầu quyền camera"
           onPress={async () => {
-            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            const { status } =
+              await ImagePicker.requestCameraPermissionsAsync();
             setIsPermissionGranted(status === "granted");
           }}
         />
@@ -422,7 +451,6 @@ const CheckLicensePlate = () => {
   }
 
   console.log("check in data thuong: ", checkInData);
-  
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
@@ -452,7 +480,9 @@ const CheckLicensePlate = () => {
               <View className="mt-4">
                 <Text className="text-gray-700 mb-2">Ảnh đã chụp:</Text>
                 <TouchableOpacity
-                  onPress={() => setSelectedImage(capturedImage[0].ImageFile || null)}
+                  onPress={() =>
+                    setSelectedImage(capturedImage[0].ImageFile || null)
+                  }
                 >
                   <Image
                     source={{ uri: capturedImage[0].ImageFile || "" }}
@@ -484,12 +514,24 @@ const CheckLicensePlate = () => {
           <View className="mt-4 p-4 bg-white rounded-lg">
             <Text className="text-lg font-semibold mb-2">Trạng thái:</Text>
             <View className="flex-row items-center space-x-2">
-              <View className={`w-3 h-3 rounded-full ${hasPhotoTaken ? 'bg-green-500' : 'bg-red-500'}`} />
-              <Text className="text-gray-700">Chụp ảnh: {hasPhotoTaken ? 'Đã hoàn thành' : 'Chưa hoàn thành'}</Text>
+              <View
+                className={`w-3 h-3 rounded-full ${
+                  hasPhotoTaken ? "bg-green-500" : "bg-red-500"
+                }`}
+              />
+              <Text className="text-gray-700">
+                Chụp ảnh: {hasPhotoTaken ? "Đã hoàn thành" : "Chưa hoàn thành"}
+              </Text>
             </View>
             <View className="flex-row items-center space-x-2 mt-2">
-              <View className={`w-3 h-3 rounded-full ${hasScannedQR ? 'bg-green-500' : 'bg-red-500'}`} />
-              <Text className="text-gray-700">Quét QR: {hasScannedQR ? 'Đã hoàn thành' : 'Chưa hoàn thành'}</Text>
+              <View
+                className={`w-3 h-3 rounded-full ${
+                  hasScannedQR ? "bg-green-500" : "bg-red-500"
+                }`}
+              />
+              <Text className="text-gray-700">
+                Quét QR: {hasScannedQR ? "Đã hoàn thành" : "Chưa hoàn thành"}
+              </Text>
             </View>
           </View>
 

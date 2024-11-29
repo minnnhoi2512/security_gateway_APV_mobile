@@ -42,6 +42,10 @@ interface ImageData {
 }
 
 const CheckLicensePlateCard = () => {
+  const BASE_URL_CAPTURE =
+    process.env.EXPO_PUBLIC_BASE_URL_CAPTURE ||
+    "https://security-gateway-camera-1.tools.kozow.com/capture-image";
+
   const { card } = useLocalSearchParams();
   console.log("coi co lay dc card k: ", card);
   const router = useRouter();
@@ -93,12 +97,12 @@ const CheckLicensePlateCard = () => {
 
   const fetchCaptureImage = async (): Promise<ImageData | null> => {
     try {
-      const response = await fetch(
-        "https://security-gateway-camera-1.tools.kozow.com/capture-image",
-        {
-          method: "GET",
-        }
-      );
+      if (!BASE_URL_CAPTURE) {
+        throw new Error("BASE_URL_CAPTURE is not defined");
+      }
+      const response = await fetch(BASE_URL_CAPTURE, {
+        method: "GET",
+      });
 
       if (!response.ok) {
         console.error("HTTP Response Status:", response.status);
