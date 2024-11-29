@@ -65,6 +65,8 @@ const ScanQr2 = () => {
     Images: [],
   });
 
+
+
   const {
     data: qrCardData,
     isLoading: isLoadingQr,

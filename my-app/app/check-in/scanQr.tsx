@@ -90,7 +90,7 @@ const scanQr = () => {
   const fetchCaptureImage = async (): Promise<ImageData | null> => {
     try {
       const response = await fetch(
-        "https://security-gateway-camera-3.tools.kozow.com/capture-image",
+        "https://security-gateway-camera-1.tools.kozow.com/capture-image",
         {
           method: "GET",
         }

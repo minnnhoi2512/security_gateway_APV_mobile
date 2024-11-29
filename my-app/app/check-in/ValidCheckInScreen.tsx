@@ -68,7 +68,7 @@ const ValidCheckInScreen = () => {
     { data: response, error, isLoading: isLoadingValidRes },
   ] = useValidCheckInMutation();
 
-  // console.log("Check in da: ", params.dataValid);
+  console.log("Check in da: ", params.dataValid);
 
   useEffect(() => {
     const validateCheckIn = async () => {
@@ -78,7 +78,7 @@ const ValidCheckInScreen = () => {
           : params.dataValid;
 
         const parsedValidData = JSON.parse(dataValid);
-
+        console.log("Check in da parse: ", parsedValidData);
         await validCheckIn({
           CredentialCard: parsedValidData.CredentialCard || null,
           QRCardVerification: parsedValidData.QRCardVerification,

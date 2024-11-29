@@ -24,7 +24,11 @@ import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import Overlay from "./OverLay";
-import { CheckInVer02, CheckInVerWithLP } from "@/Types/checkIn.type";
+import {
+  CheckInVer02,
+  CheckInVerWithLP,
+  ValidCheckIn,
+} from "@/Types/checkIn.type";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
@@ -63,10 +67,9 @@ const CheckLicensePlateCard = () => {
   }, []);
 
   useEffect(() => {
-  
     if (isPermissionGranted && !isCameraLaunched) {
-      setIsCameraLaunched(true); 
-      takePhoto(); 
+      setIsCameraLaunched(true);
+      takePhoto();
     }
   }, [isPermissionGranted, isCameraLaunched]);
 
@@ -82,10 +85,16 @@ const CheckLicensePlateCard = () => {
     },
   });
 
+  const [validCheckInData, setValidCheckInData] = useState<ValidCheckIn>({
+    CredentialCard: null,
+    QRCardVerification: "",
+    ImageShoe: [],
+  });
+
   const fetchCaptureImage = async (): Promise<ImageData | null> => {
     try {
       const response = await fetch(
-        "https://security-gateway-camera-3.tools.kozow.com/capture-image",
+        "https://security-gateway-camera-1.tools.kozow.com/capture-image",
         {
           method: "GET",
         }
@@ -154,12 +163,15 @@ const CheckLicensePlateCard = () => {
     const handleQrDataAndCapture = async () => {
       if (card) {
         try {
-        
-          setCheckInData(prevData => ({
+          setCheckInData((prevData) => ({
             ...prevData,
-            QrCardVerification: card as string
+            QrCardVerification: card as string,
           }));
 
+          setValidCheckInData((prevData) => ({
+            ...prevData,
+            QRCardVerification: card as string,
+          }));
           const capturedImageData = await fetchCaptureImage();
           console.log("Captured image data:", capturedImageData);
 
@@ -174,6 +186,11 @@ const CheckLicensePlateCard = () => {
             setCheckInData((prevData) => ({
               ...prevData,
               Images: [formattedImage],
+            }));
+
+            setValidCheckInData((prevData) => ({
+              ...prevData,
+              ImageShoe: capturedImageData.ImageFile,
             }));
           } else {
             console.error("No image data captured");
@@ -193,17 +210,14 @@ const CheckLicensePlateCard = () => {
     try {
       setIsProcessing(true);
 
- 
       const formData = new FormData();
 
-    
       formData.append("file", {
         uri: imageUri,
         type: "image/jpeg",
         name: "photo.jpg",
       } as any);
 
- 
       const response = await fetch(
         "https://security-gateway-detect.tools.kozow.com/licensePlate",
         {
@@ -229,13 +243,12 @@ const CheckLicensePlateCard = () => {
             {
               ImageType: "LicensePlate_In",
               ImageURL: "",
-              Image: imageUri,  
+              Image: imageUri,
             },
           ],
         },
       }));
 
- 
       Alert.alert(
         "Kết quả nhận dạng",
         `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
@@ -260,7 +273,6 @@ const CheckLicensePlateCard = () => {
       });
 
       if (!result.canceled && result.assets[0]) {
-         
         await uploadImageToAPI(result.assets[0].uri);
         Alert.alert("Thành công", "Đã xử lý ảnh thành công!");
       }
@@ -287,13 +299,14 @@ const CheckLicensePlateCard = () => {
           // Thêm property __type để đánh dấu object có VehicleSession
           const dataToSend = {
             ...checkInData,
-            __type: 'CheckInVerWithLP'
+            __type: "CheckInVerWithLP",
           };
-          
+
           router.push({
-            pathname: "/check-in/CheckInOverall",
+            pathname: "/check-in/ValidCheckInScreen",
             params: {
               dataCheckIn: JSON.stringify(dataToSend),
+              dataValid: JSON.stringify(validCheckInData),
             },
           });
         }
@@ -347,7 +360,6 @@ const CheckLicensePlateCard = () => {
 
       <ScrollView>
         <GestureHandlerRootView className="flex-1 p-5">
-      
           <View className="mb-4">
             {/* <TouchableOpacity
               className="flex-row items-center justify-center space-x-2 bg-blue-500 p-4 rounded-lg"
@@ -375,7 +387,6 @@ const CheckLicensePlateCard = () => {
             )} */}
           </View>
 
-          
           {/* <Modal
             visible={!!selectedImage}
             transparent={true}
