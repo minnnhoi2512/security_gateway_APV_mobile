@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -64,7 +64,6 @@ const Login: React.FC = () => {
     try {
       const result = await loginUser({ username, password }).unwrap();
       console.log("Login successful, response:", result);
-
       if (result && result.jwtToken) {
         await AsyncStorage.setItem("userToken", result.jwtToken);
         await AsyncStorage.setItem("userId", result.userId.toString());
