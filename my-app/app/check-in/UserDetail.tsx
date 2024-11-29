@@ -55,7 +55,7 @@ const UserDetail = () => {
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
   const [autoCapture, setAutoCapture] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
+  
   // RTK QUERY
 
   const {
@@ -193,10 +193,8 @@ const UserDetail = () => {
 
   useEffect(() => {
     const handleQrDataAndCapture = async () => {
-      if (!qrCardData) return;
-
-      try {
-        setIsProcessing(true);
+      if (qrCardData) {
+        // console.log("QR Card Data received:", qrCardData);
         setAutoCapture(true);
 
         if (qrCardData.cardImage) {
@@ -204,43 +202,57 @@ const UserDetail = () => {
         }
 
         if (qrCardData.cardVerification) {
-          const capturedImageData = await fetchCaptureImage();
+          console.log(
+            "Processing card verification:",
+            qrCardData.cardVerification
+          );
 
-          if (capturedImageData?.ImageFile) {
-            setCapturedImage([capturedImageData]);
+          try {
+            const capturedImageData = await fetchCaptureImage();
+            console.log("Captured image data:", capturedImageData);
 
-            const formattedImage = {
-              ImageType: "Shoe",
-              ImageURL: "",
-              Image: capturedImageData.ImageFile,
-            };
-
-            setCheckInData((prevData) => {
-              const newData = {
-                ...prevData,
-                QrCardVerification: qrCardData.cardVerification,
-                Images: [formattedImage],
+            if (capturedImageData && capturedImageData.ImageFile) {
+              setCapturedImage([capturedImageData]);
+              const formattedImage = {
+                ImageType: "Shoe",
+                ImageURL: "",
+                Image: capturedImageData.ImageFile,
               };
-              console.log("Updated checkInData:", newData);
-              return newData;
-            });
 
-            setValidCheckInData((prevData) => ({
-              ...prevData,
-              QRCardVerification: qrCardData.cardVerification,
-              ImageShoe: capturedImageData.ImageFile,
-            }));
+              // console.log("Formatted image data:", formattedImage);
+              setCheckInData((prevData) => {
+                const newData = {
+                  ...prevData,
+                  QrCardVerification: qrCardData.cardVerification,
+                  Images: [formattedImage],
+                };
+                console.log("Updated checkInData:", newData);
+                return newData;
+              });
+
+              setValidCheckInData((prevData) => {
+                const newData = {
+                  ...prevData,
+                  QRCardVerification: qrCardData.cardVerification,
+                  ImageShoe: capturedImageData.ImageFile,
+                };
+
+                return newData;
+              });
+            } else {
+              console.error("No image data captured");
+            }
+          } catch (error) {
+            console.error("Error in capture process:", error);
+            Alert.alert("Error", "Failed to capture and save image");
           }
         }
-      } catch (error) {
-        console.error("Error processing QR data:", error);
-        Alert.alert("Lỗi", "Không thể xử lý dữ liệu QR. Vui lòng thử lại.");
-      } finally {
-        setIsProcessing(false);
       }
     };
 
-    handleQrDataAndCapture();
+    handleQrDataAndCapture().catch((error) => {
+      console.error("Error in handleQrDataAndCapture:", error);
+    });
   }, [qrCardData]);
 
   useEffect(() => {
@@ -277,41 +289,34 @@ const UserDetail = () => {
     }
   }, [qrCardData]);
 
+ 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
-    try {
-      // Kiểm tra nếu đang trong quá trình scan hoặc không có data
-      if (isScanning || !data || qrLock.current) {
-        return;
-      }
+    if (!data) {
+      Alert.alert("Lỗi", "Không thể đọc được mã QR. Vui lòng thử lại.");
+      return;
+    }
 
-      // Set trạng thái scanning và lock
-      setIsScanning(true);
+    if (qrLock.current) {
+      return;
+    }
+
+    try {
       qrLock.current = true;
       setIsProcessing(true);
-
       console.log("Scanned QR Code Data:", data);
 
-      // Validate QR code format
-      if (!data.trim()) {
-        throw new Error("Invalid QR code format");
-      }
+      // Validate QR code format trước khi xử lý
 
-      // Update checkInData an toàn với try-catch
-      try {
-        setCheckInData((prevData) => ({
-          ...prevData,
-          QrCardVerification: data,
-        }));
-      } catch (error) {
-        console.error("Error updating checkInData:", error);
-        throw new Error("Failed to process QR data");
-      }
+      setCheckInData((prevData) => ({
+        ...prevData,
+        QrCardVerification: data,
+      }));
 
-      // Tắt camera sau khi scan thành công
       setIsCameraActive(false);
     } catch (error: any) {
       console.error("Error handling QR Code:", error);
 
+      // Hiển thị thông báo lỗi cụ thể
       Alert.alert(
         "Lỗi quét mã",
         error.message || "Đã có lỗi xảy ra khi xử lý mã QR. Vui lòng thử lại.",
@@ -319,21 +324,17 @@ const UserDetail = () => {
           {
             text: "Thử lại",
             onPress: () => {
-              resetScanState();
+              qrLock.current = false;
+              setIsProcessing(false);
+              setIsCameraActive(true);
             },
           },
         ]
       );
     } finally {
-      // Reset các trạng thái
-      resetScanState();
+      setIsProcessing(false);
+      qrLock.current = false;
     }
-  };
-
-  const resetScanState = () => {
-    qrLock.current = false;
-    setIsScanning(false);
-    setIsProcessing(false);
   };
 
   useEffect(() => {
@@ -354,6 +355,7 @@ const UserDetail = () => {
             params: {
               dataCheckIn: JSON.stringify(checkInData),
               dataValid: JSON.stringify(validCheckInData),
+              
             },
           });
         }
@@ -381,6 +383,8 @@ const UserDetail = () => {
       </View>
     );
   }
+
+ 
 
   if (isProcessing || isLoadingQr) {
     return (
@@ -449,6 +453,8 @@ const UserDetail = () => {
           </View>
         </GestureHandlerRootView>
       </ScrollView>
+
+ 
     </SafeAreaView>
   );
 };
