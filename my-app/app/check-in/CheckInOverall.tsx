@@ -8,6 +8,7 @@ import {
   Alert,
   Pressable,
   StyleSheet,
+  Modal,
 } from "react-native";
 import { EvilIcons, MaterialIcons } from "@expo/vector-icons";
 import { ActivityIndicator } from "react-native";
@@ -23,6 +24,7 @@ import {
 } from "@/redux/services/checkin.service";
 import { uploadToFirebase } from "@/firebase-config";
 import { useToast } from "@/components/Toast/ToastContext";
+import ImageViewer from "react-native-image-zoom-viewer";
 
 interface Visitor {
   visitorId: number;
@@ -59,6 +61,13 @@ interface ResultData {
   visit: Visit;
   cardRes: Card;
 }
+
+interface ImageSectionDropdownProps {
+  title: string;
+  icon: React.ReactNode;
+  imageUris: string[]; 
+}
+
 
 const CheckInOverall = () => {
   const { dataCheckIn } = useLocalSearchParams();
@@ -132,43 +141,58 @@ const CheckInOverall = () => {
     const performCheckIn = async () => {
       setCheckInMessage("");
       setCheckInStatus("pending");
-
+  
       try {
         if (
           !checkInData ||
           !checkInData.Images ||
-          checkInData.Images.length === 0 ||
-          !checkInData.Images[0]
+          checkInData.Images.length < 1 
+          // ||  
+          // !checkInData.Images[0] ||
+          // !checkInData.Images[1]
         ) {
           throw new Error("Missing image data for check-in.");
         }
-
+  
         const formData = new FormData();
-
+  
+        
         formData.append(
           "CredentialCard",
-          checkInData.CredentialCard
-            ? checkInData.CredentialCard.toString()
-            : ""
+          checkInData.CredentialCard ? checkInData.CredentialCard.toString() : ""
         );
         formData.append("SecurityInId", checkInData.SecurityInId.toString());
         formData.append("GateInId", checkInData.GateInId.toString());
         formData.append("QrCardVerification", checkInData.QrCardVerification);
-
-        const shoeImage = checkInData.Images[0];
+  
+      
+        const shoeImage = checkInData.Images[1];  
         const { downloadUrl: shoeImageUrl } = await uploadToFirebase(
           shoeImage.Image,
           `shoe_${Date.now()}.jpg`
         );
-
-        formData.append("Images[0].ImageType", shoeImage.ImageType);
-        formData.append("Images[0].ImageURL", shoeImageUrl.replace(/"/g, ""));
-        formData.append("Images[0].Image", {
+        formData.append("Images[1].ImageType", shoeImage.ImageType);
+        formData.append("Images[1].ImageURL", shoeImageUrl.replace(/"/g, ""));
+        formData.append("Images[1].Image", {
           uri: shoeImage.Image,
           name: shoeImage.Image.split("/").pop() || "default.jpg",
           type: "image/jpeg",
         } as any);
-
+  
+       
+        const bodyImage = checkInData.Images[0];   
+        const { downloadUrl: bodyImageUrl } = await uploadToFirebase(
+          bodyImage.Image,
+          `body_${Date.now()}.jpg`
+        );
+        formData.append("Images[0].ImageType", bodyImage.ImageType);
+        formData.append("Images[0].ImageURL", bodyImageUrl.replace(/"/g, ""));
+        formData.append("Images[0].Image", {
+          uri: bodyImage.Image,
+          name: bodyImage.Image.split("/").pop() || "default.jpg",
+          type: "image/jpeg",
+        } as any);
+ 
         if (
           checkInData.VehicleSession &&
           checkInData.VehicleSession.LicensePlate &&
@@ -179,16 +203,16 @@ const CheckInOverall = () => {
             "VehicleSession.LicensePlate",
             checkInData.VehicleSession.LicensePlate
           );
-
+  
           const vehicleImage = checkInData.VehicleSession.vehicleImages[0];
-
+  
           if (vehicleImage && vehicleImage.Image) {
             const { downloadUrl: licensePlateImageUrl } =
               await uploadToFirebase(
                 vehicleImage.Image,
                 `license_plate_${Date.now()}.jpg`
               );
-
+  
             formData.append(
               "VehicleSession.VehicleImages[0].ImageType",
               "LicensePlate_In"
@@ -199,9 +223,9 @@ const CheckInOverall = () => {
             );
           }
         }
-
+  
         console.log("Form data being sent:", formData);
-
+   
         const response = await checkIn(formData).unwrap();
         setResultData(response);
         setCheckInStatus("success");
@@ -223,9 +247,10 @@ const CheckInOverall = () => {
         ]);
       }
     };
-
+  
     performCheckIn();
   }, []);
+  
   const handleGoBack = () => {
     router.back();
   };
@@ -292,6 +317,68 @@ const CheckInOverall = () => {
           <Text className="text-lg font-semibold text-black">{title}</Text>
         </TouchableOpacity>
         {isOpen && <View className="p-4">{children}</View>}
+      </View>
+    );
+  };
+
+  const ImageSectionDropdown: React.FC<ImageSectionDropdownProps> = ({
+    title,
+    icon,
+    imageUris,
+  }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [isImageViewerVisible, setIsImageViewerVisible] = useState(false);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0); // Track which image is opened in viewer
+  
+    if (!imageUris || imageUris.length === 0) return null;
+  
+    return (
+      <View className="bg-white rounded-2xl mb-4 shadow-sm">
+        <TouchableOpacity
+          onPress={() => setIsOpen((prev) => !prev)}
+          className="p-4 flex-row items-center"
+        >
+          <View className="w-10 h-10 bg-blue-100 rounded-full items-center justify-center mr-3">
+            {icon}
+          </View>
+          <Text className="text-lg font-semibold text-black">{title}</Text>
+        </TouchableOpacity>
+  
+        {isOpen && (
+          <View className="p-4">
+            {imageUris.map((uri, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => {
+                  setSelectedImageIndex(index);
+                  setIsImageViewerVisible(true);
+                }}
+              >
+                <Image
+                  source={{ uri: uri }}
+                  style={{
+                    width: "100%",
+                    height: 200,
+                    borderRadius: 10,
+                    marginVertical: 10,
+                  }}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+            ))}
+  
+            <Modal visible={isImageViewerVisible} transparent={true}>
+              <ImageViewer
+                imageUrls={imageUris.map((uri) => ({ url: uri }))}
+                enableSwipeDown
+                index={selectedImageIndex}
+                onSwipeDown={() => setIsImageViewerVisible(false)}
+                onClick={() => setIsImageViewerVisible(false)}
+                backgroundColor="rgba(0,0,0,0.9)"
+              />
+            </Modal>
+          </View>
+        )}
       </View>
     );
   };
@@ -386,7 +473,7 @@ const CheckInOverall = () => {
             )}
           </SectionDropDown>
 
-          <SectionDropDown
+          {/* <SectionDropDown
             title="Hình ảnh giày"
             icon={<View className="w-6 h-6 bg-yellow-500 rounded-full" />}
           >
@@ -402,7 +489,15 @@ const CheckInOverall = () => {
                 resizeMode="contain"
               />
             )}
-          </SectionDropDown>
+          </SectionDropDown> */}
+             <ImageSectionDropdown
+            title="Hình ảnh giày và body"
+            icon={<View className="w-6 h-6 bg-yellow-500 rounded-full" />}
+            imageUris={[
+              checkInData?.Images?.[0]?.Image, // Body image
+              checkInData?.Images?.[1]?.Image, // Shoe image
+            ].filter(Boolean)} // Filter to avoid null/undefined URIs
+          />
 
           {checkInData.VehicleSession?.vehicleImages?.[0]?.Image && (
             <SectionDropDown

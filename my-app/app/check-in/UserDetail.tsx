@@ -28,6 +28,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
+import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
 
 interface ImageData {
   ImageType: "Shoe";
@@ -55,7 +56,7 @@ const UserDetail = () => {
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
   const [autoCapture, setAutoCapture] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  
+
   // RTK QUERY
 
   const {
@@ -79,53 +80,19 @@ const UserDetail = () => {
     ImageShoe: [],
   });
 
-  // https://security-gateway-camera.tools.kozow.com/camera-1/capture-image
-  const fetchCaptureImage = async (): Promise<ImageData | null> => {
-    try {
-      const response = await fetch(
-        "https://security-gateway-camera-1.tools.kozow.com/capture-image",
-        {
-          method: "GET",
-        }
-      );
-
-      if (!response.ok) {
-        console.error("HTTP Response Status:", response.status);
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const blob = await response.blob();
-      const fileUri = `${FileSystem.cacheDirectory}captured-image.jpg`;
-
-      const fileSaved = await new Promise<string | null>((resolve, reject) => {
-        const fileReader = new FileReader();
-        fileReader.onloadend = async () => {
-          const base64data = fileReader.result?.toString().split(",")[1];
-          if (base64data) {
-            await FileSystem.writeAsStringAsync(fileUri, base64data, {
-              encoding: FileSystem.EncodingType.Base64,
-            });
-            resolve(fileUri);
-          } else {
-            reject(null);
-          }
-        };
-        fileReader.readAsDataURL(blob);
-      });
-      console.log("file:", fileSaved);
-
-      return {
-        ImageType: "Shoe",
-        ImageURL: null,
-        ImageFile: fileSaved,
-      };
-    } catch (error) {
-      console.error("Failed to fetch capture image:", error);
-      Alert.alert("Error", "Failed to fetch the image. Please try again.");
-      return null;
+  const gateId = Number(selectedGateId) || 0;
+  const {
+    data: cameraGate,
+    isLoading: isLoadingGate,
+    isError: isErrorCamera,
+  } = useGetCameraByGateIdQuery(
+    { gateId },
+    {
+      skip: !gateId,
     }
-  };
+  );
 
+ 
   const {
     data: qrCardData,
     isLoading: isLoadingQr,
@@ -191,69 +158,119 @@ const UserDetail = () => {
     router.back();
   };
 
+  const fetchCaptureImage = async (
+    url: string,
+    imageType: string
+  ): Promise<{ ImageType: string; ImageFile: string | null }> => {
+    try {
+      const response = await fetch(url, { method: "GET" });
+  
+      if (!response.ok) {
+        console.error("HTTP Response Status:", response.status);
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+  
+      const blob = await response.blob();
+      const fileUri = `${FileSystem.cacheDirectory}captured-image-${imageType}.jpg`;
+  
+      const fileSaved = await new Promise<string | null>((resolve, reject) => {
+        const fileReader = new FileReader();
+        fileReader.onloadend = async () => {
+          const base64data = fileReader.result?.toString().split(",")[1];
+          if (base64data) {
+            await FileSystem.writeAsStringAsync(fileUri, base64data, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            resolve(fileUri);
+          } else {
+            reject(null);
+          }
+        };
+        fileReader.readAsDataURL(blob);
+      });
+  
+      return {
+        ImageType: imageType,
+        ImageFile: fileSaved,
+      };
+    } catch (error) {
+      console.error(`Failed to fetch ${imageType} image:`, error);
+      Alert.alert("Error", `Failed to fetch ${imageType} image. Please try again.`);
+      return { ImageType: imageType, ImageFile: null };
+    }
+  };
+  
+
   useEffect(() => {
     const handleQrDataAndCapture = async () => {
       if (qrCardData) {
-        // console.log("QR Card Data received:", qrCardData);
-        setAutoCapture(true);
-
-        if (qrCardData.cardImage) {
-          setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
-        }
-
         if (qrCardData.cardVerification) {
-          console.log(
-            "Processing card verification:",
-            qrCardData.cardVerification
-          );
-
+          console.log("Processing card verification:", qrCardData.cardVerification);
+  
           try {
-            const capturedImageData = await fetchCaptureImage();
-            console.log("Captured image data:", capturedImageData);
-
-            if (capturedImageData && capturedImageData.ImageFile) {
-              setCapturedImage([capturedImageData]);
-              const formattedImage = {
-                ImageType: "Shoe",
-                ImageURL: "",
-                Image: capturedImageData.ImageFile,
-              };
-
-              // console.log("Formatted image data:", formattedImage);
+            // Chụp ảnh body
+            const bodyImageData = await fetchCaptureImage(
+              "https://security-gateway-camera-1.tools.kozow.com/capture-image",
+              "CheckIn_Body"
+            );
+  
+            // Chụp ảnh shoe
+            const shoeImageData = await fetchCaptureImage(
+              "https://security-gateway-camera-3.tools.kozow.com/capture-image",
+              "CheckIn_Shoe"
+            );
+  
+            // Kiểm tra nếu cả hai ảnh đều hợp lệ
+            if (bodyImageData.ImageFile && shoeImageData.ImageFile) {
+              const images = [
+                {
+                  ImageType: bodyImageData.ImageType,
+                  ImageURL: "",
+                  Image: bodyImageData.ImageFile,
+                },
+                {
+                  ImageType: shoeImageData.ImageType,
+                  ImageURL: "",
+                  Image: shoeImageData.ImageFile,
+                },
+              ];
+  
+              // Cập nhật checkInData
               setCheckInData((prevData) => {
                 const newData = {
                   ...prevData,
                   QrCardVerification: qrCardData.cardVerification,
-                  Images: [formattedImage],
+                  Images: images,
                 };
                 console.log("Updated checkInData:", newData);
                 return newData;
               });
-
+  
               setValidCheckInData((prevData) => {
                 const newData = {
                   ...prevData,
                   QRCardVerification: qrCardData.cardVerification,
-                  ImageShoe: capturedImageData.ImageFile,
+                  ImageShoe: shoeImageData.ImageFile  
                 };
-
+                console.log("Setting validCheckInData:", newData);
                 return newData;
               });
             } else {
-              console.error("No image data captured");
+              console.error("One or both images failed to capture");
             }
           } catch (error) {
             console.error("Error in capture process:", error);
-            Alert.alert("Error", "Failed to capture and save image");
+            Alert.alert("Error", "Failed to capture and save images");
           }
         }
       }
     };
-
+  
     handleQrDataAndCapture().catch((error) => {
       console.error("Error in handleQrDataAndCapture:", error);
     });
   }, [qrCardData]);
+  
 
   useEffect(() => {
     if (qrCardData) {
@@ -289,7 +306,6 @@ const UserDetail = () => {
     }
   }, [qrCardData]);
 
- 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
     if (!data) {
       Alert.alert("Lỗi", "Không thể đọc được mã QR. Vui lòng thử lại.");
@@ -341,7 +357,7 @@ const UserDetail = () => {
     const validateAndNavigate = async () => {
       if (
         !checkInData.QrCardVerification ||
-        checkInData.Images.length !== 1 ||
+        checkInData.Images.length === 0 ||
         hasNavigated
       ) {
         return;
@@ -354,8 +370,11 @@ const UserDetail = () => {
             pathname: "/check-in/ValidCheckInScreen",
             params: {
               dataCheckIn: JSON.stringify(checkInData),
-              dataValid: JSON.stringify(validCheckInData),
-              
+              dataValid: JSON.stringify({
+                CredentialCard: checkInData.CredentialCard,
+                QRCardVerification: checkInData.QrCardVerification,
+                ImageShoe: checkInData.Images.find(img => img.ImageType === "CheckIn_Shoe")?.Image || null
+              })
             },
           });
         }
@@ -383,8 +402,6 @@ const UserDetail = () => {
       </View>
     );
   }
-
- 
 
   if (isProcessing || isLoadingQr) {
     return (
@@ -453,8 +470,6 @@ const UserDetail = () => {
           </View>
         </GestureHandlerRootView>
       </ScrollView>
-
- 
     </SafeAreaView>
   );
 };

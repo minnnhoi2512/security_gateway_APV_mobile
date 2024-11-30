@@ -52,9 +52,22 @@ interface ResultData {
 }
 interface ImageSectionDropdownProps {
   title: string;
-  icon?: React.ReactNode;
-  imageUri?: string;
+  icon: React.ReactNode;
+  imageUris: string[]; 
 }
+
+interface ValidCheckInData {
+  CredentialCard: number | null;  
+  QRCardVerification: string;
+  ImageShoe: Array<{ imageFile: string }>;
+}
+
+interface ParsedValidData {
+  CredentialCard: number | null;  
+  QRCardVerification: string;
+  ImageShoe: string | string[];
+}
+
 
 const ValidCheckInScreen = () => {
   const params = useLocalSearchParams();
@@ -69,30 +82,77 @@ const ValidCheckInScreen = () => {
   ] = useValidCheckInMutation();
 
   console.log("Check in da: ", params.dataValid);
+  console.log("Check in da res: ", response);
 
+   
   useEffect(() => {
     const validateCheckIn = async () => {
       try {
         const dataValid = Array.isArray(params.dataValid)
           ? params.dataValid[0]
           : params.dataValid;
-
-        const parsedValidData = JSON.parse(dataValid);
-        console.log("Check in da parse: ", parsedValidData);
-        await validCheckIn({
-          CredentialCard: parsedValidData.CredentialCard || null,
+  
+        const parsedValidData = JSON.parse(dataValid) as ParsedValidData;
+        console.log("Parsed Valid Data:", parsedValidData);
+  
+        // Kiểm tra chi tiết dữ liệu ImageShoe
+        console.log("ImageShoe data type:", typeof parsedValidData.ImageShoe);
+        console.log("ImageShoe content:", parsedValidData.ImageShoe);
+  
+        // Xử lý dữ liệu ImageShoe một cách chi tiết hơn
+        let imageShoeData: Array<{ imageFile: string }> = [];
+  
+        if (typeof parsedValidData.ImageShoe === 'string') {
+          // Nếu ImageShoe là string
+          console.log("Processing single image string");
+          imageShoeData = [{ imageFile: parsedValidData.ImageShoe }];
+        } else if (Array.isArray(parsedValidData.ImageShoe)) {
+          // Nếu ImageShoe là mảng
+          console.log("Processing image array");
+          imageShoeData = parsedValidData.ImageShoe
+            .filter((path): path is string => typeof path === 'string' && path !== '')
+            .map(path => ({ imageFile: path }));
+        } else if (parsedValidData.ImageShoe && typeof parsedValidData.ImageShoe === 'object') {
+          // Nếu ImageShoe đã là object có imageFile
+          console.log("Processing image object");
+          const imgFile = (parsedValidData.ImageShoe as any).imageFile;
+          if (imgFile) {
+            imageShoeData = [{ imageFile: imgFile }];
+          }
+        }
+  
+        console.log("Processed imageShoeData:", imageShoeData);
+  
+        if (imageShoeData.length === 0) {
+          console.error("No valid image data to send. Original data:", parsedValidData.ImageShoe);
+          return;
+        }
+  
+        // Convert CredentialCard to number if it's a string
+        const credentialCard = typeof parsedValidData.CredentialCard === 'string' 
+          ? parseInt(parsedValidData.CredentialCard, 10) 
+          : parsedValidData.CredentialCard;
+  
+        const validCheckInData: ValidCheckInData = {
+          CredentialCard: credentialCard,
           QRCardVerification: parsedValidData.QRCardVerification,
-          ImageShoe: [
-            {
-              imageFile: parsedValidData.ImageShoe,
-            },
-          ],
-        });
+          ImageShoe: imageShoeData
+        };
+  
+        console.log("Final data being sent to API:", validCheckInData);
+        await validCheckIn(validCheckInData);
+  
       } catch (err) {
         console.error("ValidCheckIn Error:", err);
+        // Log chi tiết lỗi để debug
+        if (err instanceof Error) {
+          console.error("Error name:", err.name);
+          console.error("Error message:", err.message);
+          console.error("Error stack:", err.stack);
+        }
       }
     };
-
+  
     validateCheckIn();
   }, [params.dataValid]);
 
@@ -123,7 +183,6 @@ const ValidCheckInScreen = () => {
       <Text className="text-black text-sm font-medium">{value}</Text>
     </View>
   );
-  console.log("res: ", response);
 
   const Section = ({
     children,
@@ -175,13 +234,14 @@ const ValidCheckInScreen = () => {
   const ImageSectionDropdown: React.FC<ImageSectionDropdownProps> = ({
     title,
     icon,
-    imageUri,
+    imageUris,
   }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isImageViewerVisible, setIsImageViewerVisible] = useState(false);
-
-    if (!imageUri) return null;
-
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0); // Track which image is opened in viewer
+  
+    if (!imageUris || imageUris.length === 0) return null;
+  
     return (
       <View className="bg-white rounded-2xl mb-4 shadow-sm">
         <TouchableOpacity
@@ -193,30 +253,38 @@ const ValidCheckInScreen = () => {
           </View>
           <Text className="text-lg font-semibold text-black">{title}</Text>
         </TouchableOpacity>
-
+  
         {isOpen && (
           <View className="p-4">
-            <TouchableOpacity onPress={() => setIsImageViewerVisible(true)}>
-              <Image
-                source={{ uri: imageUri }}
-                style={{
-                  width: "100%",
-                  height: 200,
-                  borderRadius: 10,
-                  marginVertical: 10,
+            {imageUris.map((uri, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => {
+                  setSelectedImageIndex(index);
+                  setIsImageViewerVisible(true);
                 }}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-
+              >
+                <Image
+                  source={{ uri: uri }}
+                  style={{
+                    width: "100%",
+                    height: 200,
+                    borderRadius: 10,
+                    marginVertical: 10,
+                  }}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+            ))}
+  
             <Modal visible={isImageViewerVisible} transparent={true}>
               <ImageViewer
-                imageUrls={[{ url: imageUri }]}
+                imageUrls={imageUris.map((uri) => ({ url: uri }))}
                 enableSwipeDown
+                index={selectedImageIndex}
                 onSwipeDown={() => setIsImageViewerVisible(false)}
                 onClick={() => setIsImageViewerVisible(false)}
                 backgroundColor="rgba(0,0,0,0.9)"
-                // renderIndicator={() => null}
               />
             </Modal>
           </View>
@@ -224,6 +292,7 @@ const ValidCheckInScreen = () => {
       </View>
     );
   };
+  
   if (isLoadingValidRes) {
     return (
       <View className="flex-1 items-center justify-center bg-backgroundApp">
@@ -313,9 +382,12 @@ const ValidCheckInScreen = () => {
             )}
           </ImageSectionDropdown> */}
           <ImageSectionDropdown
-            title="Hình ảnh giày"
+            title="Hình ảnh giày và body"
             icon={<View className="w-6 h-6 bg-yellow-500 rounded-full" />}
-            imageUri={checkInData?.Images?.[0]?.Image} // Pass image URI directly
+            imageUris={[
+              checkInData?.Images?.[0]?.Image, // Body image
+              checkInData?.Images?.[1]?.Image, // Shoe image
+            ].filter(Boolean)} // Filter to avoid null/undefined URIs
           />
 
           {checkInData?.VehicleSession?.vehicleImages?.[0]?.Image && (
