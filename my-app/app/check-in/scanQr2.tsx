@@ -75,6 +75,7 @@ const ScanQr2 = () => {
   } = useGetDataByCardVerificationQuery(cardVerification || "", {
     skip: !cardVerification,
   });
+  
 
   useFocusEffect(
     useCallback(() => {

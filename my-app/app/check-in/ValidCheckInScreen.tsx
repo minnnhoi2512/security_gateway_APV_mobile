@@ -7,6 +7,7 @@ import {
   Pressable,
   Image,
   Modal,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -53,21 +54,25 @@ interface ResultData {
 interface ImageSectionDropdownProps {
   title: string;
   icon: React.ReactNode;
-  imageUris: string[]; 
+  imageUris: string[];
+}
+
+interface ImageSectionProps {
+  visitorImage: string;
 }
 
 interface ValidCheckInData {
-  CredentialCard: number | null;  
+  CredentialCard: string | null;
   QRCardVerification: string;
   ImageShoe: Array<{ imageFile: string }>;
 }
 
 interface ParsedValidData {
-  CredentialCard: number | null;  
+  CredentialCard: string   | null;
   QRCardVerification: string;
+ 
   ImageShoe: string | string[];
 }
-
 
 const ValidCheckInScreen = () => {
   const params = useLocalSearchParams();
@@ -84,7 +89,6 @@ const ValidCheckInScreen = () => {
   console.log("Check in da: ", params.dataValid);
   console.log("Check in da res: ", response);
 
-   
   useEffect(() => {
     const validateCheckIn = async () => {
       try {
@@ -95,25 +99,23 @@ const ValidCheckInScreen = () => {
         const parsedValidData = JSON.parse(dataValid) as ParsedValidData;
         console.log("Parsed Valid Data:", parsedValidData);
   
-        // Kiểm tra chi tiết dữ liệu ImageShoe
         console.log("ImageShoe data type:", typeof parsedValidData.ImageShoe);
         console.log("ImageShoe content:", parsedValidData.ImageShoe);
   
-        // Xử lý dữ liệu ImageShoe một cách chi tiết hơn
         let imageShoeData: Array<{ imageFile: string }> = [];
   
-        if (typeof parsedValidData.ImageShoe === 'string') {
-          // Nếu ImageShoe là string
+        if (typeof parsedValidData.ImageShoe === "string") {
           console.log("Processing single image string");
           imageShoeData = [{ imageFile: parsedValidData.ImageShoe }];
         } else if (Array.isArray(parsedValidData.ImageShoe)) {
-          // Nếu ImageShoe là mảng
           console.log("Processing image array");
-          imageShoeData = parsedValidData.ImageShoe
-            .filter((path): path is string => typeof path === 'string' && path !== '')
-            .map(path => ({ imageFile: path }));
-        } else if (parsedValidData.ImageShoe && typeof parsedValidData.ImageShoe === 'object') {
-          // Nếu ImageShoe đã là object có imageFile
+          imageShoeData = parsedValidData.ImageShoe.filter(
+            (path): path is string => typeof path === "string" && path !== ""
+          ).map((path) => ({ imageFile: path }));
+        } else if (
+          parsedValidData.ImageShoe &&
+          typeof parsedValidData.ImageShoe === "object"
+        ) {
           console.log("Processing image object");
           const imgFile = (parsedValidData.ImageShoe as any).imageFile;
           if (imgFile) {
@@ -124,32 +126,59 @@ const ValidCheckInScreen = () => {
         console.log("Processed imageShoeData:", imageShoeData);
   
         if (imageShoeData.length === 0) {
-          console.error("No valid image data to send. Original data:", parsedValidData.ImageShoe);
+          console.error(
+            "No valid image data to send. Original data:",
+            parsedValidData.ImageShoe
+          );
           return;
         }
   
-        // Convert CredentialCard to number if it's a string
-        const credentialCard = typeof parsedValidData.CredentialCard === 'string' 
-          ? parseInt(parsedValidData.CredentialCard, 10) 
-          : parsedValidData.CredentialCard;
+        // Xử lý CredentialCard
+        // let credentialCard: number | null = null;
+        
+        // if (parsedValidData.CredentialCard !== null) {
+        //   if (typeof parsedValidData.CredentialCard === "string") {
+        //     // Chuyển đổi string sang number
+        //     const parsed = parseInt(parsedValidData.CredentialCard, 10);
+        //     credentialCard = isNaN(parsed) ? null : parsed;
+        //   } else if (typeof parsedValidData.CredentialCard === "number") {
+        //     credentialCard = parsedValidData.CredentialCard;
+        //   }
+        // }
   
+        // const validCheckInData: ValidCheckInData = {
+        //   CredentialCard: credentialCard,
+        //   QRCardVerification: parsedValidData.QRCardVerification,
+        //   ImageShoe: imageShoeData,
+        // };
         const validCheckInData: ValidCheckInData = {
-          CredentialCard: credentialCard,
+          CredentialCard: parsedValidData.CredentialCard || null,
           QRCardVerification: parsedValidData.QRCardVerification,
-          ImageShoe: imageShoeData
+          ImageShoe: imageShoeData,
         };
   
         console.log("Final data being sent to API:", validCheckInData);
         await validCheckIn(validCheckInData);
-  
-      } catch (err) {
-        console.error("ValidCheckIn Error:", err);
-        // Log chi tiết lỗi để debug
-        if (err instanceof Error) {
-          console.error("Error name:", err.name);
-          console.error("Error message:", err.message);
-          console.error("Error stack:", err.stack);
+      } catch (error: any) {
+        console.error("ValidCheckIn Error:", error);
+        
+        if (error instanceof Error) {
+          console.error("Error name:", error.name);
+          console.error("Error message:", error.message);
+          console.error("Error stack:", error.stack);
         }
+        
+        const errorMessage =
+          error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
+  
+        Alert.alert("Đã có lỗi xảy ra", errorMessage, [
+          {
+            text: "OK",
+            onPress: () => {
+              router.push("/(tabs)/checkin");
+            },
+          },
+        ]);
       }
     };
   
@@ -239,9 +268,9 @@ const ValidCheckInScreen = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isImageViewerVisible, setIsImageViewerVisible] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0); // Track which image is opened in viewer
-  
+
     if (!imageUris || imageUris.length === 0) return null;
-  
+
     return (
       <View className="bg-white rounded-2xl mb-4 shadow-sm">
         <TouchableOpacity
@@ -253,7 +282,7 @@ const ValidCheckInScreen = () => {
           </View>
           <Text className="text-lg font-semibold text-black">{title}</Text>
         </TouchableOpacity>
-  
+
         {isOpen && (
           <View className="p-4">
             {imageUris.map((uri, index) => (
@@ -276,7 +305,7 @@ const ValidCheckInScreen = () => {
                 />
               </TouchableOpacity>
             ))}
-  
+
             <Modal visible={isImageViewerVisible} transparent={true}>
               <ImageViewer
                 imageUrls={imageUris.map((uri) => ({ url: uri }))}
@@ -292,7 +321,73 @@ const ValidCheckInScreen = () => {
       </View>
     );
   };
-  
+
+  const ImageSection: React.FC<ImageSectionProps> = ({ visitorImage }) => {
+    const [isImageViewVisible, setIsImageViewVisible] = useState(false);
+
+    // Cấu hình ảnh cho ImageViewer
+    const images = [
+      {
+        url: "",
+        props: {
+          source: {
+            uri: `data:image/png;base64,${visitorImage}`,
+          },
+        },
+      },
+    ];
+
+    return (
+      <View className="mt-4 items-center">
+        <Text className="text-gray-500 text-sm mb-2">Ảnh giấy tờ</Text>
+
+        {/* Thumbnail có thể click */}
+        <TouchableOpacity
+          onPress={() => setIsImageViewVisible(true)}
+          className="w-32 h-32"
+        >
+          <Image
+            source={{
+              uri: `data:image/png;base64,${visitorImage}`,
+            }}
+            className="w-32 h-32"
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+
+        {/* Modal hiển thị ảnh có thể zoom */}
+        <Modal
+          visible={isImageViewVisible}
+          transparent={true}
+          onRequestClose={() => setIsImageViewVisible(false)}
+        >
+          <ImageViewer
+            imageUrls={images}
+            enableSwipeDown={true}
+            onSwipeDown={() => setIsImageViewVisible(false)}
+            onCancel={() => setIsImageViewVisible(false)}
+            // renderIndicator={() => null}
+            backgroundColor="rgba(0, 0, 0, 0.9)"
+            renderHeader={() => (
+              <TouchableOpacity
+                onPress={() => setIsImageViewVisible(false)}
+                style={{
+                  position: "absolute",
+                  top: 40,
+                  right: 20,
+                  zIndex: 100,
+                  padding: 10,
+                }}
+              >
+                <Text style={{ color: "white", fontSize: 16 }}>✕</Text>
+              </TouchableOpacity>
+            )}
+          />
+        </Modal>
+      </View>
+    );
+  };
+
   if (isLoadingValidRes) {
     return (
       <View className="flex-1 items-center justify-center bg-backgroundApp">
@@ -324,12 +419,45 @@ const ValidCheckInScreen = () => {
             <InfoRow label="Giờ bắt đầu" value={response?.expectedStartHour} />
             <InfoRow label="Giờ kết thúc" value={response?.expectedEndHour} />
             <InfoRow label="Tên cuộc thăm" value={response?.visit.visitName} />
-            <InfoRow label="Số lượng" value={response?.visit.visitQuantity} />
-            <InfoRow
+            <InfoRow label="Tên khách" value={response?.visitor.visitorName} />
+
+            {/* <InfoRow label="Số lượng" value={response?.visit.visitQuantity} /> */}
+            {/* <InfoRow
               label="Loại lịch"
               value={response?.visit.scheduleTypeName}
+            /> */}
+            {/* <Text>Thông tin khách hàng</Text>
+            <InfoRow label="Tên khách" value={response?.visitor.visitorName} />
+            <InfoRow label="Công ty" value={response?.visitor.companyName} />
+            <InfoRow
+              label="Số điện thoại"
+              value={response?.visitor.phoneNumber}
             />
-            <Text>Thông tin khách hàng</Text>
+            <InfoRow
+              label="CMND/CCCD"
+              value={response?.visitor.credentialsCard}
+            /> */}
+          </Section>
+          <SectionDropDown
+            title="Thông tin chuyến thăm"
+            icon={<View className="w-6 h-6 bg-orange-500 rounded-full" />}
+          >
+            <InfoRow
+              label="Thời gian dự kiến"
+              value={response?.expectedStartHour - response?.expectedEndHour}
+            />
+            {/* <InfoRow
+              label="Tên chuyến thăm"
+              value={response?.expectedStartHour - response?.expectedEndHour}
+            /> */}
+
+            <InfoRow label="Số lượng" value={response?.visit.visitQuantity} />
+            {/* <InfoRow label="Loại chuyến thăm" value={response?.visit.visitQuantity} /> */}
+          </SectionDropDown>
+          <SectionDropDown
+            title="Thông tin khách"
+            icon={<View className="w-6 h-6 bg-blue-500 rounded-full" />}
+          >
             <InfoRow label="Tên khách" value={response?.visitor.visitorName} />
             <InfoRow label="Công ty" value={response?.visitor.companyName} />
             <InfoRow
@@ -340,16 +468,17 @@ const ValidCheckInScreen = () => {
               label="CMND/CCCD"
               value={response?.visitor.credentialsCard}
             />
-          </Section>
+
+            {response?.visitor.visitorCredentialFrontImage && (
+              <ImageSection
+                visitorImage={response?.visitor.visitorCredentialFrontImage}
+              />
+            )}
+          </SectionDropDown>
           <SectionDropDown
             title="Thông tin thẻ"
             icon={<View className="w-6 h-6 bg-green-500 rounded-full" />}
           >
-            <InfoRow
-              label="Mã xác thực"
-              value={response?.cardRes.cardVerification}
-            />
-
             {response?.cardRes.cardImage && (
               <View className="mt-4 items-center">
                 <Text className="text-gray-500 text-sm mb-2">QR Code</Text>
@@ -382,18 +511,18 @@ const ValidCheckInScreen = () => {
             )}
           </ImageSectionDropdown> */}
           <ImageSectionDropdown
-            title="Hình ảnh giày và body"
+            title="Hình ảnh check in"
             icon={<View className="w-6 h-6 bg-yellow-500 rounded-full" />}
             imageUris={[
-              checkInData?.Images?.[0]?.Image, // Body image
-              checkInData?.Images?.[1]?.Image, // Shoe image
-            ].filter(Boolean)} // Filter to avoid null/undefined URIs
+              checkInData?.Images?.[0]?.Image,
+              checkInData?.Images?.[1]?.Image,
+            ].filter(Boolean)}
           />
 
           {checkInData?.VehicleSession?.vehicleImages?.[0]?.Image && (
             <SectionDropDown
               title="Hình ảnh biển số xe"
-              icon={<View className="w-6 h-6 bg-blue-500 rounded-full" />}
+              icon={<View className="w-6 h-6 bg-pink-500 rounded-full" />}
             >
               <View>
                 {checkInData.VehicleSession?.LicensePlate && (

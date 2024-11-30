@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { Camera, Gate } from "../Types/gate.type";
+import {  Gate, GateCamera } from "../Types/gate.type";
 
 const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
@@ -21,7 +21,7 @@ export const gateApi = createApi({
       query: () => "Gate",
     }),
 
-    getCameraByGateId: builder.query<Camera[], { gateId: number }>({
+    getCameraByGateId: builder.query<GateCamera, { gateId: number }>({
       query: ({ gateId }) => `Gate/Camera/${gateId}`,
     }),
   }),
