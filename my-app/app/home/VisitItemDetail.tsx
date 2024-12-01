@@ -5,17 +5,36 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
+  Button,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Visit2 } from "@/redux/Types/visit.type";
 import { FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
 import RenderHTML from "react-native-render-html";
+import { UpdateVisitStatusModal } from "@/components/UI/UpdateVisitStatusModal ";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 interface VisitCardProps {
   visit: Visit2;
 }
 
 const VisitItemDetail: React.FC<VisitCardProps> = ({ visit }) => {
   const { width } = useWindowDimensions();
+  const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
+  useEffect(() => {
+    const fetchRole = async () => {
+      const storedRole = await AsyncStorage.getItem("userRole");
+      setRole(storedRole);
+    };
+    fetchRole();
+  }, []);
+  const handleUpdateStatus = () => {
+    setIsUpdateModalVisible(true);
+  };
+
+  const handleCloseUpdateModal = () => {
+    setIsUpdateModalVisible(false);
+  };
   const [isDescriptionModalVisible, setDescriptionModalVisible] =
     useState(false);
   const getPlainDescription = (html: string) => {
@@ -44,9 +63,12 @@ const VisitItemDetail: React.FC<VisitCardProps> = ({ visit }) => {
     );
   };
 
-  const renderTruncatedDescription = (description: string, maxLength: number = 100) => {
+  const renderTruncatedDescription = (
+    description: string,
+    maxLength: number = 100
+  ) => {
     const plainText = description.replace(/<[^>]+>/g, "");
-    
+
     if (plainText.length <= maxLength) {
       return (
         <RenderHTML
@@ -81,6 +103,16 @@ const VisitItemDetail: React.FC<VisitCardProps> = ({ visit }) => {
           <Text className="text-2xl font-bold text-teal-600">
             {visit.visitName}
           </Text>
+        </View>
+        <View>
+          {visit.visitStatus === "ActiveTemporary" && role === "Staff" && (
+            <Button onPress={handleUpdateStatus} title="Cập nhật trạng thái" />
+          )}
+          <UpdateVisitStatusModal
+            visit={visit}
+            isVisible={isUpdateModalVisible}
+            onClose={handleCloseUpdateModal}
+          />
         </View>
         <View className="flex-row items-center space-x-2">
           <Text className="text-lg font-semibold text-gray-600">
