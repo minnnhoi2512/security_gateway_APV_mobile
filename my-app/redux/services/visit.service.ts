@@ -7,7 +7,6 @@ const BASE_URL2 = `https://securitygateapv-be-y69w.onrender.com/api/`;
 
 export const visitApi = createApi({
   reducerPath: 'visitApi',
-  // tagTypes: ['VisitByCard'], 
   baseQuery: fetchBaseQuery({
     baseUrl: BASE_URL,
     prepareHeaders: async (headers) => {
@@ -34,7 +33,7 @@ export const visitApi = createApi({
         // return `Visit/CurrentDate/CredentialCard/${credentialCard}?date=${currentDate}`;
         return `Visit/CurrentDate/CredentialCard/${credentialCard}`;
       },
-      // providesTags: [{ type: 'VisitByCard', id: 'LIST' }]
+ 
     }),
     createVisit: builder.mutation({
       query: (visit: CreateVisit) => ({
@@ -43,6 +42,13 @@ export const visitApi = createApi({
         body: visit,
       }),
     }),
+    updateVisitStatus: builder.mutation({
+      query: ({visitId, newStatus}) => ({
+        url: `Visit/Status/${visitId}?action=${newStatus}`,
+        method: 'PUT',
+ 
+      })
+    })
   }),
 });
 
@@ -51,4 +57,5 @@ export const {
   useGetVisitDetailByIdQuery,
   useGetVisitByCredentialCardQuery,
   useCreateVisitMutation,
+  useUpdateVisitStatusMutation
 } = visitApi;

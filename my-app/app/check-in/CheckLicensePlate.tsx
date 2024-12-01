@@ -356,7 +356,7 @@ const CheckLicensePlate = () => {
 
         // Chụp ảnh body
         if (bodyCamera?.cameraURL) {
-          const bodyImageUrl = `${bodyCamera.cameraURL}/capture-image`;
+          const bodyImageUrl = `${bodyCamera.cameraURL}capture-image`;
           console.log("Attempting to capture body image from:", bodyImageUrl);
 
           const bodyImageData = await fetchCaptureImage(
@@ -376,7 +376,7 @@ const CheckLicensePlate = () => {
 
         // Chụp ảnh giày
         if (shoeCamera?.cameraURL) {
-          const shoeImageUrl = `${shoeCamera.cameraURL}/capture-image`;
+          const shoeImageUrl = `${shoeCamera.cameraURL}capture-image`;
           console.log("Attempting to capture shoe image from:", shoeImageUrl);
 
           const shoeImageData = await fetchCaptureImage(
