@@ -4,6 +4,7 @@ import { Dispatch } from 'redux';
 import UserConnectionHubType from '../Types/userConnectionHubType';
 import { clearConnection, setConnection } from '../redux/slices/hubConnection.slice';
 import { pushNotification } from '../redux/slices/notification.slice';
+import * as Notifications from 'expo-notifications';
 
 const SetSignalR = async (
   user : UserConnectionHubType,
@@ -27,36 +28,19 @@ const SetSignalR = async (
         console.log("Connected to NotificationHub " + connection.current?.connectionId);
         dispatch(setConnection(connection));
         connection.current?.on("ReceiveMessage", (title, message) => {
-          // console.log(message)
-        //   PushNotification.localNotification({
-        //     channelId: "general_notifications",
-        //     title: title,
-        //     message: message,
-        //   });
-        //   dispatch(setNewNotificationReceived(true)); // Đánh dấu có thông báo mới được nhận
         });
-        connection.current?.on("ReceiveNotification", (title, message, scheduleId) => {
-        //   PushNotification.localNotification({
-        //     channelId: "general_notifications",
-        //     title: title,
-        //     message: message,
-        //   });
+        connection.current?.on("ReceiveNotification", async (title, message, scheduleId) => {
             console.log("New notification")
-          // const notiList = JSON.parse(localStorage.getItem("notification") as string) as NotificationType[]
-          // if(notiList){
-          //   notiList.push(notification)
-          //   if(notiList?.length > 10){
-          //     notiList.shift()
-          //   }
-          //   localStorage.setItem("notification", JSON.stringify(notiList)) 
-          //   dispatch(pushNotification(notification));
-          // }
-          // else{
-          //   const newList : NotificationType[] = [notification]
-          //   localStorage.setItem("notification", JSON.stringify(newList)) 
+            await Notifications.scheduleNotificationAsync({
+                  content:{
+                    title:  title,
+                    body: message,
+                    data : {},
+                  },
+                  trigger: {
+                  } as any
+                })
             dispatch(pushNotification());
-          // }
-          // console.log(notiList)
         });
         await connection.current?.invoke("JoinHub", user);
       } catch (error) {

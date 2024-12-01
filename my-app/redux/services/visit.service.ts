@@ -25,6 +25,11 @@ export const visitApi = createApi({
         return `Visit/Day?pageSize=10&pageNumber=1&date=${currentDate}`;
       },
     }),
+    getAllVisitsByCurrentDateByID: builder.query({
+      query: (visitId: string) => {
+        return `Visit/Day/${visitId}?pageSize=10&pageNumber=1`;
+      },
+    }),
     getVisitDetailById: builder.query({
       query: (visitId: string) => `Visit/VisitDetail/${visitId}`,
     }),
@@ -49,6 +54,7 @@ export const visitApi = createApi({
 export const {
   useGetAllVisitsByCurrentDateQuery,
   useGetVisitDetailByIdQuery,
+  useGetAllVisitsByCurrentDateByIDQuery,
   useGetVisitByCredentialCardQuery,
   useCreateVisitMutation,
 } = visitApi;

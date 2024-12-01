@@ -7,30 +7,27 @@ import { useRouter } from 'expo-router';
 import NotificationUserType from '@/redux/Types/notification.type';
 import { useDispatch, useSelector } from 'react-redux';
 import { reloadNoti } from '@/redux/slices/notification.slice';
-import { useGetVisitDetailByIdQuery } from '@/redux/services/visit.service';
+import { useGetAllVisitsByCurrentDateByIDQuery } from '@/redux/services/visit.service';
 
 const notification = () => {
   const [userId, setUserID] = useState();
   const router = useRouter();
+  const [onClick, setOnClick] = useState(false);
   const [visitId, setVisitId] = useState("");
   const {
     data: visit,
     isError,
     refetch: refestVisit
-  } = useGetVisitDetailByIdQuery(visitId);
+  } = useGetAllVisitsByCurrentDateByIDQuery(visitId);
   const handlePressNotification = (notificationUser : NotificationUserType) => {
     if(notificationUser.notification.notificationType.name == "Visit"){
       setVisitId(notificationUser.notification.action)
-      refestVisit().then(s => {
-        router.push({
-            pathname: `/home/VisitDetail`,
-            params: {
-              
-              data: JSON.stringify(visit),
-            },
-          });
-      });
-
+      if(onClick == true){
+        setOnClick(false)
+      }
+      else{
+        setOnClick(true)
+      }
       // router.push({
       //   pathname: `/home/VisitDetail`,
       //   params: {
@@ -40,7 +37,29 @@ const notification = () => {
       // });
     }
   };
+  // async function handleNotification() {
+  //   await Notifications.scheduleNotificationAsync({
+  //     content:{
+  //       title:"Test",
+  //       body: "hahaha",
+  //       data : {},
+  //     },
+  //     trigger: {
+  //     } as any
+  //   })
+  // }
 
+  useEffect(() => {
+    if(visit && !isError){
+      router.push({
+          pathname: `/home/VisitDetail`,
+          params: {
+            
+            data: JSON.stringify(visit[0]),
+          },
+        });
+    }
+  },[visit, onClick])
   useEffect(() => {
     const checkAuth = async () => {
       const UserId = await AsyncStorage.getItem('userId');
@@ -140,13 +159,14 @@ const notification = () => {
             <Text className="text-blue-900 text-xs font-medium">{notifications?.length}</Text>
           </View>
         </View>
-        <TouchableOpacity>
+        <TouchableOpacity
+        >
           <Text className="text-2xl text-gray-400">×</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView className="flex-1">
-        {notifications?.map(renderNotification)}
+        {notifications?.toReversed().map(renderNotification)}
       </ScrollView>
     </SafeAreaView>
   );
