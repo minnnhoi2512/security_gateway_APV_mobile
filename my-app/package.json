@@ -24,6 +24,7 @@
     "@shopify/react-native-skia": "1.5.0",
     "axios": "^1.7.7",
     "dotenv": "^16.4.5",
+    "eas-cli": "^13.4.2",
     "expo": "~52.0.7",
     "expo-av": "~15.0.1",
     "expo-camera": "^16.0.7",
