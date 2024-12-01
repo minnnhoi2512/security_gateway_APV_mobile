@@ -65,6 +65,8 @@ const ScanQr2 = () => {
     Images: [],
   });
 
+
+
   const {
     data: qrCardData,
     isLoading: isLoadingQr,
@@ -73,6 +75,7 @@ const ScanQr2 = () => {
   } = useGetDataByCardVerificationQuery(cardVerification || "", {
     skip: !cardVerification,
   });
+  
 
   useFocusEffect(
     useCallback(() => {

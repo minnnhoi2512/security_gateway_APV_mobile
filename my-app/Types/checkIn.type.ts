@@ -48,8 +48,8 @@ export interface CheckInVerWithLP {
 }
 
 export interface ValidCheckIn {
-  CredentialCard: number | null;
-  QrCardVerification: string;
+  CredentialCard: string | null;
+  QRCardVerification: string;
   ImageShoe: any
 }
 

@@ -23,17 +23,25 @@ import { Camera, CameraView, useCameraPermissions } from "expo-camera";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import Overlay from "./OverLay";
-import { CheckInVer02 } from "@/Types/checkIn.type";
+import { CheckInVer02, ValidCheckIn } from "@/Types/checkIn.type";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
+import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
 
 interface ImageData {
   ImageType: "Shoe";
   ImageURL: string | null;
   ImageFile: string | null;
 }
+
+interface CapturedImage {
+  ImageType: string;
+  ImageURL: string;
+  Image: string;
+}
+
 
 const UserDetail = () => {
   const { visitId } = useLocalSearchParams<{ visitId: string }>();
@@ -55,6 +63,7 @@ const UserDetail = () => {
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
   const [autoCapture, setAutoCapture] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
   // RTK QUERY
 
   const {
@@ -71,53 +80,28 @@ const UserDetail = () => {
     QrCardVerification: "",
     Images: [],
   });
-  // https://security-gateway-camera.tools.kozow.com/camera-1/capture-image
-  const fetchCaptureImage = async (): Promise<ImageData | null> => {
-    try {
-      const response = await fetch(
-        "https://security-gateway-camera-1.tools.kozow.com/capture-image-2",
-        {
-          method: "GET",
-        }
-      );
 
-      if (!response.ok) {
-        console.error("HTTP Response Status:", response.status);
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
+  const [validCheckInData, setValidCheckInData] = useState<ValidCheckIn>({
+    CredentialCard: null,
+    QRCardVerification: "",
+    ImageShoe: [],
+  });
 
-      const blob = await response.blob();
-      const fileUri = `${FileSystem.cacheDirectory}captured-image.jpg`;
+  
 
-      const fileSaved = await new Promise<string | null>((resolve, reject) => {
-        const fileReader = new FileReader();
-        fileReader.onloadend = async () => {
-          const base64data = fileReader.result?.toString().split(",")[1];
-          if (base64data) {
-            await FileSystem.writeAsStringAsync(fileUri, base64data, {
-              encoding: FileSystem.EncodingType.Base64,
-            });
-            resolve(fileUri);
-          } else {
-            reject(null);
-          }
-        };
-        fileReader.readAsDataURL(blob);
-      });
-      console.log("file:", fileSaved);
-
-      return {
-        ImageType: "Shoe",
-        ImageURL: null,
-        ImageFile: fileSaved,
-      };
-    } catch (error) {
-      console.error("Failed to fetch capture image:", error);
-      Alert.alert("Error", "Failed to fetch the image. Please try again.");
-      return null;
+  const gateId = Number(selectedGateId) || 0;
+  const {
+    data: cameraGate,
+    isLoading: isLoadingGate,
+    isError: isErrorCamera,
+  } = useGetCameraByGateIdQuery(
+    { gateId },
+    {
+      skip: !gateId,
     }
-  };
+  );
 
+ 
   const {
     data: qrCardData,
     isLoading: isLoadingQr,
@@ -156,6 +140,10 @@ const UserDetail = () => {
         ...prevData,
         CredentialCard: credentialCard,
       }));
+      setValidCheckInData((prevData) => ({
+        ...prevData,
+        CredentialCard: credentialCard,
+      }));
     }
   }, [visitDetail]);
 
@@ -179,59 +167,163 @@ const UserDetail = () => {
     router.back();
   };
 
+  const fetchCaptureImage = async (
+    url: string,
+    imageType: string
+  ): Promise<{ ImageType: string; ImageFile: string | null }> => {
+    try {
+      const response = await fetch(url, { method: "GET" });
+
+      if (!response.ok) {
+        console.error("HTTP Response Status:", response.status);
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const fileUri = `${FileSystem.cacheDirectory}captured-image-${imageType}.jpg`;
+
+      const fileSaved = await new Promise<string | null>((resolve, reject) => {
+        const fileReader = new FileReader();
+        fileReader.onloadend = async () => {
+          const base64data = fileReader.result?.toString().split(",")[1];
+          if (base64data) {
+            await FileSystem.writeAsStringAsync(fileUri, base64data, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            resolve(fileUri);
+          } else {
+            reject(null);
+          }
+        };
+        fileReader.readAsDataURL(blob);
+      });
+
+      return {
+        ImageType: imageType,
+        ImageFile: fileSaved,
+      };
+    } catch (error) {
+      console.error(`Failed to fetch ${imageType} image:`, error);
+      Alert.alert(
+        "Error",
+        `Failed to fetch ${imageType} image. Please try again.`
+      );
+      return { ImageType: imageType, ImageFile: null };
+    }
+  };
+
   useEffect(() => {
+    console.log("Camera Gate Structure:", JSON.stringify(cameraGate, null, 2));
+
     const handleQrDataAndCapture = async () => {
-      if (qrCardData) {
-        console.log("QR Card Data received:", qrCardData);
-        setAutoCapture(true);
+      if (!qrCardData.cardVerification || !cameraGate || !Array.isArray(cameraGate)) {
+        console.log("Missing required data:", {
+          cardVerification: qrCardData.cardVerification,
+          cameraGate: !!cameraGate,
+          isArray: Array.isArray(cameraGate),
+        });
+        return;
+      }
 
-        if (qrCardData.cardImage) {
-          setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
-        }
+      try {
+        console.log("Processing card verification:", qrCardData.cardVerification);
 
-        if (qrCardData.cardVerification) {
-          console.log(
-            "Processing card verification:",
-            qrCardData.cardVerification
+        // Tìm camera trực tiếp từ mảng cameraGate
+        const bodyCamera = cameraGate.find(
+          (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Body"
+        );
+
+        const shoeCamera = cameraGate.find(
+          (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Shoe"
+        );
+
+        console.log("Found cameras:", {
+          bodyCamera: bodyCamera?.cameraURL,
+          shoeCamera: shoeCamera?.cameraURL,
+        });
+
+        const images: CapturedImage[] = [];
+
+        // Chụp ảnh body
+        if (bodyCamera?.cameraURL) {
+          const bodyImageUrl = `${bodyCamera.cameraURL}/capture-image`;
+          console.log("Attempting to capture body image from:", bodyImageUrl);
+
+          const bodyImageData = await fetchCaptureImage(
+            bodyImageUrl,
+            "CheckIn_Body"
           );
 
-          try {
-            const capturedImageData = await fetchCaptureImage();
-            console.log("Captured image data:", capturedImageData);
-
-            if (capturedImageData && capturedImageData.ImageFile) {
-              setCapturedImage([capturedImageData]);
-              const formattedImage = {
-                ImageType: "Shoe",
-                ImageURL: "",
-                Image: capturedImageData.ImageFile,
-              };
-
-              // console.log("Formatted image data:", formattedImage);
-              setCheckInData((prevData) => {
-                const newData = {
-                  ...prevData,
-                  QrCardVerification: qrCardData.cardVerification,
-                  Images: [formattedImage],
-                };
-                console.log("Updated checkInData:", newData);
-                return newData;
-              });
-            } else {
-              console.error("No image data captured");
-            }
-          } catch (error) {
-            console.error("Error in capture process:", error);
-            Alert.alert("Error", "Failed to capture and save image");
+          if (bodyImageData.ImageFile) {
+            images.push({
+              ImageType: "CheckIn_Body",
+              ImageURL: "",
+              Image: bodyImageData.ImageFile,
+            });
+            console.log("Body image captured successfully");
           }
         }
+
+        // Chụp ảnh giày
+        if (shoeCamera?.cameraURL) {
+          const shoeImageUrl = `${shoeCamera.cameraURL}/capture-image`;
+          console.log("Attempting to capture shoe image from:", shoeImageUrl);
+
+          const shoeImageData = await fetchCaptureImage(
+            shoeImageUrl,
+            "CheckIn_Shoe"
+          );
+
+          if (shoeImageData.ImageFile) {
+            images.push({
+              ImageType: "CheckIn_Shoe",
+              ImageURL: "",
+              Image: shoeImageData.ImageFile,
+            });
+            console.log("Shoe image captured successfully");
+          }
+        }
+
+        if (images.length > 0) {
+          console.log("Setting state with captured images:", images.length);
+
+          // Cập nhật checkInData
+          setCheckInData((prevData) => ({
+            ...prevData,
+            QrCardVerification: qrCardData.cardVerification,
+            Images: images,
+          }));
+
+          // Cập nhật validCheckInData
+          const shoeImage = images.find(
+            (img) => img.ImageType === "CheckIn_Shoe"
+          );
+          if (shoeImage?.Image) {
+            setValidCheckInData((prevData) => ({
+              ...prevData,
+              QRCardVerification: qrCardData.cardVerification,
+              ImageBody: shoeImage.Image,
+            }));
+            console.log("ValidCheckInData updated with shoe image");
+          }
+        } else {
+          console.error("No images were captured successfully");
+          Alert.alert("Warning", "Không thể chụp ảnh. Vui lòng thử lại.");
+        }
+      } catch (error) {
+        console.error("Error in capture process:", error);
+        Alert.alert(
+          "Error",
+          "Lỗi khi chụp ảnh. Vui lòng kiểm tra cấu hình camera và thử lại."
+        );
       }
     };
 
     handleQrDataAndCapture().catch((error) => {
-      console.error("Error in handleQrDataAndCapture:", error);
+      // console.error("Error in handleQrDataAndCapture:", error);
     });
-  }, [qrCardData]);
+  }, [qrCardData, cameraGate]);
+  
 
   useEffect(() => {
     if (qrCardData) {
@@ -267,49 +359,32 @@ const UserDetail = () => {
     }
   }, [qrCardData]);
 
-  // const handleBarCodeScanned = async ({ data }: { data: string }) => {
-  //   if (data && !qrLock.current) {
-  //     qrLock.current = true;
-  //     setIsScanning(true);
-  //     console.log("Scanned QR Code Data:", data);
-
-  //     setCheckInData((prevData) => ({
-  //       ...prevData,
-  //       QrCardVerification: data,
-  //     }));
-
-  //     setIsCameraActive(false);
-  //     // setAutoCapture(true);
-  //   }
-  // };
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
     if (!data) {
       Alert.alert("Lỗi", "Không thể đọc được mã QR. Vui lòng thử lại.");
       return;
     }
-  
+
     if (qrLock.current) {
       return;
     }
-  
+
     try {
       qrLock.current = true;
       setIsProcessing(true);
       console.log("Scanned QR Code Data:", data);
-  
+
       // Validate QR code format trước khi xử lý
- 
-  
+
       setCheckInData((prevData) => ({
         ...prevData,
         QrCardVerification: data,
       }));
-  
+
       setIsCameraActive(false);
-  
     } catch (error: any) {
       console.error("Error handling QR Code:", error);
-      
+
       // Hiển thị thông báo lỗi cụ thể
       Alert.alert(
         "Lỗi quét mã",
@@ -321,8 +396,8 @@ const UserDetail = () => {
               qrLock.current = false;
               setIsProcessing(false);
               setIsCameraActive(true);
-            }
-          }
+            },
+          },
         ]
       );
     } finally {
@@ -335,7 +410,7 @@ const UserDetail = () => {
     const validateAndNavigate = async () => {
       if (
         !checkInData.QrCardVerification ||
-        checkInData.Images.length !== 1 ||
+        checkInData.Images.length === 0 ||
         hasNavigated
       ) {
         return;
@@ -345,9 +420,17 @@ const UserDetail = () => {
         if (!hasNavigated) {
           setHasNavigated(true);
           router.push({
-            pathname: "/check-in/CheckInOverall",
+            pathname: "/check-in/ValidCheckInScreen",
             params: {
               dataCheckIn: JSON.stringify(checkInData),
+              dataValid: JSON.stringify({
+                CredentialCard: checkInData.CredentialCard,
+                QRCardVerification: checkInData.QrCardVerification,
+                ImageShoe:
+                  checkInData.Images.find(
+                    (img) => img.ImageType === "CheckIn_Shoe"
+                  )?.Image || null,
+              }),
             },
           });
         }
@@ -376,25 +459,6 @@ const UserDetail = () => {
     );
   }
 
-  // if (isLoadingQr) {
-  //   return (
-  //     <View className="flex-1 justify-center items-center bg-gray-100">
-  //       <Text className="text-xl font-semibold text-backgroundApp">
-  //         Đang tải...
-  //       </Text>
-  //     </View>
-  //   );
-  // }
-
-  // if (isProcessing || isLoadingQr) {
-  //   return (
-  //     <View style={styles.loadingCentered}>
-  //       <ActivityIndicator size="large" color="red" />
-  //       <Text style={styles.loadingText}>Hệ thống đang xử lý QR Code...</Text>
-  //     </View>
-  //   );
-  // }
-
   if (isProcessing || isLoadingQr) {
     return (
       <View className="flex-1 items-center justify-center bg-backgroundApp">
@@ -403,8 +467,6 @@ const UserDetail = () => {
       </View>
     );
   }
-  
-  
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
@@ -464,13 +526,6 @@ const UserDetail = () => {
           </View>
         </GestureHandlerRootView>
       </ScrollView>
-
-      {/* {isProcessing || isLoadingQr && (
-        <View className="absolute inset-0  flex justify-center items-center z-[1000]">
-          <ActivityIndicator size="large" color="red" />
-          <Text className="text-red text-3xl mt-2">Đang xử lý...</Text>
-        </View>
-      )} */}
     </SafeAreaView>
   );
 };
@@ -486,7 +541,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
-    backgroundColor: "transparent",  
+    backgroundColor: "transparent",
   },
   loadingText: {
     color: "red",
@@ -494,4 +549,3 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
 });
-

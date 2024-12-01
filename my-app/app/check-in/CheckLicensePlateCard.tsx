@@ -24,12 +24,17 @@ import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import Overlay from "./OverLay";
-import { CheckInVer02, CheckInVerWithLP } from "@/Types/checkIn.type";
+import {
+  CheckInVer02,
+  CheckInVerWithLP,
+  ValidCheckIn,
+} from "@/Types/checkIn.type";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
 import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 import { uploadToFirebase } from "@/firebase-config";
+import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
 
 interface ImageData {
   ImageType: "Shoe";
@@ -37,7 +42,41 @@ interface ImageData {
   ImageFile: string | null;
 }
 
+interface CapturedImage {
+  ImageType: string;
+  ImageURL: string;
+  Image: string;
+}
+
+interface CameraType {
+  cameraTypeId: number;
+  cameraTypeName: string;
+  description: string;
+}
+
+interface Camera {
+  id: number;
+  cameraURL: string;
+  description: string;
+  status: boolean;
+  gateId: number;
+  cameraType: CameraType;
+}
+
+interface GateCamera {
+  gateId: number;
+  gateName: string;
+  createDate: string;
+  description: string;
+  status: boolean;
+  cameras: Camera[];
+}
+
 const CheckLicensePlateCard = () => {
+  const BASE_URL_CAPTURE =
+    process.env.EXPO_PUBLIC_BASE_URL_CAPTURE ||
+    "https://security-gateway-camera-1.tools.kozow.com/capture-image";
+
   const { card } = useLocalSearchParams();
   console.log("coi co lay dc card k: ", card);
   const router = useRouter();
@@ -63,10 +102,9 @@ const CheckLicensePlateCard = () => {
   }, []);
 
   useEffect(() => {
-  
     if (isPermissionGranted && !isCameraLaunched) {
-      setIsCameraLaunched(true); 
-      takePhoto(); 
+      setIsCameraLaunched(true);
+      takePhoto();
     }
   }, [isPermissionGranted, isCameraLaunched]);
 
@@ -82,51 +120,23 @@ const CheckLicensePlateCard = () => {
     },
   });
 
-  const fetchCaptureImage = async (): Promise<ImageData | null> => {
-    try {
-      const response = await fetch(
-        "https://security-gateway-camera-1.tools.kozow.com/capture-image-2",
-        {
-          method: "GET",
-        }
-      );
+  const [validCheckInData, setValidCheckInData] = useState<ValidCheckIn>({
+    CredentialCard: null,
+    QRCardVerification: "",
+    ImageShoe: [],
+  });
 
-      if (!response.ok) {
-        console.error("HTTP Response Status:", response.status);
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const blob = await response.blob();
-      const fileUri = `${FileSystem.cacheDirectory}captured-image.jpg`;
-
-      const fileSaved = await new Promise<string | null>((resolve, reject) => {
-        const fileReader = new FileReader();
-        fileReader.onloadend = async () => {
-          const base64data = fileReader.result?.toString().split(",")[1];
-          if (base64data) {
-            await FileSystem.writeAsStringAsync(fileUri, base64data, {
-              encoding: FileSystem.EncodingType.Base64,
-            });
-            resolve(fileUri);
-          } else {
-            reject(null);
-          }
-        };
-        fileReader.readAsDataURL(blob);
-      });
-      console.log("file:", fileSaved);
-
-      return {
-        ImageType: "Shoe",
-        ImageURL: null,
-        ImageFile: fileSaved,
-      };
-    } catch (error) {
-      console.error("Failed to fetch capture image:", error);
-      Alert.alert("Error", "Failed to fetch the image. Please try again.");
-      return null;
+  const gateId = Number(selectedGateId) || 0;
+  const {
+    data: cameraGate,
+    isLoading: isLoadingGate,
+    isError: isErrorCamera,
+  } = useGetCameraByGateIdQuery(
+    { gateId },
+    {
+      skip: !gateId,
     }
-  };
+  );
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -150,60 +160,175 @@ const CheckLicensePlateCard = () => {
     fetchUserId();
   }, []);
 
+  const fetchCaptureImage = async (
+    url: string,
+    imageType: string
+  ): Promise<{ ImageType: string; ImageFile: string | null }> => {
+    try {
+      const response = await fetch(url, { method: "GET" });
+
+      if (!response.ok) {
+        console.error("HTTP Response Status:", response.status);
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const fileUri = `${FileSystem.cacheDirectory}captured-image-${imageType}.jpg`;
+
+      const fileSaved = await new Promise<string | null>((resolve, reject) => {
+        const fileReader = new FileReader();
+        fileReader.onloadend = async () => {
+          const base64data = fileReader.result?.toString().split(",")[1];
+          if (base64data) {
+            await FileSystem.writeAsStringAsync(fileUri, base64data, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            resolve(fileUri);
+          } else {
+            reject(null);
+          }
+        };
+        fileReader.readAsDataURL(blob);
+      });
+
+      return {
+        ImageType: imageType,
+        ImageFile: fileSaved,
+      };
+    } catch (error) {
+      console.error(`Failed to fetch ${imageType} image:`, error);
+      Alert.alert(
+        "Error",
+        `Failed to fetch ${imageType} image. Please try again.`
+      );
+      return { ImageType: imageType, ImageFile: null };
+    }
+  };
+
   useEffect(() => {
+    console.log("Camera Gate Structure:", JSON.stringify(cameraGate, null, 2));
+
     const handleQrDataAndCapture = async () => {
-      if (card) {
-        try {
-        
-          setCheckInData(prevData => ({
+      if (!card || !cameraGate || !Array.isArray(cameraGate)) {
+        console.log("Missing required data:", {
+          cardVerification: card,
+          cameraGate: !!cameraGate,
+          isArray: Array.isArray(cameraGate),
+        });
+        return;
+      }
+
+      try {
+        console.log("Processing card verification:", card);
+
+        // Tìm camera trực tiếp từ mảng cameraGate
+        const bodyCamera = cameraGate.find(
+          (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Body"
+        );
+
+        const shoeCamera = cameraGate.find(
+          (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Shoe"
+        );
+
+        console.log("Found cameras:", {
+          bodyCamera: bodyCamera?.cameraURL,
+          shoeCamera: shoeCamera?.cameraURL,
+        });
+
+        const images: CapturedImage[] = [];
+
+        // Chụp ảnh body
+        if (bodyCamera?.cameraURL) {
+          const bodyImageUrl = `${bodyCamera.cameraURL}/capture-image`;
+          console.log("Attempting to capture body image from:", bodyImageUrl);
+
+          const bodyImageData = await fetchCaptureImage(
+            bodyImageUrl,
+            "CheckIn_Body"
+          );
+
+          if (bodyImageData.ImageFile) {
+            images.push({
+              ImageType: "CheckIn_Body",
+              ImageURL: "",
+              Image: bodyImageData.ImageFile,
+            });
+            console.log("Body image captured successfully");
+          }
+        }
+
+        // Chụp ảnh giày
+        if (shoeCamera?.cameraURL) {
+          const shoeImageUrl = `${shoeCamera.cameraURL}/capture-image`;
+          console.log("Attempting to capture shoe image from:", shoeImageUrl);
+
+          const shoeImageData = await fetchCaptureImage(
+            shoeImageUrl,
+            "CheckIn_Shoe"
+          );
+
+          if (shoeImageData.ImageFile) {
+            images.push({
+              ImageType: "CheckIn_Shoe",
+              ImageURL: "",
+              Image: shoeImageData.ImageFile,
+            });
+            console.log("Shoe image captured successfully");
+          }
+        }
+
+        if (images.length > 0) {
+          console.log("Setting state with captured images:", images.length);
+
+          // Cập nhật checkInData
+          setCheckInData((prevData) => ({
             ...prevData,
-            QrCardVerification: card as string
+            QrCardVerification: card as string,
+            Images: images,
           }));
 
-          const capturedImageData = await fetchCaptureImage();
-          console.log("Captured image data:", capturedImageData);
-
-          if (capturedImageData && capturedImageData.ImageFile) {
-            setCapturedImage([capturedImageData]);
-            const formattedImage = {
-              ImageType: "Shoe",
-              ImageURL: "",
-              Image: capturedImageData.ImageFile,
-            };
-
-            setCheckInData((prevData) => ({
+          // Cập nhật validCheckInData
+          const shoeImage = images.find(
+            (img) => img.ImageType === "CheckIn_Shoe"
+          );
+          if (shoeImage?.Image) {
+            setValidCheckInData((prevData) => ({
               ...prevData,
-              Images: [formattedImage],
+              QRCardVerification: card as string,
+              ImageBody: shoeImage.Image,
             }));
-          } else {
-            console.error("No image data captured");
+            console.log("ValidCheckInData updated with shoe image");
           }
-        } catch (error) {
-          console.error("Error in capture process:", error);
-          Alert.alert("Error", "Failed to capture and save image");
+        } else {
+          console.error("No images were captured successfully");
+          Alert.alert("Warning", "Không thể chụp ảnh. Vui lòng thử lại.");
         }
+      } catch (error) {
+        console.error("Error in capture process:", error);
+        Alert.alert(
+          "Error",
+          "Lỗi khi chụp ảnh. Vui lòng kiểm tra cấu hình camera và thử lại."
+        );
       }
     };
 
     handleQrDataAndCapture().catch((error) => {
-      console.error("Error in handleQrDataAndCapture:", error);
+      // console.error("Error in handleQrDataAndCapture:", error);
     });
-  }, [card]);
+  }, [card, cameraGate]);
+
   const uploadImageToAPI = async (imageUri: string) => {
     try {
       setIsProcessing(true);
 
- 
       const formData = new FormData();
 
-    
       formData.append("file", {
         uri: imageUri,
         type: "image/jpeg",
         name: "photo.jpg",
       } as any);
 
- 
       const response = await fetch(
         "https://security-gateway-detect.tools.kozow.com/licensePlate",
         {
@@ -229,13 +354,12 @@ const CheckLicensePlateCard = () => {
             {
               ImageType: "LicensePlate_In",
               ImageURL: "",
-              Image: imageUri,  
+              Image: imageUri,
             },
           ],
         },
       }));
 
- 
       Alert.alert(
         "Kết quả nhận dạng",
         `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
@@ -260,7 +384,6 @@ const CheckLicensePlateCard = () => {
       });
 
       if (!result.canceled && result.assets[0]) {
-         
         await uploadImageToAPI(result.assets[0].uri);
         Alert.alert("Thành công", "Đã xử lý ảnh thành công!");
       }
@@ -274,7 +397,7 @@ const CheckLicensePlateCard = () => {
     const validateAndNavigate = async () => {
       if (
         !checkInData.QrCardVerification ||
-        checkInData.Images.length !== 1 ||
+        checkInData.Images.length === 0 ||
         checkInData.VehicleSession.vehicleImages.length !== 1 ||
         hasNavigated
       ) {
@@ -287,13 +410,21 @@ const CheckLicensePlateCard = () => {
           // Thêm property __type để đánh dấu object có VehicleSession
           const dataToSend = {
             ...checkInData,
-            __type: 'CheckInVerWithLP'
+            __type: "CheckInVerWithLP",
           };
-          
+
           router.push({
-            pathname: "/check-in/CheckInOverall",
+            pathname: "/check-in/ValidCheckInScreen",
             params: {
               dataCheckIn: JSON.stringify(dataToSend),
+              dataValid: JSON.stringify({
+                CredentialCard: checkInData.CredentialCard,
+                QRCardVerification: checkInData.QrCardVerification,
+                ImageShoe:
+                  checkInData.Images.find(
+                    (img) => img.ImageType === "CheckIn_Shoe"
+                  )?.Image || null,
+              }),
             },
           });
         }
@@ -347,7 +478,6 @@ const CheckLicensePlateCard = () => {
 
       <ScrollView>
         <GestureHandlerRootView className="flex-1 p-5">
-      
           <View className="mb-4">
             {/* <TouchableOpacity
               className="flex-row items-center justify-center space-x-2 bg-blue-500 p-4 rounded-lg"
@@ -375,7 +505,6 @@ const CheckLicensePlateCard = () => {
             )} */}
           </View>
 
-          
           {/* <Modal
             visible={!!selectedImage}
             transparent={true}

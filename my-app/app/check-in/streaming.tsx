@@ -11,16 +11,12 @@
 //   STRETCH = "stretch",
 // }
 
-
 // const VideoPlayer = ({
 
 // }) => {
 //   const videoRef = useRef<Video | null>(null);
 
-
 //   const [isVideoReady, setIsVideoReady] = useState(false);
-
-
 
 //   return (
 //     <View style={styles.container}>
@@ -77,11 +73,13 @@
 
 // export default VideoPlayer;
 
-
 import React, { useRef, useState } from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Video } from "expo-av";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store/store";
 
 export enum ResizeMode {
   CONTAIN = "contain",
@@ -94,10 +92,23 @@ const VideoPlayer = () => {
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
+  const selectedGateId = useSelector(
+    (state: RootState) => state.gate.selectedGateId
+  );
+  const gateId = Number(selectedGateId) || 0;
+  const { data, isLoading, isError } = useGetCameraByGateIdQuery(
+    { gateId },
+    {
+      skip: !gateId,
+    }
+  );
+
+  // console.log("data camera co kh: ", data);
+  
 
   const togglePlayPause = async () => {
     if (!videoRef.current) return;
-    
+
     if (isPlaying) {
       await videoRef.current.pauseAsync();
     } else {
@@ -115,7 +126,6 @@ const VideoPlayer = () => {
   return (
     <View className="flex-1 bg-gray-100 p-4 justify-center">
       <View className="bg-white rounded-xl shadow-lg overflow-hidden">
- 
         <View className="bg-blue-600 p-4 flex-row items-center justify-between">
           <View className="flex-row items-center space-x-2">
             <MaterialIcons name="videocam" size={24} color="white" />
@@ -128,7 +138,6 @@ const VideoPlayer = () => {
           </Text>
         </View>
 
-   
         <View className="relative">
           <Video
             ref={videoRef}
@@ -148,14 +157,13 @@ const VideoPlayer = () => {
             }}
           />
 
-    
           {!isVideoReady && (
             <View className="absolute inset-0 bg-black/50 items-center justify-center">
               <ActivityIndicator size="large" color="#3B82F6" />
               <Text className="text-white mt-2">Loading stream...</Text>
             </View>
           )}
- 
+
           <View className="absolute bottom-0 left-0 right-0 p-4 bg-black/30 flex-row justify-between items-center">
             <TouchableOpacity
               onPress={togglePlayPause}
@@ -181,21 +189,21 @@ const VideoPlayer = () => {
           </View>
         </View>
 
- 
         <View className="p-4 flex-row justify-between items-center bg-gray-50">
           <View className="flex-row items-center space-x-2">
-            <View className={`w-2 h-2 rounded-full ${isVideoReady ? 'bg-green-500' : 'bg-red-500'}`} />
+            <View
+              className={`w-2 h-2 rounded-full ${
+                isVideoReady ? "bg-green-500" : "bg-red-500"
+              }`}
+            />
             <Text className="text-sm text-gray-600">
               {isVideoReady ? "Đã kết nối" : "Đang kết nối..."}
             </Text>
           </View>
-          <Text className="text-sm text-gray-500">
-            Camera chụp ảnh khách
-          </Text>
+          <Text className="text-sm text-gray-500">Camera chụp ảnh khách</Text>
         </View>
       </View>
 
- 
       <View className="mt-4 p-4 bg-white rounded-xl shadow">
         <Text className="text-gray-700 font-medium mb-2">Thông tin</Text>
         <View className="space-y-2">

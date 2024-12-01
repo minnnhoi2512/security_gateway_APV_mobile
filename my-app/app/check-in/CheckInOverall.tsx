@@ -8,6 +8,7 @@ import {
   Alert,
   Pressable,
   StyleSheet,
+  Modal,
 } from "react-native";
 import { EvilIcons, MaterialIcons } from "@expo/vector-icons";
 import { ActivityIndicator } from "react-native";
@@ -23,6 +24,7 @@ import {
 } from "@/redux/services/checkin.service";
 import { uploadToFirebase } from "@/firebase-config";
 import { useToast } from "@/components/Toast/ToastContext";
+import ImageViewer from "react-native-image-zoom-viewer";
 
 interface Visitor {
   visitorId: number;
@@ -58,6 +60,16 @@ interface ResultData {
   visitor: Visitor;
   visit: Visit;
   cardRes: Card;
+}
+
+interface ImageSectionDropdownProps {
+  title: string;
+  icon: React.ReactNode;
+  imageUris: string[];
+}
+
+interface ImageSectionProps {
+  visitorImage: string;
 }
 
 const CheckInOverall = () => {
@@ -137,8 +149,10 @@ const CheckInOverall = () => {
         if (
           !checkInData ||
           !checkInData.Images ||
-          checkInData.Images.length === 0 ||
-          !checkInData.Images[0]
+          checkInData.Images.length < 1
+          // ||
+          // !checkInData.Images[0] ||
+          // !checkInData.Images[1]
         ) {
           throw new Error("Missing image data for check-in.");
         }
@@ -155,17 +169,29 @@ const CheckInOverall = () => {
         formData.append("GateInId", checkInData.GateInId.toString());
         formData.append("QrCardVerification", checkInData.QrCardVerification);
 
-        const shoeImage = checkInData.Images[0];
+        const shoeImage = checkInData.Images[1];
         const { downloadUrl: shoeImageUrl } = await uploadToFirebase(
           shoeImage.Image,
           `shoe_${Date.now()}.jpg`
         );
-
-        formData.append("Images[0].ImageType", shoeImage.ImageType);
-        formData.append("Images[0].ImageURL", shoeImageUrl.replace(/"/g, ""));
-        formData.append("Images[0].Image", {
+        formData.append("Images[1].ImageType", shoeImage.ImageType);
+        formData.append("Images[1].ImageURL", shoeImageUrl.replace(/"/g, ""));
+        formData.append("Images[1].Image", {
           uri: shoeImage.Image,
           name: shoeImage.Image.split("/").pop() || "default.jpg",
+          type: "image/jpeg",
+        } as any);
+
+        const bodyImage = checkInData.Images[0];
+        const { downloadUrl: bodyImageUrl } = await uploadToFirebase(
+          bodyImage.Image,
+          `body_${Date.now()}.jpg`
+        );
+        formData.append("Images[0].ImageType", bodyImage.ImageType);
+        formData.append("Images[0].ImageURL", bodyImageUrl.replace(/"/g, ""));
+        formData.append("Images[0].Image", {
+          uri: bodyImage.Image,
+          name: bodyImage.Image.split("/").pop() || "default.jpg",
           type: "image/jpeg",
         } as any);
 
@@ -226,6 +252,9 @@ const CheckInOverall = () => {
 
     performCheckIn();
   }, []);
+
+  console.log("chedck da: ", checkInData);
+
   const handleGoBack = () => {
     router.back();
   };
@@ -296,6 +325,143 @@ const CheckInOverall = () => {
     );
   };
 
+  const ImageSectionDropdown: React.FC<ImageSectionDropdownProps> = ({
+    title,
+    icon,
+    imageUris,
+  }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [isImageViewerVisible, setIsImageViewerVisible] = useState(false);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+    if (!imageUris || imageUris.length === 0) return null;
+
+    return (
+      <View className="bg-white rounded-2xl mb-4 shadow-sm">
+        <TouchableOpacity
+          onPress={() => setIsOpen((prev) => !prev)}
+          className="p-4 flex-row items-center"
+        >
+          <View className="w-10 h-10 bg-blue-100 rounded-full items-center justify-center mr-3">
+            {icon}
+          </View>
+          <Text className="text-lg font-semibold text-black">{title}</Text>
+        </TouchableOpacity>
+
+        {isOpen && (
+          <View className="p-4">
+            {imageUris.map((uri, index) => {
+              // Tạo unique key bằng cách kết hợp index và uri
+              const uniqueKey = `image-${index}-${uri.split("/").pop()}`;
+
+              return (
+                <TouchableOpacity
+                  key={uniqueKey}
+                  onPress={() => {
+                    setSelectedImageIndex(index);
+                    setIsImageViewerVisible(true);
+                  }}
+                >
+                  <Image
+                    source={{ uri }}
+                    style={{
+                      width: "100%",
+                      height: 200,
+                      borderRadius: 10,
+                      marginVertical: 10,
+                    }}
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
+              );
+            })}
+
+            <Modal visible={isImageViewerVisible} transparent={true}>
+              <ImageViewer
+                imageUrls={imageUris.map((uri, index) => ({
+                  url: uri,
+                  props: {
+                    // Thêm key cho mỗi image trong ImageViewer
+                    key: `viewer-image-${index}-${uri.split("/").pop()}`,
+                  },
+                }))}
+                enableSwipeDown
+                index={selectedImageIndex}
+                onSwipeDown={() => setIsImageViewerVisible(false)}
+                onClick={() => setIsImageViewerVisible(false)}
+                backgroundColor="rgba(0,0,0,0.9)"
+              />
+            </Modal>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const ImageSection: React.FC<ImageSectionProps> = ({ visitorImage }) => {
+    const [isImageViewVisible, setIsImageViewVisible] = useState(false);
+
+    // Cấu hình ảnh cho ImageViewer
+    const images = [
+      {
+        url: "",
+        props: {
+          source: {
+            uri: `data:image/png;base64,${visitorImage}`,
+          },
+        },
+      },
+    ];
+
+    return (
+      <View className="mt-4 items-center">
+        <Text className="text-gray-500 text-sm mb-2">QR Code</Text>
+
+        <TouchableOpacity
+          onPress={() => setIsImageViewVisible(true)}
+          className="w-32 h-32"
+        >
+          <Image
+            source={{
+              uri: `data:image/png;base64,${visitorImage}`,
+            }}
+            className="w-32 h-32"
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+
+        <Modal
+          visible={isImageViewVisible}
+          transparent={true}
+          onRequestClose={() => setIsImageViewVisible(false)}
+        >
+          <ImageViewer
+            imageUrls={images}
+            enableSwipeDown={true}
+            onSwipeDown={() => setIsImageViewVisible(false)}
+            onCancel={() => setIsImageViewVisible(false)}
+            // renderIndicator={() => null}
+            backgroundColor="rgba(0, 0, 0, 0.9)"
+            renderHeader={() => (
+              <TouchableOpacity
+                onPress={() => setIsImageViewVisible(false)}
+                style={{
+                  position: "absolute",
+                  top: 40,
+                  right: 20,
+                  zIndex: 100,
+                  padding: 10,
+                }}
+              >
+                <Text style={{ color: "white", fontSize: 16 }}>✕</Text>
+              </TouchableOpacity>
+            )}
+          />
+        </Modal>
+      </View>
+    );
+  };
+
   if (checkInStatus === "pending") {
     return (
       <View className="flex-1 items-center justify-center bg-backgroundApp">
@@ -337,7 +503,7 @@ const CheckInOverall = () => {
       </View>
       <View className="flex-1 mt-[5%]">
         <View className="p-4">
-          <Section title="Thông tin cơ bản">
+          {/* <Section title="Thông tin cơ bản">
             <View className="flex-row items-center mb-4">
               <Text className="text-gray-600 text-lg">
                 Hôm nay, {resultData.expectedStartHour}
@@ -362,16 +528,72 @@ const CheckInOverall = () => {
               label="CMND/CCCD"
               value={resultData.visitor.credentialsCard}
             />
+          </Section> */}
+          <Section title="Thông tin cơ bản">
+            <View className="flex-row items-center mb-4">
+              <Text className="text-gray-600 text-lg">
+                Hôm nay, {resultData?.expectedStartHour}
+              </Text>
+            </View>
+            <InfoRow
+              label="Giờ bắt đầu"
+              value={resultData?.expectedStartHour}
+            />
+            <InfoRow label="Giờ kết thúc" value={resultData?.expectedEndHour} />
+            <InfoRow
+              label="Tên cuộc thăm"
+              value={resultData?.visit.visitName}
+            />
+            <InfoRow
+              label="Tên khách"
+              value={resultData?.visitor.visitorName}
+            />
           </Section>
+          <SectionDropDown
+            title="Thông tin chuyến thăm"
+            icon={<View className="w-6 h-6 bg-orange-500 rounded-full" />}
+          >
+            {/* <InfoRow
+              label="Thời gian dự kiến"
+              value={resultData?.expectedStartHour - resultData?.expectedEndHour}
+            /> */}
+            {/* <InfoRow
+              label="Tên chuyến thăm"
+              value={response?.expectedStartHour - response?.expectedEndHour}
+            /> */}
+
+            <InfoRow label="Số lượng" value={resultData?.visit.visitQuantity} />
+            {/* <InfoRow label="Loại chuyến thăm" value={response?.visit.visitQuantity} /> */}
+          </SectionDropDown>
+          <SectionDropDown
+            title="Thông tin khách"
+            icon={<View className="w-6 h-6 bg-blue-500 rounded-full" />}
+          >
+            <InfoRow
+              label="Tên khách"
+              value={resultData?.visitor.visitorName}
+            />
+            <InfoRow label="Công ty" value={resultData?.visitor.companyName} />
+            <InfoRow
+              label="Số điện thoại"
+              value={resultData?.visitor.phoneNumber}
+            />
+            <InfoRow
+              label="CMND/CCCD"
+              value={resultData?.visitor.credentialsCard}
+            />
+
+            {/* {resultData?.visitor.visitorCredentialFrontImage && (
+              <ImageSection
+                visitorImage={resultData?.visitor.visitorCredentialFrontImage}
+              />
+            )} */}
+          </SectionDropDown>
           <SectionDropDown
             title="Thông tin thẻ"
             icon={<View className="w-6 h-6 bg-green-500 rounded-full" />}
           >
-            <InfoRow
-              label="Mã xác thực"
-              value={resultData.cardRes.cardVerification}
-            />
-
+  
             {resultData.cardRes.cardImage && (
               <View className="mt-4 items-center">
                 <Text className="text-gray-500 text-sm mb-2">QR Code</Text>
@@ -386,7 +608,7 @@ const CheckInOverall = () => {
             )}
           </SectionDropDown>
 
-          <SectionDropDown
+          {/* <SectionDropDown
             title="Hình ảnh giày"
             icon={<View className="w-6 h-6 bg-yellow-500 rounded-full" />}
           >
@@ -402,12 +624,20 @@ const CheckInOverall = () => {
                 resizeMode="contain"
               />
             )}
-          </SectionDropDown>
+          </SectionDropDown> */}
+          <ImageSectionDropdown
+            title="Hình ảnh giày và body"
+            icon={<View className="w-6 h-6 bg-yellow-500 rounded-full" />}
+            imageUris={[
+              checkInData?.Images?.[0]?.Image, 
+              checkInData?.Images?.[1]?.Image,  
+            ].filter(Boolean)} 
+          />
 
           {checkInData.VehicleSession?.vehicleImages?.[0]?.Image && (
             <SectionDropDown
               title="Hình ảnh biển số xe"
-              icon={<View className="w-6 h-6 bg-blue-500 rounded-full" />}
+              icon={<View className="w-6 h-6 bg-pink-500 rounded-full" />}
             >
               <View>
                 {checkInData.VehicleSession.LicensePlate && (
