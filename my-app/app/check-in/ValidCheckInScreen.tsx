@@ -412,14 +412,17 @@ const ValidCheckInScreen = () => {
         <View className="p-4">
           <Section title="Thông tin cơ bản">
             <View className="flex-row items-center mb-4">
-              <Text className="text-gray-600 text-lg">
-                Hôm nay, {response?.expectedStartHour}
-              </Text>
+            
             </View>
             <InfoRow label="Giờ bắt đầu" value={response?.expectedStartHour} />
             <InfoRow label="Giờ kết thúc" value={response?.expectedEndHour} />
             <InfoRow label="Tên cuộc thăm" value={response?.visit.visitName} />
             <InfoRow label="Tên khách" value={response?.visitor.visitorName} />
+            {response?.visitor.visitorCredentialFrontImage && (
+              <ImageSection
+                visitorImage={response?.visitor.visitorCredentialFrontImage}
+              />
+            )}
 
             {/* <InfoRow label="Số lượng" value={response?.visit.visitQuantity} /> */}
             {/* <InfoRow
