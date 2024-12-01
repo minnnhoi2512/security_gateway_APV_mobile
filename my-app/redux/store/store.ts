@@ -14,6 +14,8 @@ import { userApi } from "../services/user.service";
 import { pythonAPI } from "../services/pythonApi.service";
 import { visitorSessionApi } from "../services/visitorSession.service";
 import { checkOutApi } from "../services/checkout.service";
+import hubConnectionReducer from "../slices/hubConnection.slice";
+import notificationReducer from "../slices/notification.slice";
 
 export const store = configureStore({
   reducer: {
@@ -28,7 +30,8 @@ export const store = configureStore({
     [visitorApi.reducerPath]: visitorApi.reducer,
     [userApi.reducerPath]: userApi.reducer,
     [pythonAPI.reducerPath]: pythonAPI.reducer,
- 
+    hubConnection : hubConnectionReducer,
+    notification : notificationReducer,
     auth: authSlice,
     visitStaff : visitStaffCreateSlice
   },
