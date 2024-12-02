@@ -28,7 +28,7 @@ export const qrcodeApi = createApi({
       query: (file) => {
         const formData = createFormData(file);
         return {
-          url: 'QRCode/ShoeDetect',
+          url: 'Card/ShoeDetect',
           method: 'POST',
           body: formData,
           headers: {
@@ -61,7 +61,7 @@ function createFormData(file: ImageFile): FormData {
   const fileUri = Platform.OS === 'ios' ? file.uri.replace('file://', '') : file.uri;
 console.log(`Final file URI being sent: ${fileUri}`);
 
-  formData.append('image', {
+  formData.append('Image', {
     uri: fileUri,
     type: file.type || 'image/jpeg',
     name: file.name || 'image.jpg',

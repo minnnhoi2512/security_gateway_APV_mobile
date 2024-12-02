@@ -87,11 +87,11 @@ const Checkout = () => {
   });
   useEffect(() => {
     // setCredentialCard('CREDENTIAL_CARD');
-    console.log("thẻ:", cameraType);
-    console.log("CredentialCard:", creadentialCard);
-    console.log("qrCardVerifi:", qrCardVerified);
+    // console.log("thẻ:", cameraType);
+    // console.log("CredentialCard:", creadentialCard);
+    // console.log("qrCardVerifi:", qrCardVerified);
   }, [cameraType, creadentialCard, qrCardVerified]);
-  console.log("Check reder");
+  // console.log("Check reder");
   const handleBarCodeScanned = useCallback(
     async ({ data }: { data: string }) => {
       if (isQrCardSet.current) return;
@@ -188,22 +188,57 @@ const Checkout = () => {
     },
     []
   );
+  const qrLock = useRef(false);
+  // const handleLicensePlateScanned2 = useCallback(
+  //   async ({ data }: { data: string }) => {
+  //     if (data && !qrLock.current) {
+  //       setIsCameraActive(false);
+
+  //       router.push({
+  //         pathname: "/check-out/CheckOutNormal",
+  //         params: {
+  //           qrString: data,
+  //         },
+  //       });
+  //     }
+  //   },
+  //   []
+  // );
 
   const handleLicensePlateScanned2 = useCallback(
     async ({ data }: { data: string }) => {
-      if (data) {
-        setIsCameraActive(false);
+      if (data && !qrLock.current) {
+        qrLock.current = true;
+        try {
+          setIsCameraActive(false);
 
-        router.push({
-          pathname: "/check-out/CheckOutNormal",
-          params: {
-            data: data,
-          },
-        });
+          console.log("Scanned QR Code:", data);
+
+          router.push({
+            pathname: "/check-out/CheckOutNormal",
+            params: {
+              qrString: data,
+            },
+          });
+        } catch (error) {
+          console.error("Error handling QR Code:", error);
+        }
       }
     },
     []
   );
+
+  // const handleBarCodeScanned = ({ data }: { data: string }) => {
+  //   if (data && !qrLock.current) {
+  //     qrLock.current = true;
+  //     setCheckInData((prevData) => ({
+  //       ...prevData,
+  //       QrCardVerification: data,
+  //     }));
+  //     setIsProcessing(true);
+  //     console.log("Scanned QR Code Data:", data);
+  //   }
+  // };
 
   const handleBarCodeScannedCCCD = useCallback(({ data }: { data: string }) => {
     if (data && data.includes("|")) {

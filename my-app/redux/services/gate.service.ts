@@ -21,7 +21,7 @@ export const gateApi = createApi({
       query: () => "Gate",
     }),
 
-    getCameraByGateId: builder.query<GateCamera, { gateId: number }>({
+    getCameraByGateId: builder.query<any, { gateId: number }>({
       query: ({ gateId }) => `Gate/Camera/${gateId}`,
     }),
   }),

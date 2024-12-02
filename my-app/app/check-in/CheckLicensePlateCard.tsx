@@ -360,11 +360,11 @@ const CheckLicensePlateCard = () => {
         },
       }));
 
-      Alert.alert(
-        "Kết quả nhận dạng",
-        `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
-        [{ text: "OK" }]
-      );
+      // Alert.alert(
+      //   "Kết quả nhận dạng",
+      //   `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
+      //   [{ text: "OK" }]
+      // );
     } catch (error) {
       console.error("Error processing image:", error);
       Alert.alert("Lỗi", "Không thể xử lý ảnh. Vui lòng thử lại.");

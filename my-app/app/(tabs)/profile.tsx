@@ -5,6 +5,8 @@ import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useGetUserProfileQuery } from "@/redux/services/user.service";
+import { useDispatch, useSelector } from "react-redux";
+import SignalR from "../../hooks/signalR";
 interface MenuItem {
   icon: React.ComponentProps<typeof Feather>["name"];
   title: string;
@@ -14,6 +16,10 @@ interface MenuItem {
 const Profile: React.FC = () => {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
+  const connection = useSelector<any>(
+    (s) => s.hubConnection.connection
+  ) as React.MutableRefObject<signalR.HubConnection | null>;
+  const dispatch = useDispatch();
   const {
     data: profile,
     isLoading,
@@ -127,6 +133,9 @@ const Profile: React.FC = () => {
         <TouchableOpacity
           onPress={async () => {
             try {
+              if (connection) {
+                SignalR.DisconnectSignalR(connection, dispatch);
+              }
               await AsyncStorage.removeItem("userToken");
               await AsyncStorage.removeItem("userId");
               await AsyncStorage.removeItem("userRole");
