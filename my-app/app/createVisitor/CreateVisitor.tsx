@@ -14,7 +14,7 @@ import { Camera, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCreateVisitorMutation } from "@/redux/services/visitor.service";
-import { Visitor } from "@/Types/visitor.type";
+
 import { MaterialIcons } from "@expo/vector-icons";
 interface ScanData {
   id: string;
@@ -41,13 +41,15 @@ const CreateVisitor = () => {
   };
   const userData: ScanData | null = data ? parseQRData(data) : null;
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoUriBack, setPhotoUriBack] = useState<string | null>(null);
   const [visitor, setVisitor] = useState<Visitor>({
-    VisitorName: userData?.name || "",
-    CompanyName: "",
-    PhoneNumber: "",
-    CredentialsCard: userData?.id || "",
-    CredentialCardTypeId: 1,
-    VisitorCredentialImageFromRequest: null,
+    visitorName: userData?.name || "",
+    companyName: "",
+    phoneNumber: "",
+    credentialsCard: userData?.id || "",
+    credentialCardTypeId: 1,
+    visitorCredentialFrontImageFromRequest: null,
+    visitorCredentialBackImageFromRequest: null,
   });
   useEffect(() => {
     if (permission?.granted) {
@@ -82,8 +84,32 @@ const CreateVisitor = () => {
           type: "image/jpeg",
           name: fileName,
         };
-        handleInputChange("VisitorCredentialImageFromRequest", file);
+        handleInputChange("visitorCredentialFrontImageFromRequest", file);
         setPhotoUri(uri);
+      }
+    } catch (error) {
+      console.error("Error taking photo:", JSON.stringify(error, null, 2));
+      Alert.alert("Error", "Failed to take photo. Please try again.");
+    }
+  };
+
+  const takePhotoBack = async () => {
+    try {
+      const cameraResp = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+      });
+      if (!cameraResp.canceled && cameraResp.assets[0]) {
+        const { uri } = cameraResp.assets[0];
+        const fileName = uri.split("/").pop();
+        const file = {
+          uri,
+          type: "image/jpeg",
+          name: fileName,
+        };
+        handleInputChange("visitorCredentialBackImageFromRequest", file);
+        setPhotoUriBack(uri);
       }
     } catch (error) {
       console.error("Error taking photo:", JSON.stringify(error, null, 2));
@@ -93,25 +119,33 @@ const CreateVisitor = () => {
   // Validation function
   const validateForm = () => {
     const {
-      VisitorName,
-      CompanyName,
-      PhoneNumber,
-      VisitorCredentialImageFromRequest,
+      visitorName,
+      companyName,
+      phoneNumber,
+      visitorCredentialFrontImageFromRequest,
+      visitorCredentialBackImageFromRequest
     } = visitor;
-    if (!VisitorName) {
+    if (!visitorName) {
       Alert.alert("Validation Error", "Please provide the visitor's name.");
       return false;
     }
-    if (!PhoneNumber) {
+    if (!phoneNumber) {
       Alert.alert("Validation Error", "Please provide a phone number.");
       return false;
     }
-    if (!CompanyName) {
+    if (!companyName) {
       Alert.alert("Validation Error", "Please provide a company name.");
       return false;
     }
-    if (!VisitorCredentialImageFromRequest) {
+    if (!visitorCredentialFrontImageFromRequest) {
       Alert.alert("Validation Error", "Please take a photo of the ID card.");
+      return false;
+    }
+    if (!visitorCredentialBackImageFromRequest) {
+      Alert.alert(
+        "Validation Error",
+        "Please take a photo of the back of the ID card."
+      );
       return false;
     }
     return true;
@@ -121,20 +155,27 @@ const CreateVisitor = () => {
       return; // If validation fails, exit the function
     }
     const formData = new FormData();
-    formData.append("VisitorName", visitor.VisitorName);
-    formData.append("CompanyName", visitor.CompanyName);
-    formData.append("PhoneNumber", visitor.PhoneNumber);
-    formData.append("CredentialsCard", visitor.CredentialsCard);
+    formData.append("visitorName", visitor.visitorName);
+    formData.append("companyName", visitor.companyName);
+    formData.append("phoneNumber", visitor.phoneNumber);
+    formData.append("credentialsCard", visitor.credentialsCard);
     formData.append(
-      "CredentialCardTypeId",
-      visitor.CredentialCardTypeId.toString()
+      "credentialCardTypeId",
+      visitor.credentialCardTypeId.toString()
     );
-    if (visitor.VisitorCredentialImageFromRequest) {
+    if (visitor.visitorCredentialFrontImageFromRequest) {
       formData.append(
-        "VisitorCredentialImageFromRequest",
-        visitor.VisitorCredentialImageFromRequest
+        "visitorCredentialFrontImageFromRequest",
+        visitor.visitorCredentialFrontImageFromRequest
       );
     }
+    if (visitor.visitorCredentialBackImageFromRequest) {
+      formData.append(
+        "visitorCredentialBackImageFromRequest",
+        visitor.visitorCredentialBackImageFromRequest
+      );
+    }
+
     try {
       const response = await createVisitor(formData).unwrap();
       Alert.alert("Thành công", "Tạo khách vãng lai thành công", [
@@ -151,7 +192,7 @@ const CreateVisitor = () => {
       //   JSON.stringify(error, null, 2)
       // );
       console.log("tạo visitor kh đc: ", error);
-      
+
       const errors = error?.data?.errors;
       if (errors) {
         let errorMessage =
@@ -168,7 +209,7 @@ const CreateVisitor = () => {
   const handleGoBack = () => {
     router.back();
   };
-console.log("Create visitor data: ", visitor);
+  console.log("Create visitor data: ", visitor);
   return (
     <ScrollView className="flex-1 bg-gradient-to-b from-blue-50 to-white mt-[53px]">
       <View>
@@ -205,8 +246,8 @@ console.log("Create visitor data: ", visitor);
             </Text>
             <TextInput
               className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-backgroundApp"
-              value={visitor.PhoneNumber}
-              onChangeText={(text) => handleInputChange("PhoneNumber", text)}
+              value={visitor.phoneNumber}
+              onChangeText={(text) => handleInputChange("phoneNumber", text)}
               placeholder="Nhập số điện thoại"
             />
           </View>
@@ -216,8 +257,8 @@ console.log("Create visitor data: ", visitor);
             </Text>
             <TextInput
               className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-backgroundApp"
-              value={visitor.CompanyName}
-              onChangeText={(text) => handleInputChange("CompanyName", text)}
+              value={visitor.companyName}
+              onChangeText={(text) => handleInputChange("companyName", text)}
               placeholder="Nhập tên công ty"
             />
           </View>
@@ -226,13 +267,34 @@ console.log("Create visitor data: ", visitor);
               onPress={takePhoto}
               className="bg-buttonGreen p-3 rounded-lg"
             >
-              <Text className="text-white text-center">Chụp ảnh CCCD</Text>
+              <Text className="text-white text-center">
+                Chụp ảnh mặt trước CCCD
+              </Text>
             </TouchableOpacity>
           </View>
           {photoUri && (
             <View className="mb-4">
               <Image
                 source={{ uri: photoUri }}
+                style={{ width: 290, height: 220 }}
+                className="rounded-lg"
+              />
+            </View>
+          )}
+          <View className="mb-4">
+            <TouchableOpacity
+              onPress={takePhotoBack}
+              className="bg-buttonGreen p-3 rounded-lg"
+            >
+              <Text className="text-white text-center">
+                Chụp ảnh mặt sau CCCD
+              </Text>
+            </TouchableOpacity>
+          </View>
+          {photoUriBack && (
+            <View className="mb-4">
+              <Image
+                source={{ uri: photoUriBack }}
                 style={{ width: 290, height: 220 }}
                 className="rounded-lg"
               />

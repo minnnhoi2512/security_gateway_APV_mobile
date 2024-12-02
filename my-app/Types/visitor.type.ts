@@ -1,10 +1,9 @@
-export interface Visitor {
-    VisitorName: string;
-    CompanyName: string;
-    PhoneNumber: string;
-    CredentialsCard: string;
-    CredentialCardTypeId: number;
-    VisitorCredentialImageFromRequest: any;
-    
-  }
-  
+interface Visitor {
+  visitorName: string;
+  companyName: string;
+  phoneNumber: string;
+  credentialsCard: string;
+  credentialCardTypeId: number;
+  visitorCredentialFrontImageFromRequest?: string | null; 
+  visitorCredentialBackImageFromRequest?: string | null;  
+}
