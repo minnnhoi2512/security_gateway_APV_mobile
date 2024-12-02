@@ -87,11 +87,11 @@ const Checkout = () => {
   });
   useEffect(() => {
     // setCredentialCard('CREDENTIAL_CARD');
-    console.log("thẻ:", cameraType);
-    console.log("CredentialCard:", creadentialCard);
-    console.log("qrCardVerifi:", qrCardVerified);
+    // console.log("thẻ:", cameraType);
+    // console.log("CredentialCard:", creadentialCard);
+    // console.log("qrCardVerifi:", qrCardVerified);
   }, [cameraType, creadentialCard, qrCardVerified]);
-  console.log("Check reder");
+  // console.log("Check reder");
   const handleBarCodeScanned = useCallback(
     async ({ data }: { data: string }) => {
       if (isQrCardSet.current) return;
@@ -197,7 +197,7 @@ const Checkout = () => {
         router.push({
           pathname: "/check-out/CheckOutNormal",
           params: {
-            data: data,
+            qrString: data,
           },
         });
       }
