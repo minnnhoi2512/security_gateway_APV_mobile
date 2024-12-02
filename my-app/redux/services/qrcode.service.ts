@@ -59,7 +59,7 @@ function createFormData(file: ImageFile): FormData {
   const formData = new FormData();
   // Remove 'file://' prefix on iOS, keep it for Android
   const fileUri = Platform.OS === 'ios' ? file.uri.replace('file://', '') : file.uri;
-console.log(`Final file URI being sent: ${fileUri}`);
+// console.log(`Final file URI being sent: ${fileUri}`);
 
   formData.append('Image', {
     uri: fileUri,

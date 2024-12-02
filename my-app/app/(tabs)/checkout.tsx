@@ -28,6 +28,7 @@ const Checkout = () => {
   const [activeCamera, setActiveCamera] = useState<"QR" | "LICENSE" | "CCCD">(
     "QR"
   );
+
   const [creadentialCard, setCredentialCard] = useState<string | null>(null);
   const [visitorSessionData, setVisitorSessionData] = useState([]);
   const [qrCardVerified, setQrCardVerified] = useState<string | null>(null);
@@ -85,13 +86,13 @@ const Checkout = () => {
   } = useGetVissitorSessionByCardverifiedQuery(qrCardVerified as string, {
     skip: qrCardVerified === null,
   });
+  const [hasScanned, setHasScanned] = useState(false);
+  const qrLock = useRef(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   useEffect(() => {
-    // setCredentialCard('CREDENTIAL_CARD');
-    // console.log("thẻ:", cameraType);
-    // console.log("CredentialCard:", creadentialCard);
-    // console.log("qrCardVerifi:", qrCardVerified);
-  }, [cameraType, creadentialCard, qrCardVerified]);
-  // console.log("Check reder");
+    console.log("toi bi loop");
+  }, []);
+
   const handleBarCodeScanned = useCallback(
     async ({ data }: { data: string }) => {
       if (isQrCardSet.current) return;
@@ -133,6 +134,7 @@ const Checkout = () => {
       !isFetchinByCredentialCard &&
       !isLoadingByCredentialCard
     ) {
+      // qrLock.current = false;
       if (dataByCredentialCard && !errorByCredentialCard) {
         // Nếu có dữ liệu trả về và không có lỗi
         router.push({
@@ -158,6 +160,7 @@ const Checkout = () => {
       !isFetchingByCardVerifided &&
       !isLoadingByCardVerifided
     ) {
+      // qrLock.current = false;
       if (dataByCardVerifided && !errorByCardVerifided) {
         router.push({
           pathname: "/check-out/CheckOutCard",
@@ -191,18 +194,25 @@ const Checkout = () => {
 
   const handleLicensePlateScanned2 = useCallback(
     async ({ data }: { data: string }) => {
-      if (data) {
-        setIsCameraActive(false);
+      if (data && !hasScanned) {
+        setHasScanned(true);
+        try {
+          setIsCameraActive(false);
 
-        router.push({
-          pathname: "/check-out/CheckOutNormal",
-          params: {
-            qrString: data,
-          },
-        });
+          // console.log("toi bi loop");
+
+          router.navigate({
+            pathname: "/check-out/CheckOutNormal",
+            params: {
+              qrString: data,
+            },
+          });
+        } catch (error) {
+          console.error("Error handling QR Code:", error);
+        }
       }
     },
-    []
+    [hasScanned, router]
   );
 
   const handleBarCodeScannedCCCD = useCallback(({ data }: { data: string }) => {
@@ -301,6 +311,7 @@ const Checkout = () => {
                     <CameraView
                       className="flex-1 w-full h-full"
                       onBarcodeScanned={handleLicensePlateScanned2}
+                      
                     />
                   );
                 case "CCCD":
