@@ -12,24 +12,17 @@ import {
 import React, { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSelector } from "react-redux";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
-
-import { CheckOutVerWithLP } from "@/Types/checkout.type";
 import { RootState } from "@/redux/store/store";
-import {
-  EvilIcons,
-  FontAwesome5,
-  Ionicons,
-  MaterialIcons,
-} from "@expo/vector-icons";
+import { EvilIcons, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import {
-  useCheckOutWithCardMutation,
-  useCheckOutWithCredentialCardMutation,
-  useGetVisitorImageByVisitorSessionIdQuery,
-} from "@/redux/services/checkout.service";
+import { useCheckOutWithCardMutation, useGetVissitorSessionByCardverifiedQuery } from "@/redux/services/checkout.service";
 import { uploadToFirebase } from "@/firebase-config";
+import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
+import * as FileSystem from "expo-file-system";
+import { useShoeDetectMutation } from "@/redux/services/qrcode.service";
+import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface CheckoutResponse {
   checkinTime: string;
@@ -59,58 +52,209 @@ interface CheckoutResponse {
   };
   visitorSessionId: number;
 }
+interface ICheckOutData {
+  securityOutId: number;
+  gateOutId: number;
+  vehicleSession?: {
+    licensePlate: string;
+    vehicleImages: vehicleImagesType[]
+  };
+  images?: updateImage[];
+}
+type vehicleImagesType = 
+  {
+    imageType: string;
+    imageURL: string;
+  };
 
+type updateImage = {
+  imageType: string;
+  imageURL: string;
+};
+interface ImageFile {
+  uri: string;
+  type: string;
+  name: string;
+}
+const fetchCaptureImage = async (
+  url: string,
+  imageType: string
+): Promise<{ ImageType: string; ImageFile: string | null }> => {
+  try {
+    const response = await fetch(url, { method: "GET" });
+
+    if (!response.ok) {
+      // console.error("HTTP Response Status:", response.status);
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const fileUri = `${FileSystem.cacheDirectory}captured-image-${imageType}.jpg`;
+
+    const fileSaved = await new Promise<string | null>((resolve, reject) => {
+      const fileReader = new FileReader();
+      fileReader.onloadend = async () => {
+        const base64data = fileReader.result?.toString().split(",")[1];
+        if (base64data) {
+          await FileSystem.writeAsStringAsync(fileUri, base64data, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          resolve(fileUri);
+        } else {
+          reject(null);
+        }
+      };
+      fileReader.readAsDataURL(blob);
+    });
+
+    return {
+      ImageType: imageType,
+      ImageFile: fileSaved,
+    };
+  } catch (error) {
+    // console.error(`Failed to fetch ${imageType} image:`, error);
+    Alert.alert(
+      "Error",
+      `Failed to fetch ${imageType} image. Please try again.`
+    );
+    return { ImageType: imageType, ImageFile: null };
+  }
+};
 const CheckOutLicensePlate = () => {
-  const { data } = useLocalSearchParams();
-  console.log("qr cảd: ", data);
+  const { qrString } = useLocalSearchParams();
+  // console.log("qr cảd: ", data);
   const [checkoutResponse, setCheckoutResponse] =
     useState<CheckoutResponse | null>(null);
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
+  const {
+    data: checkInData,
+    isLoading,
+    refetch,
+  } = useGetVissitorSessionByCardverifiedQuery(qrString as string);
+  const gateId = Number(selectedGateId) || 0;
+  const {
+    data: cameraGate,
+    isLoading: gateLoading,
+    isError: isErrorCamera,
+  } = useGetCameraByGateIdQuery(
+    { gateId },
+    {
+      skip: !gateId,
+    }
+  );
+  const [handleValidShoe, setHandleValidShoe] = useState(false);
+  const [handleValidCar, setHandleValidCar] = useState(false);
   const router = useRouter();
   const [fileImage, setFileImage] = useState("");
   const [capturedImage, setCapturedImage] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
   const [licensePlateNumber, setLicensePlateNumber] = useState<string>("");
-  const [checkoutData, setCheckoutData] = useState<CheckOutVerWithLP>({
-    securityOutId: 0,
-    gateOutId: Number(selectedGateId) || 0,
-    vehicleSession: {
-      licensePlate: "",
-      vehicleImages: [],
-    },
-  });
+  const [validImageShoeUrl, setValidImageShoeUrl] = useState<string>("");
+  const [validImageBodyUrl, setValidImageBodyUrl] = useState<string>("");
+  const [shoeDetectMutation] = useShoeDetectMutation();
+  const [checkOutWithCard] = useCheckOutWithCardMutation();
+  const [validData, setValidData] = useState<boolean>(false);
 
-  const [checkOutWithCard, { isLoading }] = useCheckOutWithCardMutation();
-  const {
-    data: dataVisitorSessionImage,
-    error: errorVisitorSessionImage,
-    refetch,
-    isFetching: isFetchingVisitorSessionImage,
-    isLoading: isLoadingVisitorSessionImage,
-  } = useGetVisitorImageByVisitorSessionIdQuery(
-    checkoutResponse?.visitorSessionId as number,
-    {
-      skip: !checkoutResponse,
-    }
-  );
-  useEffect(() => {
-    const fetchUserId = async () => {
-      try {
-        const storedUserId = await AsyncStorage.getItem("userId");
-        if (storedUserId) {
-          setCheckoutData((prevState) => ({
-            ...prevState,
-            securityOutId: Number(storedUserId) || 0,
-          }));
+  const resetData = async () => {
+    setTimeout(async () => {
+      const result = await refetch();
+      if (result.error) {
+        const error = result.error as FetchBaseQueryError;
+        if ("status" in error && error.status === 400) {
+          handleBack();
+          Alert.alert("Lỗi", "Vui lòng gán thông tin người dùng lên thẻ");
         }
-      } catch (error) {
-        console.error("Error fetching userId from AsyncStorage:", error);
+      } else {
+        setValidData(true);
       }
-    };
-    fetchUserId();
+    }, 3000); // 3-second timeout
+  };
+
+  useEffect(() => {
+    resetData();
   }, []);
+  useEffect(() => {
+    if (validData) {
+      captureImageShoe();
+      captureImageBody();
+    }
+  }, [cameraGate, validData]);
+  const captureImageShoe = async () => {
+    if (checkInData && Array.isArray(cameraGate)) {
+      const camera = cameraGate.find(
+        (camera) => camera?.cameraType?.cameraTypeId === 3
+      );
+      if (camera) {
+        try {
+          const checkOutShoe = await fetchCaptureImage(
+            `${camera.cameraURL}capture-image`,
+            "CheckOut_Shoe"
+          );
+
+          const imageValid: ImageFile = {
+            name: "CheckOut_Shoe",
+            type: "image/jpeg",
+            uri: checkOutShoe.ImageFile || "",
+          };
+          const validShoe = await shoeDetectMutation(imageValid);
+
+          if (validShoe.error) {
+            handleBack();
+            Alert.alert("Lỗi", "Giày không hợp lệ");
+          } else if (validShoe.data.confidence > 50) {
+            const { downloadUrl: shoeValidImageUrl } = await uploadToFirebase(
+              imageValid.uri,
+              `shoeCheckout_${Date.now()}.jpg`
+            );
+
+            setValidImageShoeUrl(shoeValidImageUrl);
+            setHandleValidShoe(true);
+          } else {
+            handleBack();
+            Alert.alert("Lỗi", "Giày không hợp lệ");
+          }
+        } catch (error) {
+          handleBack();
+          Alert.alert("Lỗi", "Đã xảy ra lỗi khi xác minh giày");
+        }
+      }
+    }
+  };
+  const captureImageBody = async () => {
+    if (checkInData && Array.isArray(cameraGate)) {
+      const camera = cameraGate.find(
+        (camera) => camera?.cameraType?.cameraTypeId === 3
+      );
+      if (camera) {
+        try {
+          const checkOutShoe = await fetchCaptureImage(
+            `${camera.cameraURL}capture-image`,
+            "CheckOut_Body"
+          );
+          const imageValid: ImageFile = {
+            name: "CheckOut_Body",
+            type: "image/jpeg",
+            uri: checkOutShoe.ImageFile || "",
+          };
+          const { downloadUrl: bodyValidImageUrl } = await uploadToFirebase(
+            imageValid.uri,
+            `bodyCheckout_${Date.now()}.jpg`
+          );
+          setValidImageBodyUrl(bodyValidImageUrl);
+        } catch (error) {
+          handleBack();
+          Alert.alert("Lỗi", "Đã xảy ra lỗi khi xác minh giày");
+        }
+      }
+    }
+  };
+  const handleBack = () => {
+    router.navigate({
+      pathname: "/(tabs)/checkout",
+    });
+  };
 
   const uploadImageToAPI = async (imageUri: string) => {
     try {
@@ -140,22 +284,24 @@ const CheckOutLicensePlate = () => {
       }
 
       const result = await response.json();
-      setCapturedImage(imageUri);
-      console.log("API Response:", result);
-      setFileImage(imageUri);
+      const { downloadUrl: vehicleValidImageUrl } = await uploadToFirebase(
+        imageUri,
+        `vehicleCheckout_${Date.now()}.jpg`
+      );
+      setCapturedImage(vehicleValidImageUrl);
       setLicensePlateNumber(result.licensePlate || "Không nhận dạng được");
-      setCheckoutData((prevData) => ({
-        ...prevData,
-        vehicleSession: {
-          licensePlate: result.licensePlate || "",
-          vehicleImages: [
-            {
-              imageType: "LicensePlate_Out",
-              imageURL: "",
-            },
-          ],
-        },
-      }));
+      // setCheckoutData((prevData) => ({
+      //   ...prevData,
+      //   vehicleSession: {
+      //     licensePlate: result.licensePlate || "",
+      //     vehicleImages: [
+      //       {
+      //         imageType: "LicensePlate_Out",
+      //         imageURL: "",
+      //       },
+      //     ],
+      //   },
+      // }));
 
       Alert.alert(
         "Kết quả nhận dạng",
@@ -170,14 +316,9 @@ const CheckOutLicensePlate = () => {
     }
   };
 
-  const handleNext = () => {
-    router.push({
-      pathname: "/(tabs)/checkout",
-    });
-  };
-
   const takePhoto = async () => {
     try {
+      setHandleValidCar(true);
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: "images",
         quality: 0.8,
@@ -188,6 +329,7 @@ const CheckOutLicensePlate = () => {
 
       if (!result.canceled && result.assets[0]) {
         await uploadImageToAPI(result.assets[0].uri);
+        setHandleValidCar(false);
         Alert.alert("Thành công", "Đã xử lý ảnh thành công!");
       }
     } catch (error) {
@@ -195,71 +337,86 @@ const CheckOutLicensePlate = () => {
       Alert.alert("Lỗi", "Không thể chụp ảnh. Vui lòng thử lại.");
     }
   };
-
-  const handleCheckout = async () => {
+  const handleCheckOut = async () => {
+    const storedUserId = await AsyncStorage.getItem("userId");
     try {
-      setIsUploading(true);
+      const checkOutData: ICheckOutData = {
+        securityOutId: Number(storedUserId),
+        gateOutId: gateId,
+        images: [
+          {
+            imageType: "CheckOut_Body",
+            imageURL: validImageBodyUrl,
+          },
+          {
+            imageType: "CheckOut_Shoe",
+            imageURL: validImageShoeUrl,
+          },
 
-      if (!fileImage) {
-        Alert.alert("Lỗi", "Vui lòng chụp ảnh biển số trước khi checkout");
-        return;
-      }
-
-      const fileName = `license_plate_${Date.now()}`;
-      const uploadResult = await uploadToFirebase(
-        fileImage,
-        fileName,
-        (progress: any) => {
-          console.log("Upload progress:", progress);
-        }
-      );
-
-      setCheckoutData((prevData) => ({
-        ...prevData,
+        ],
         vehicleSession: {
-          ...prevData.vehicleSession,
+          licensePlate: licensePlateNumber,
           vehicleImages: [
             {
               imageType: "LicensePlate_Out",
-              imageURL: uploadResult.downloadUrl,
+              imageURL: capturedImage,
             },
           ],
-        },
-      }));
+        }
+      };
 
-      const response = await checkOutWithCard({
-        qrCardVerifi: data,
-        checkoutData: checkoutData,
-      }).unwrap();
-
-      console.log("Checkout response:", response);
-      setCheckoutResponse(response);
-      // Alert.alert("Thành công", "Đã checkout thành công!", [
-      //   { text: "OK", onPress: () => {
-      //     // Có thể thêm navigation sau 3 giây
-      //     setTimeout(() => {
-      //       router.back();
-      //     }, 3000);
-      //   }}
-      // ]);
-    } catch (error: any) {
-      // console.error("Checkout error:", error);
-      const errorMessage =
-        error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
-
-      Alert.alert("Đã có lỗi xảy ra", errorMessage, [
-        {
-          text: "OK",
-          onPress: () => {
-            router.push("/(tabs)/checkin");
+      Alert.alert(
+        "Xác nhận",
+        "Bạn có muốn xác nhận ra không?",
+        [
+          {
+            text: "Hủy",
+            onPress: () => {
+              // Handle cancel action if needed
+            },
           },
-        },
-      ]);
-    } finally {
-      setIsUploading(false);
+          {
+            text: "Đồng ý",
+            onPress: async () => {
+              try {
+                const response = await checkOutWithCard({
+                  qrCardVerifi: qrString as string,
+                  checkoutData: checkOutData,
+                });
+                router.navigate({
+                  pathname: "/(tabs)/checkout",
+                });
+                if (response.error) {
+                  const error = response.error as FetchBaseQueryError;
+                  if (
+                    "data" in error &&
+                    error.data &&
+                    typeof error.data === "object" &&
+                    "message" in error.data
+                  ) {
+                    Alert.alert(
+                      "Lỗi",
+                      `${(error.data as { message: string }).message}`
+                    );
+                  } else {
+                    Alert.alert("Lỗi", "Đã xảy ra lỗi không xác định");
+                  }
+                } else {
+                  Alert.alert("Thành công", "Xác nhận ra thành công");
+                }
+              } catch (error) {
+                console.log(error);
+                Alert.alert("Lỗi", "Đã xảy ra lỗi khi xác nhận ra");
+              }
+            },
+          },
+        ],
+        { cancelable: true }
+      );
+    } catch (error) {
+      Alert.alert("Thất bại", "Đã xảy ra lỗi khi xác nhận ra");
     }
   };
-
   const InfoRow = ({
     label,
     value,
@@ -330,26 +487,6 @@ const CheckOutLicensePlate = () => {
     );
   };
 
-  const PreviewSection = () => (
-    <View className="mb-4">
-      {capturedImage && (
-        <SectionDropDown
-        icon={<View className="w-6 h-6 bg-pink-500 rounded-full" />}
-          title="Thông tin biển số xe"
-        >
-          <View className="space-y-4">
-            <Image
-              source={{ uri: capturedImage }}
-              className="w-full h-48 rounded-lg"
-              resizeMode="contain"
-            />
-            <InfoRow label="Biển số xe" value={licensePlateNumber} />
-          </View>
-        </SectionDropDown>
-      )}
-    </View>
-  );
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("vi-VN", {
@@ -360,191 +497,279 @@ const CheckOutLicensePlate = () => {
       minute: "2-digit",
     });
   };
-
-  console.log("Check out data: ", checkoutData);
-  console.log("File ảnh: ", fileImage);
-
-  return (
-    <SafeAreaView className="flex-1 bg-gray-100 mb-4">
-      <View>
-        <Pressable className="flex flex-row items-center space-x-2 px-4 py-2 bg-gray-100 rounded-lg active:bg-gray-200">
-          <MaterialIcons name="arrow-back" size={24} color="#4B5563" />
-          <Text className="text-gray-600 font-medium">Quay về</Text>
-        </Pressable>
-      </View>
-
-      <ScrollView>
-        <GestureHandlerRootView className="flex-1 p-5">
-          {checkoutResponse ? (
-            <View className="bg-backgroundApp p-4 rounded-lg shadow">
-              <View className="mb-4 bg-green-50 p-3 rounded-lg">
-                <Text className="text-green-600 font-bold text-center text-lg mb-2">
-                  Checkout thành công
-                </Text>
-              </View>
-              <View className="p-4">
-                <Section
-                  icon={<View className="w-6 h-6 bg-purple-500 rounded-full" />}
-                  title="Trạng thái Checkout"
-                >
-                  <InfoRow
-                    label="Thời gian check-in"
-                    value={formatDate(checkoutResponse.checkinTime)}
-                  />
-                  <InfoRow label="Trạng thái" value={checkoutResponse.status} />
-
-                  {/* <InfoRow
-                  label="ID phiên"
-                  value={checkoutResponse.visitorSessionId}
-                /> */}
-                </Section>
-
-                <SectionDropDown
-                  icon={<View className="w-6 h-6 bg-green-500 rounded-full" />}
-                  title="Thông tin thẻ"
-                >
-                  <InfoRow
-                    label="Loại thẻ"
-                    value={checkoutResponse.visitCard.card.qrCardTypename}
-                  />
-                  <InfoRow
-                    label="Mã thẻ"
-                    value={checkoutResponse.visitCard.card.cardVerification}
-                  />
-                  <InfoRow
-                    label="Trạng thái thẻ"
-                    value={checkoutResponse.visitCard.card.cardStatus}
-                  />
-                  <InfoRow
-                    label="Hình ảnh thẻ"
-                    value={checkoutResponse.visitCard.card.cardImage}
-                    isImage={true}
-                  />
-                </SectionDropDown>
-
-                <SectionDropDown
-                  icon={<View className="w-6 h-6 bg-orange-500 rounded-full" />}
-                  title="Thời gian hiệu lực"
-                >
-                  <InfoRow
-                    label="Ngày phát hành"
-                    value={formatDate(checkoutResponse.visitCard.issueDate)}
-                  />
-                  <InfoRow
-                    label="Ngày hết hạn"
-                    value={formatDate(checkoutResponse.visitCard.expiryDate)}
-                  />
-                  <InfoRow
-                    label="Giờ bắt đầu"
-                    value={checkoutResponse.visitDetail.expectedStartHour}
-                  />
-                  <InfoRow
-                    label="Giờ kết thúc"
-                    value={checkoutResponse.visitDetail.expectedEndHour}
-                  />
-                </SectionDropDown>
-
-                <SectionDropDown
-                  title="Hình ảnh giày"
-                  icon={<View className="w-6 h-6 bg-yellow-500 rounded-full" />}
-                >
-                  {dataVisitorSessionImage &&
-                    dataVisitorSessionImage.map(
-                      (
-                        image: { imageURL: string; imageType: string },
-                        index: number
-                      ) => (
-                        <View key={index}>
-                          <Image
-                            source={{ uri: image.imageURL }}
-                            style={{
-                              width: "100%",
-                              height: 200,
-                              borderRadius: 10,
-                              marginVertical: 10,
-                            }}
-                            resizeMode="contain"
-                          />
-                          {/* <Text className="text-xl">
-                    {image.imageType === "Shoe" ? "Giày" : "Ảnh khách hàng"}
-                  </Text> */}
-                        </View>
-                      )
-                    )}
-                </SectionDropDown>
-                <PreviewSection />
-
-                {(checkoutResponse.gateIn || checkoutResponse.securityIn) && (
-                  <Section
-                    icon={<View className="w-6 h-6 bg-blue-500 rounded-full" />}
-                    title="Thông tin bảo vệ"
-                  >
-                    {checkoutResponse.gateIn && (
-                      <InfoRow
-                        label="Cổng vào"
-                        value={checkoutResponse.gateIn}
-                      />
-                    )}
-                    {checkoutResponse.securityIn && (
-                      <InfoRow
-                        label="Bảo vệ"
-                        value={checkoutResponse.securityIn}
-                      />
-                    )}
-                  </Section>
-                )}
-                <TouchableOpacity
-                  onPress={handleNext}
-                  className="p-4 mb-4 bg-white rounded-full flex-row items-center justify-center"
-                >
-                  <Text className="text-lg mr-2">Xong</Text>
-                  <EvilIcons name="arrow-right" size={30} color="black" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : (
-            <View className="space-y-4">
-              <View className="mb-4">
-                <TouchableOpacity
-                  className="flex-row items-center justify-center space-x-2 bg-blue-500 p-4 rounded-lg"
-                  onPress={takePhoto}
-                >
-                  <Ionicons name="camera" size={24} color="white" />
-                  <Text className="text-white font-medium">Chụp ảnh</Text>
-                </TouchableOpacity>
-              </View>
-
-              <TouchableOpacity
-                className="flex-row items-center justify-center space-x-2 bg-green-500 p-4 rounded-lg"
-                onPress={handleCheckout}
-                disabled={isLoading || isUploading || !fileImage}
-              >
-                <MaterialIcons name="check-circle" size={24} color="white" />
-                <Text className="text-white font-medium">
-                  {isUploading
-                    ? "Đang xử lý..."
-                    : isLoading
-                    ? "Đang xử lý..."
-                    : "Checkout"}
-                </Text>
-              </TouchableOpacity>
-
-              {(isUploading || isLoading) && (
-                <View className="flex items-center space-y-2 mt-4">
-                  <ActivityIndicator size="large" color="#3B82F6" />
-                  <Text className="text-gray-600">
-                    {isUploading
-                      ? "Đang xử lý..."
-                      : "Đang xử lý checkout..."}
-                  </Text>
-                </View>
-              )}
+  if (capturedImage === "" && validData) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-100 mb-4">
+        <View>
+          <Pressable
+            onPress={handleBack}
+            className="flex flex-row items-center space-x-2 px-4 py-2 bg-gray-100 rounded-lg active:bg-gray-200"
+          >
+            <MaterialIcons name="arrow-back" size={24} color="#4B5563" />
+            <Text className="text-gray-600 font-medium">Quay về</Text>
+          </Pressable>
+        </View>
+        <View className="space-y-4">
+          <View className="mb-4">
+            <TouchableOpacity
+              className="flex-row items-center justify-center space-x-2 bg-blue-500 p-4 rounded-lg"
+              onPress={takePhoto}
+            >
+              <Ionicons name="camera" size={24} color="white" />
+              <Text className="text-white font-medium">Chụp ảnh biển số xe</Text>
+            </TouchableOpacity>
+          </View>
+          {handleValidCar && (
+            <View className="flex-1 justify-center items-center p-4">
+              <ActivityIndicator size="large" color="#3B82F6" />
+              <Text className="text-gray-600 mt-4">Đang xử lý thông tin</Text>
             </View>
           )}
-        </GestureHandlerRootView>
-      </ScrollView>
-    </SafeAreaView>
-  );
+        </View>
+      </SafeAreaView>
+    );
+  }
+  if (!handleValidShoe && handleValidCar)
+    return (
+      <View className="flex-1 justify-center items-center p-4">
+        <ActivityIndicator size="large" color="#3B82F6" />
+        <Text className="text-gray-600 mt-4">Đang xử lý thông tin</Text>
+      </View>
+    );
+  else {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-100 mb-4">
+        <View>
+          <Pressable
+            onPress={handleBack}
+            className="flex flex-row items-center space-x-2 px-4 py-2 bg-gray-100 rounded-lg active:bg-gray-200"
+          >
+            <MaterialIcons name="arrow-back" size={24} color="#4B5563" />
+            <Text className="text-gray-600 font-medium">Quay về</Text>
+          </Pressable>
+        </View>
+
+        <ScrollView>
+          <GestureHandlerRootView className="flex-1 p-5">
+            {!isLoading && checkInData ? (
+              <View className="bg-backgroundApp p-4 rounded-lg shadow">
+                <View className="mb-4 bg-green-50 p-3 rounded-lg">
+                  <Text className="text-green-600 font-bold text-center text-lg mb-2">
+                    Bảng thông tin
+                  </Text>
+                </View>
+                <View className="p-4">
+                  <Section
+                    icon={
+                      <View className="w-6 h-6 bg-purple-500 rounded-full" />
+                    }
+                    title="Trạng thái"
+                  >
+                    <InfoRow
+                      label="Thời gian vào công ty"
+                      value={formatDate(checkInData.checkinTime)}
+                    />
+                    {checkInData.gateIn && (
+                      <InfoRow
+                        label="Cổng vào"
+                        value={checkInData.gateIn.gateName}
+                      />
+                    )}
+                    {checkInData.gateIn && (
+                      <InfoRow
+                        label="Khách"
+                        value={checkInData.visitDetail.visitor.visitorName}
+                      />
+                    )}
+                    {checkInData.securityIn && (
+                      <InfoRow
+                        label="Bảo vệ"
+                        value={checkInData.securityIn.fullName}
+                      />
+                    )}
+                    <InfoRow
+                      label="Trạng thái"
+                      value={
+                        checkInData.status === "CheckIn"
+                          ? "Đã vào"
+                          : checkInData.status === "CheckOut"
+                          ? "Đã ra"
+                          : checkInData.status
+                      }
+                    />
+
+                    {/* <InfoRow
+                        label="ID phiên"
+                        value={checkoutResponse.visitorSessionId}
+                      /> */}
+                  </Section>
+
+                  <SectionDropDown
+                    icon={
+                      <View className="w-6 h-6 bg-green-500 rounded-full" />
+                    }
+                    title="Thông tin thẻ"
+                  >
+                    <InfoRow
+                      label="Loại thẻ"
+                      value={
+                        checkInData.visitCard.card.qrCardTypename
+                          ? "Loại thẻ: " +
+                            checkInData.visitCard.card.qrCardTypename
+                          : "Theo ngày"
+                      }
+                    />
+                    <InfoRow
+                      label="Mã thẻ"
+                      value={checkInData.visitCard.card.cardVerification}
+                    />
+                    <InfoRow
+                      label="Trạng thái thẻ"
+                      value={
+                        checkInData.visitCard.card.cardStatus === "Active"
+                          ? "Còn hiệu lực"
+                          : checkInData.visitCard.card.cardStatus === "Inactive"
+                          ? "Hết hiệu lực"
+                          : checkInData.visitCard.card.cardStatus === "Lost"
+                          ? "Mất thẻ"
+                          : checkInData.visitCard.card.cardStatus
+                      }
+                    />
+                    <InfoRow
+                      label="Hình ảnh thẻ"
+                      value={checkInData.visitCard.card.cardImage}
+                      isImage={true}
+                    />
+                  </SectionDropDown>
+
+                  <SectionDropDown
+                    icon={
+                      <View className="w-6 h-6 bg-orange-500 rounded-full" />
+                    }
+                    title="Thời gian hiệu lực"
+                  >
+                    <InfoRow
+                      label="Ngày phát hành"
+                      value={formatDate(checkInData.visitCard.issueDate)}
+                    />
+                    <InfoRow
+                      label="Ngày hết hạn"
+                      value={formatDate(checkInData.visitCard.expiryDate)}
+                    />
+                    <InfoRow
+                      label="Giờ bắt đầu"
+                      value={checkInData.visitDetail.expectedStartHour}
+                    />
+                    <InfoRow
+                      label="Giờ kết thúc"
+                      value={checkInData.visitDetail.expectedEndHour}
+                    />
+                  </SectionDropDown>
+
+                  <SectionDropDown
+                    title="Hình ảnh xác minh"
+                    icon={
+                      <View className="w-6 h-6 bg-yellow-500 rounded-full" />
+                    }
+                  >
+                    <View>
+                      <Text className="text-xl font-bold">Ảnh lúc vào</Text>
+
+                      <Image
+                        source={{
+                          uri: "https://ototai247.com/wp-content/uploads/2020/07/quy-dinh-bien-so-xe.jpg",
+                        }}
+                        style={{
+                          width: "100%",
+                          height: 200,
+                          borderRadius: 10,
+                          marginVertical: 10,
+                        }}
+                        resizeMode="contain"
+                      />
+
+                      {checkInData.visitorSessionsImages &&
+                        checkInData.visitorSessionsImages
+                          .filter(
+                            (image: { imageType: string }) =>
+                              image.imageType !== "CheckOut_Shoe"
+                          )
+                          .map(
+                            (
+                              image: { imageURL: string; imageType: string },
+                              index: number
+                            ) => (
+                              <View key={index}>
+                                <Image
+                                  source={{ uri: image.imageURL }}
+                                  style={{
+                                    width: "100%",
+                                    height: 200,
+                                    borderRadius: 10,
+                                    marginVertical: 10,
+                                  }}
+                                  resizeMode="contain"
+                                />
+                              </View>
+                            )
+                          )}
+                    </View>
+                    <View>
+                      <Text className="text-xl font-bold">Ảnh lúc ra</Text>
+                      <Image
+                        source={{
+                          uri: capturedImage,
+                        }}
+                        style={{
+                          width: "100%",
+                          height: 200,
+                          borderRadius: 10,
+                          marginVertical: 10,
+                        }}
+                        resizeMode="contain"
+                      />
+                      <Image
+                        source={{
+                          uri: validImageShoeUrl,
+                        }}
+                        style={{
+                          width: "100%",
+                          height: 200,
+                          borderRadius: 10,
+                          marginVertical: 10,
+                        }}
+                        resizeMode="contain"
+                      />
+                      <Image
+                        source={{
+                          uri: validImageBodyUrl,
+                        }}
+                        style={{
+                          width: "100%",
+                          height: 200,
+                          borderRadius: 10,
+                          marginVertical: 10,
+                        }}
+                        resizeMode="contain"
+                      />
+                    </View>
+                  </SectionDropDown>
+
+                  <TouchableOpacity
+                    onPress={handleCheckOut}
+                    className="p-4 mb-4 bg-white rounded-full flex-row items-center justify-center"
+                  >
+                    <Text className="text-lg mr-2">Xác nhận</Text>
+                    <EvilIcons name="arrow-right" size={30} color="black" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : null}
+          </GestureHandlerRootView>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 };
 
 export default CheckOutLicensePlate;

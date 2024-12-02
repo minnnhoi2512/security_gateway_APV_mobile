@@ -25,19 +25,18 @@ const Checkout = () => {
   const router = useRouter();
   const [isModalVisible, setModalVisible] = useState(false);
   const [cameraType, setCameraType] = useState<CameraType>("OTHER_TYPE");
-  const [activeCamera, setActiveCamera] = useState<"QR" | "LICENSE" | "CCCD">(
-    "QR"
-  );
-
+  const [activeCamera, setActiveCamera] = useState<"QR" | "LICENSE">("QR");
+  const [activeCameraCCCD, setActiveCameraCCCD] = useState<"CCCD" | "LICENSE">("CCCD");
   const [creadentialCard, setCredentialCard] = useState<string | null>(null);
   const [visitorSessionData, setVisitorSessionData] = useState([]);
   const [qrCardVerified, setQrCardVerified] = useState<string | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [isCameraCCCDActive, setIsCameraCCCDActive] = useState(false);
   const isQrCardSet = useRef(false);
   const handleOptionSelect = () => {
     Alert.alert(
-      "Chọn phương thức check out",
       "Vui lòng chọn một trong các tùy chọn bên dưới",
+      "",
       [
         // {
         //   text: "Quét bằng thẻ",
@@ -47,15 +46,9 @@ const Checkout = () => {
           text: "Quét bằng CCCD",
           onPress: () => {
             setCameraType("CREDENTIAL_CARD"),
-              setIsCameraActive(true),
+              setIsCameraCCCDActive(true),
               (isQrCardSet.current = false),
               setQrCardVerified(null);
-          },
-        },
-        {
-          text: "Nhập CCCD",
-          onPress: () => {
-            setModalVisible(true);
           },
         },
         {
@@ -89,9 +82,6 @@ const Checkout = () => {
   const [hasScanned, setHasScanned] = useState(false);
   const qrLock = useRef(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  useEffect(() => {
-    console.log("toi bi loop");
-  }, []);
 
   const handleBarCodeScanned = useCallback(
     async ({ data }: { data: string }) => {
@@ -181,10 +171,10 @@ const Checkout = () => {
       if (data) {
         setIsCameraActive(false);
 
-        router.push({
+        router.navigate({
           pathname: "/check-out/CheckOutLicensePlate",
           params: {
-            data: data,
+            qrString: data,
           },
         });
       }
@@ -220,11 +210,13 @@ const Checkout = () => {
       try {
         // Lấy phần tử đầu tiên trước dấu |
         const credentialId = data.split("|")[0];
-        console.log("Extracted Credential ID:", credentialId);
-
-        // Set credential ID vào state để trigger query
-        setCredentialCard(credentialId);
-        setIsCameraActive(false); // Tắt camera sau khi quét thành công
+        setIsCameraCCCDActive(false); // Tắt camera sau khi quét thành công
+        router.navigate({
+          pathname: "/check-out/CheckOutCard",
+          params: {
+            cccd: credentialId,
+          },
+        });
       } catch (error) {
         console.error("Error processing CCCD:", error);
         Alert.alert("Lỗi", "Định dạng CCCD không hợp lệ. Vui lòng thử lại.");
@@ -233,7 +225,26 @@ const Checkout = () => {
       Alert.alert("Lỗi", "Vui lòng quét đúng mã CCCD");
     }
   }, []);
-
+  const handleBarCodeScannedCCCDWithVehicle = useCallback(({ data }: { data: string }) => {
+    if (data && data.includes("|")) {
+      try {
+        // Lấy phần tử đầu tiên trước dấu |
+        const credentialId = data.split("|")[0];
+        setIsCameraCCCDActive(false); // Tắt camera sau khi quét thành công
+        router.navigate({
+          pathname: "/check-outCheckOutCCCD-Vehicle",
+          params: {
+            cccd: credentialId,
+          },
+        });
+      } catch (error) {
+        console.error("Error processing CCCD:", error);
+        Alert.alert("Lỗi", "Định dạng CCCD không hợp lệ. Vui lòng thử lại.");
+      }
+    } else {
+      Alert.alert("Lỗi", "Vui lòng quét đúng mã CCCD");
+    }
+  }, []);
   const handleSeachVisitSessionBCredentialCard = () => {
     if (isLoadingByCredentialCard) {
       console.log("Đang tải dữ liệu...");
@@ -292,7 +303,7 @@ const Checkout = () => {
         </View>
         <View className="items-center justify-center mb-44">
           <ButtonSingleTextMainColor
-            text="khách mất thẻ"
+            text="Khách sử dụng CCCD"
             onPress={handleOptionSelect}
             width={200}
             height={50}
@@ -311,16 +322,15 @@ const Checkout = () => {
                     <CameraView
                       className="flex-1 w-full h-full"
                       onBarcodeScanned={handleLicensePlateScanned2}
-                      
                     />
                   );
-                case "CCCD":
-                  return (
-                    <CameraView
-                      className="flex-1 w-full h-full"
-                      onBarcodeScanned={handleBarCodeScannedCCCD}
-                    />
-                  );
+                // case "CCCD":
+                //   return (
+                //     <CameraView
+                //       className="flex-1 w-full h-full"
+                //       onBarcodeScanned={handleBarCodeScannedCCCD}
+                //     />
+                //   );
                 case "LICENSE":
                   return (
                     <CameraView
@@ -381,7 +391,7 @@ const Checkout = () => {
                   </Text>
                 </View>
               </TouchableOpacity>
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 className={`flex-1 py-3 px-4 rounded-lg ${
                   activeCamera === "CCCD" ? "bg-blue-500" : "bg-gray-500"
                 }`}
@@ -391,32 +401,109 @@ const Checkout = () => {
                   <AntDesign name="idcard" size={24} color="white" />
                   <Text className="text-white font-semibold">Quét CCCD</Text>
                 </View>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
 
             <View className="absolute bottom-8 w-full">
               <Text className="text-white text-center">
                 {activeCamera === "QR"
                   ? "Đưa mã QR vào khung hình để quét"
-                  : activeCamera === "CCCD"
-                  ? "Đưa CCCD vào khung hình để quét"
-                  : "Đưa biển số xe vào khung hình để quét"}
+                  : activeCamera === "LICENSE"
+                  ? "Đưa mã QR vào khung hình để quét"
+                  : ""}
               </Text>
             </View>
           </View>
         </Modal>
-        <View>
-          <ModalSearch
-            isVisible={isModalVisible}
-            onClose={() => setModalVisible(false)}
-            value={creadentialCard === null ? "" : creadentialCard}
-            setValue={setCredentialCard}
-            handleSearch={() => {}}
-            isLoading={false}
-            error={null}
-            placeholder="Nhập CCCD"
-          />
-        </View>
+        {/* CCCD SCAN*/}
+        <Modal
+          visible={isCameraCCCDActive}
+          animationType="slide"
+          transparent={true}
+        >
+          <View className="flex-1 bg-black justify-center items-center">
+            {(() => {
+              switch (activeCameraCCCD) {
+                case "CCCD":
+                  return (
+                    <CameraView
+                      className="flex-1 w-full h-full"
+                      onBarcodeScanned={handleBarCodeScannedCCCD}
+                    />
+                  );
+                case "LICENSE":
+                  return (
+                    <CameraView
+                      className="flex-1 w-full h-full"
+                      onBarcodeScanned={handleBarCodeScannedCCCDWithVehicle}
+                    />
+                  );
+                default:
+                  return null;
+              }
+            })()}
+            <Overlay />
+
+            <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
+              <Text className="text-green-700 text-sm font-semibold">
+                {activeCameraCCCD === "CCCD"
+                  ? "Quét CCCD"
+                  : activeCameraCCCD === "LICENSE"
+                  ? "Quét CCCD với xe"
+                  : ""}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
+              onPress={() => setIsCameraCCCDActive(false)}
+            >
+              <Text className="text-white">Thoát Camera</Text>
+            </TouchableOpacity>
+
+            <View className="absolute bottom-20 flex-row justify-center space-x-4 w-full px-4">
+              <TouchableOpacity
+                className={`flex-1 py-3 px-4 rounded-lg ${
+                  activeCameraCCCD === "CCCD" ? "bg-blue-500" : "bg-gray-500"
+                }`}
+                onPress={() => setActiveCameraCCCD("CCCD")}
+              >
+                <View className="flex-row justify-center items-center space-x-2">
+                  <Ionicons name="qr-code" size={24} color="white" />
+                  <Text className="text-white font-semibold">Quét CCCD</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className={`flex-1 py-3 px-4 rounded-lg ${
+                  activeCameraCCCD === "LICENSE" ? "bg-blue-500" : "bg-gray-500"
+                }`}
+                onPress={() => setActiveCameraCCCD("LICENSE")}
+              >
+                <View className="flex-row justify-center items-center space-x-2">
+                  <MaterialIcons
+                    name="directions-car"
+                    size={24}
+                    color="white"
+                  />
+                  <Text className="text-white font-semibold">
+                    Quét CCCD với xe
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            <View className="absolute bottom-8 w-full">
+              <Text className="text-white text-center">
+                {activeCameraCCCD === "CCCD"
+                  ? "Đưa CCCD vào khung hình để quét"
+                  : activeCameraCCCD === "LICENSE"
+                  ? "Đưa CCCD vào khung hình để quét"
+                  : ""}
+              </Text>
+            </View>
+          </View>
+        </Modal>
       </View>
     </SafeAreaProvider>
   );

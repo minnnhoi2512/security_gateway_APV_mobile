@@ -376,6 +376,8 @@ const CheckOutNormal = () => {
                   } else {
                     Alert.alert("Lỗi", "Đã xảy ra lỗi không xác định");
                   }
+                } else {
+                  Alert.alert("Thành công", "Xác nhận ra thành công");
                 }
               } catch (error) {
                 console.log(error);
@@ -404,7 +406,13 @@ const CheckOutNormal = () => {
   //   handleBack();
   //   Alert.alert("Lỗi", "Vui lòng gán thông tin người dùng lên thẻ");
   // }
-
+  if (!handleValidShoe)
+    return (
+      <View className="flex-1 justify-center items-center p-4">
+        <ActivityIndicator size="large" color="#3B82F6" />
+        <Text className="text-gray-600 mt-4">Đang xử lý thông tin</Text>
+      </View>
+    );
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
       <View>
@@ -419,12 +427,7 @@ const CheckOutNormal = () => {
 
       <ScrollView>
         <GestureHandlerRootView className="flex-1 p-5">
-          {!handleValidShoe ? (
-            <View className="flex-1 justify-center items-center p-4">
-              <ActivityIndicator size="large" color="#3B82F6" />
-              <Text className="text-gray-600 mt-4">Đang xử lý thông tin</Text>
-            </View>
-          ) : !isLoading && checkInData ? (
+          {!isLoading && checkInData ? (
             <View className="bg-backgroundApp p-4 rounded-lg shadow">
               <View className="mb-4 bg-green-50 p-3 rounded-lg">
                 <Text className="text-green-600 font-bold text-center text-lg mb-2">
