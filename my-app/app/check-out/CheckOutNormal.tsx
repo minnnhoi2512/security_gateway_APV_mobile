@@ -67,6 +67,9 @@ const CheckOutNormal = () => {
     (state: RootState) => state.gate.selectedGateId
   );
 
+  console.log("CHECK OUT NORMAL CARD: ", data);
+  
+
 
   const [checkoutResponse, setCheckoutResponse] =
     useState<CheckoutResponse | null>(null);
@@ -74,7 +77,7 @@ const CheckOutNormal = () => {
     securityOutId: 0,
     gateOutId: Number(selectedGateId) || 0,
   });
-
+  console.log("CHECK OUT NORMAL DATA: ", checkoutData);
   const [checkOutWithCard, { isLoading }] = useCheckOutWithCardMutation();
   const {
     data: dataVisitorSessionImage,
@@ -127,7 +130,8 @@ const CheckOutNormal = () => {
         } catch (error: any) {
           const errorMessage =
             error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
-
+          console.log("err checkout", errorMessage);
+          
           Alert.alert("Đã có lỗi xảy ra", errorMessage, [
             {
               text: "OK",
@@ -234,6 +238,8 @@ const CheckOutNormal = () => {
       minute: "2-digit",
     });
   };
+
+ 
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
