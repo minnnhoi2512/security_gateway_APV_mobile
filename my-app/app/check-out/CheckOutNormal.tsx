@@ -151,11 +151,26 @@ const CheckOutNormal = () => {
   const resetData = async () => {
     setTimeout(async () => {
       const result = await refetch();
+      if (result?.data?.vehicleSession != null) {
+        Alert.alert("Khách này sử dụng phương tiện", "Vui lòng thử lại.");
+        handleBack();
+        return;
+      }
       if (result.error) {
         const error = result.error as FetchBaseQueryError;
-        if ("status" in error && error.status === 400) {
+        if (
+          "data" in error &&
+          error.data &&
+          typeof error.data === "object" &&
+          "message" in error.data
+        ) {
+          Alert.alert("Lỗi", `${(error.data as { message: string }).message}`);
           handleBack();
-          Alert.alert("Lỗi", "Vui lòng gán thông tin người dùng lên thẻ");
+          return;
+        } else {
+          Alert.alert("Lỗi", "Đã xảy ra lỗi không xác định");
+          handleBack();
+          return;
         }
       } else {
         setValidData(true);
@@ -466,10 +481,10 @@ const CheckOutNormal = () => {
                     }
                   />
 
-                  {/* <InfoRow
-                    label="ID phiên"
-                    value={checkoutResponse.visitorSessionId}
-                  /> */}
+                  <InfoRow
+                    label="Trạng thái chuyến thăm"
+                    value={checkInData.visitDetail.visit.visitStatus}
+                  />
                 </Section>
 
                 <SectionDropDown
@@ -536,6 +551,31 @@ const CheckOutNormal = () => {
                 >
                   <View>
                     <Text className="text-xl font-bold">Ảnh lúc vào</Text>
+                    {checkInData?.vehicleSession &&
+                      checkInData?.vehicleSession?.images
+                        .filter(
+                          (image: { imageType: string }) =>
+                            image.imageType !== ""
+                        )
+                        .map(
+                          (
+                            image: { imageURL: string; imageType: string },
+                            index: number
+                          ) => (
+                            <View key={index}>
+                              <Image
+                                source={{ uri: image.imageURL }}
+                                style={{
+                                  width: "100%",
+                                  height: 200,
+                                  borderRadius: 10,
+                                  marginVertical: 10,
+                                }}
+                                resizeMode="contain"
+                              />
+                            </View>
+                          )
+                        )}
                     {checkInData.visitorSessionsImages &&
                       checkInData.visitorSessionsImages
                         .filter(
@@ -558,9 +598,6 @@ const CheckOutNormal = () => {
                                 }}
                                 resizeMode="contain"
                               />
-                              {/* <Text className="text-xl">
-                {image.imageType === "Shoe" ? "Giày" : "Ảnh khách hàng"}
-              </Text> */}
                             </View>
                           )
                         )}

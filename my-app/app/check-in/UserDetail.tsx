@@ -52,7 +52,7 @@ const UserDetail = () => {
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
   const qrLock = useRef(false);
-
+  const [hasShownError, setHasShownError] = useState(false);
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -111,7 +111,6 @@ const UserDetail = () => {
             ...prevState,
             SecurityInId: Number(storedUserId) || 0,
           }));
-          console.log("User ID from AsyncStorage:", storedUserId);
         } else {
           console.log("No userId found in AsyncStorage");
         }
@@ -126,8 +125,6 @@ const UserDetail = () => {
   useEffect(() => {
     if (visitDetail && Array.isArray(visitDetail) && visitDetail.length > 0) {
       const credentialCard = visitDetail[0]?.visitor?.credentialsCard;
-
-      console.log("Original Credential Card:", credentialCard);
 
       setCheckInData((prevData) => ({
         ...prevData,
@@ -205,6 +202,30 @@ const UserDetail = () => {
     }
   };
 
+
+ 
+
+  useEffect(() => {
+    if (isErrorQr && !hasShownError) {
+      setHasShownError(true);
+      Alert.alert(
+        "Lỗi",
+        "Không tìm thấy dữ liệu QR. Vui lòng thử lại.",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              qrLock.current = false;
+              setIsProcessing(false);
+              setCheckInData(prev => ({...prev, QrCardVerification: ""}));
+              router.back();
+            }
+          }
+        ]
+      );
+    }
+  }, [isErrorQr]);
+
   useEffect(() => {
     const handleQrDataAndCapture = async () => {
       if (
@@ -221,11 +242,6 @@ const UserDetail = () => {
       }
 
       try {
-        console.log(
-          "Processing card verification:",
-          qrCardData.cardVerification
-        );
-
         const bodyCamera = cameraGate.find(
           (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Body"
         );
@@ -234,17 +250,11 @@ const UserDetail = () => {
           (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Shoe"
         );
 
-        console.log("Found cameras:", {
-          bodyCamera: bodyCamera?.cameraURL,
-          shoeCamera: shoeCamera?.cameraURL,
-        });
-
         const images: CapturedImage[] = [];
 
         // Chụp ảnh body
         if (bodyCamera?.cameraURL) {
           const bodyImageUrl = `${bodyCamera.cameraURL}capture-image`;
-          console.log("Attempting to capture body image from:", bodyImageUrl);
 
           const bodyImageData = await fetchCaptureImage(
             bodyImageUrl,
@@ -257,14 +267,12 @@ const UserDetail = () => {
               ImageURL: "",
               Image: bodyImageData.ImageFile,
             });
-            console.log("Body image captured successfully");
           }
         }
 
         // Chụp ảnh giày
         if (shoeCamera?.cameraURL) {
           const shoeImageUrl = `${shoeCamera.cameraURL}capture-image`;
-          console.log("Attempting to capture shoe image from:", shoeImageUrl);
 
           const shoeImageData = await fetchCaptureImage(
             shoeImageUrl,
@@ -277,13 +285,10 @@ const UserDetail = () => {
               ImageURL: "",
               Image: shoeImageData.ImageFile,
             });
-            console.log("Shoe image captured successfully");
           }
         }
 
         if (images.length > 0) {
-          console.log("Setting state with captured images:", images.length);
-
           // Cập nhật checkInData
           setCheckInData((prevData) => ({
             ...prevData,
@@ -415,54 +420,61 @@ const UserDetail = () => {
     );
   }
 
-  if (isProcessing || isLoadingQr) {
-    return (
-      <View className="flex-1 items-center justify-center bg-backgroundApp">
-        <ActivityIndicator size="large" color="#ffffff" />
-        <Text className="text-white mt-4">Đang xử lý mã QR Code...</Text>
-      </View>
-    );
-  }
+  // if (isProcessing || isLoadingQr) {
+  //   return (
+  //     <View className="flex-1 items-center justify-center bg-backgroundApp">
+  //       <ActivityIndicator size="large" color="#ffffff" />
+  //       <Text className="text-white mt-4">Đang xử lý mã QR Code...</Text>
+  //     </View>
+  //   );
+  // }
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
-      <ScrollView>
-        <GestureHandlerRootView className="flex-1 ">
-          <View className="w-full aspect-[2/4] relative mb-4">
-            <CameraView
-              className="flex-1 w-full h-full"
-              onBarcodeScanned={handleBarCodeScanned}
-            />
-            <Overlay />
-            {(isProcessing || isLoadingQr) && (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#ffffff" />
-                <Text className="text-xl" style={styles.loadingText}>
-                  Đang xử lý...
+      {isProcessing ? (
+        <View className="flex-1 items-center justify-center bg-backgroundApp">
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text className="text-white mt-4">Đang xử lý mã QR Code...</Text>
+        </View>
+      ) : (
+        <ScrollView>
+          <GestureHandlerRootView className="flex-1 ">
+            <View className="w-full aspect-[2/4] relative mb-4">
+              <CameraView
+                className="flex-1 w-full h-full"
+                onBarcodeScanned={handleBarCodeScanned}
+              />
+              <Overlay />
+              {(isProcessing || isLoadingQr) && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#ffffff" />
+                  <Text className="text-xl" style={styles.loadingText}>
+                    Đang xử lý...
+                  </Text>
+                </View>
+              )}
+              <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
+                <Text className="text-green-700 text-sm font-semibold">
+                  Camera Checkin
                 </Text>
               </View>
-            )}
-            <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
-              <Text className="text-green-700 text-sm font-semibold">
-                Camera Checkin
-              </Text>
-            </View>
-            <TouchableOpacity
-              className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-2 rounded-md shadow-lg"
-              onPress={handleGoBack}
-            >
-              <Text className="text-white text-sm font-semibold">
-                Thoát Camera
-              </Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-2 rounded-md shadow-lg"
+                onPress={handleGoBack}
+              >
+                <Text className="text-white text-sm font-semibold">
+                  Thoát Camera
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
-              onPress={() => setIsCameraActive(false)}
-            ></TouchableOpacity>
-          </View>
-        </GestureHandlerRootView>
-      </ScrollView>
+              <TouchableOpacity
+                className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
+                onPress={() => setIsCameraActive(false)}
+              ></TouchableOpacity>
+            </View>
+          </GestureHandlerRootView>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 };

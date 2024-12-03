@@ -635,7 +635,7 @@ const CheckLicensePlate = () => {
     );
   }
 
-  console.log("check in data thuong: ", checkInData);
+  // console.log("check in data thuong: ", checkInData);
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">

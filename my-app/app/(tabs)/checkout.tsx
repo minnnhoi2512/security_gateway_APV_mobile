@@ -26,7 +26,9 @@ const Checkout = () => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [cameraType, setCameraType] = useState<CameraType>("OTHER_TYPE");
   const [activeCamera, setActiveCamera] = useState<"QR" | "LICENSE">("QR");
-  const [activeCameraCCCD, setActiveCameraCCCD] = useState<"CCCD" | "LICENSE">("CCCD");
+  const [activeCameraCCCD, setActiveCameraCCCD] = useState<"CCCD" | "LICENSE">(
+    "CCCD"
+  );
   const [creadentialCard, setCredentialCard] = useState<string | null>(null);
   const [visitorSessionData, setVisitorSessionData] = useState([]);
   const [qrCardVerified, setQrCardVerified] = useState<string | null>(null);
@@ -34,30 +36,26 @@ const Checkout = () => {
   const [isCameraCCCDActive, setIsCameraCCCDActive] = useState(false);
   const isQrCardSet = useRef(false);
   const handleOptionSelect = () => {
-    Alert.alert(
-      "Vui lòng chọn một trong các tùy chọn bên dưới",
-      "",
-      [
-        // {
-        //   text: "Quét bằng thẻ",
-        //   onPress: () => router.push("/check-out/CheckOutCard"),
-        // },
-        {
-          text: "Quét bằng CCCD",
-          onPress: () => {
-            setCameraType("CREDENTIAL_CARD"),
-              setIsCameraCCCDActive(true),
-              (isQrCardSet.current = false),
-              setQrCardVerified(null);
-          },
+    Alert.alert("Vui lòng chọn một trong các tùy chọn bên dưới", "", [
+      // {
+      //   text: "Quét bằng thẻ",
+      //   onPress: () => router.push("/check-out/CheckOutCard"),
+      // },
+      {
+        text: "Quét bằng CCCD",
+        onPress: () => {
+          setCameraType("CREDENTIAL_CARD"),
+            setIsCameraCCCDActive(true),
+            (isQrCardSet.current = false),
+            setQrCardVerified(null);
         },
-        {
-          text: "Hủy",
-          style: "cancel",
-          onPress: () => {},
-        },
-      ]
-    );
+      },
+      {
+        text: "Hủy",
+        style: "cancel",
+        onPress: () => {},
+      },
+    ]);
   };
 
   const {
@@ -82,7 +80,7 @@ const Checkout = () => {
   const [hasScanned, setHasScanned] = useState(false);
   const qrLock = useRef(false);
   const [isProcessing, setIsProcessing] = useState(false);
-
+  const [changeCCCD, setChangeCCCD] = useState<string | null>(null);
   const handleBarCodeScanned = useCallback(
     async ({ data }: { data: string }) => {
       if (isQrCardSet.current) return;
@@ -205,46 +203,60 @@ const Checkout = () => {
     [hasScanned, router]
   );
 
-  const handleBarCodeScannedCCCD = useCallback(({ data }: { data: string }) => {
-    if (data && data.includes("|")) {
-      try {
-        // Lấy phần tử đầu tiên trước dấu |
-        const credentialId = data.split("|")[0];
-        setIsCameraCCCDActive(false); // Tắt camera sau khi quét thành công
-        router.navigate({
-          pathname: "/check-out/CheckOutCard",
-          params: {
-            cccd: credentialId,
-          },
-        });
-      } catch (error) {
-        console.error("Error processing CCCD:", error);
+  const handleBarCodeScannedCCCD = useCallback(
+    ({ data }: { data: string }) => {
+      setChangeCCCD(data);
+      if (!data.includes("|") && !hasScanned) {
+        setHasScanned(true);
         Alert.alert("Lỗi", "Định dạng CCCD không hợp lệ. Vui lòng thử lại.");
+        return;
       }
-    } else {
-      Alert.alert("Lỗi", "Vui lòng quét đúng mã CCCD");
-    }
-  }, []);
-  const handleBarCodeScannedCCCDWithVehicle = useCallback(({ data }: { data: string }) => {
-    if (data && data.includes("|")) {
-      try {
-        // Lấy phần tử đầu tiên trước dấu |
-        const credentialId = data.split("|")[0];
-        setIsCameraCCCDActive(false); // Tắt camera sau khi quét thành công
-        router.navigate({
-          pathname: "/check-out/CheckOutCCCD-Vehicle",
-          params: {
-            cccd: credentialId,
-          },
-        });
-      } catch (error) {
-        console.error("Error processing CCCD:", error);
+      if (data && data.includes("|")) {
+        try {
+          // Lấy phần tử đầu tiên trước dấu |
+
+          const credentialId = data.split("|")[0];
+          setIsCameraCCCDActive(false); // Tắt camera sau khi quét thành công
+          router.navigate({
+            pathname: "/check-out/CheckOutCard",
+            params: {
+              cccd: credentialId,
+            },
+          });
+        } catch (error) {
+          console.error("Error processing CCCD:", error);
+          Alert.alert("Lỗi", "Định dạng CCCD không hợp lệ. Vui lòng thử lại.");
+        }
+      }
+    },
+    [hasScanned, router,changeCCCD]
+  );
+  const handleBarCodeScannedCCCDWithVehicle = useCallback(
+    ({ data }: { data: string }) => {
+      setChangeCCCD(data);
+      if (!data.includes("|") && !hasScanned) {
+        setHasScanned(true);
         Alert.alert("Lỗi", "Định dạng CCCD không hợp lệ. Vui lòng thử lại.");
+        return;
       }
-    } else {
-      Alert.alert("Lỗi", "Vui lòng quét đúng mã CCCD");
-    }
-  }, []);
+      if (data && data.includes("|")) {
+        try {
+          const credentialId = data.split("|")[0];
+          setIsCameraCCCDActive(false); // Tắt camera sau khi quét thành công
+          router.navigate({
+            pathname: "/check-out/CheckOutCCCD-Vehicle",
+            params: {
+              cccd: credentialId,
+            },
+          });
+        } catch (error) {
+          console.error("Error processing CCCD:", error);
+          Alert.alert("Lỗi", "Định dạng CCCD không hợp lệ. Vui lòng thử lại.");
+        }
+      }
+    },
+    [hasScanned, router, changeCCCD]
+  );
   const handleSeachVisitSessionBCredentialCard = () => {
     if (isLoadingByCredentialCard) {
       console.log("Đang tải dữ liệu...");

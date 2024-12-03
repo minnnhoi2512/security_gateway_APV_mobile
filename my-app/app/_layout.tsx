@@ -160,6 +160,10 @@ export default function RootLayout() {
               options={{ headerShown: false }}
             />
             <Stack.Screen
+              name="check-out/CheckOutCCCD-Vehicle"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
               name="check-out/CheckOutLicensePlate"
               options={{ animation: "fade", headerShown: false }}
             />
