@@ -430,7 +430,7 @@ const CheckLicensePlate = () => {
     };
 
     handleQrDataAndCapture().catch((error) => {
-      console.error("Error in handleQrDataAndCapture:", error);
+      // console.error("Error in handleQrDataAndCapture:", error);
     });
   }, [qrCardData, cameraGate]);
  

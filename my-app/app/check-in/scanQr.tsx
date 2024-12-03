@@ -58,6 +58,7 @@ const scanQr = () => {
   const [cardVerification, setCardVerification] = useState<string | null>(null);
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const alertShown = useRef(false);
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
@@ -106,7 +107,7 @@ const scanQr = () => {
     }
   );
 
-  console.log("Gate camera: ", cameraGate);
+
 
   const fetchCaptureImage = async (
     url: string,
@@ -169,10 +170,10 @@ const scanQr = () => {
       }
 
       try {
-        console.log(
-          "Processing card verification:",
-          qrCardData.cardVerification
-        );
+        // console.log(
+        //   "Processing card verification:",
+        //   qrCardData.cardVerification
+        // );
 
         // Tìm camera trực tiếp từ mảng cameraGate
         const bodyCamera = cameraGate.find(
@@ -183,17 +184,17 @@ const scanQr = () => {
           (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Shoe"
         );
 
-        console.log("Found cameras:", {
-          bodyCamera: bodyCamera?.cameraURL,
-          shoeCamera: shoeCamera?.cameraURL,
-        });
+        // console.log("Found cameras:", {
+        //   bodyCamera: bodyCamera?.cameraURL,
+        //   shoeCamera: shoeCamera?.cameraURL,
+        // });
 
         const images: CapturedImage[] = [];
 
         // Chụp ảnh body
         if (bodyCamera?.cameraURL) {
           const bodyImageUrl = `${bodyCamera.cameraURL}capture-image`;
-          console.log("Attempting to capture body image from:", bodyImageUrl);
+          // console.log("Attempting to capture body image from:", bodyImageUrl);
 
           const bodyImageData = await fetchCaptureImage(
             bodyImageUrl,
@@ -206,14 +207,14 @@ const scanQr = () => {
               ImageURL: "",
               Image: bodyImageData.ImageFile,
             });
-            console.log("Body image captured successfully");
+            // console.log("Body image captured successfully");
           }
         }
 
         // Chụp ảnh giày
         if (shoeCamera?.cameraURL) {
           const shoeImageUrl = `${shoeCamera.cameraURL}capture-image`;
-          console.log("Attempting to capture shoe image from:", shoeImageUrl);
+          // console.log("Attempting to capture shoe image from:", shoeImageUrl);
 
           const shoeImageData = await fetchCaptureImage(
             shoeImageUrl,
@@ -226,12 +227,12 @@ const scanQr = () => {
               ImageURL: "",
               Image: shoeImageData.ImageFile,
             });
-            console.log("Shoe image captured successfully");
+      
           }
         }
 
         if (images.length > 0) {
-          console.log("Setting state with captured images:", images.length);
+          // console.log("Setting state with captured images:", images.length);
 
           // Cập nhật checkInData
           setCheckInData((prevData) => ({
@@ -250,7 +251,7 @@ const scanQr = () => {
               QRCardVerification: qrCardData.cardVerification,
               ImageBody: shoeImage.Image,
             }));
-            console.log("ValidCheckInData updated with shoe image");
+            // console.log("ValidCheckInData updated with shoe image");
           }
         } else {
           console.error("No images were captured successfully");
@@ -423,14 +424,25 @@ const scanQr = () => {
           });
 
           resetState();
+          alertShown.current = false;
         } else if (
           !isLoadingQr &&
           !isFetchingQr &&
           (isErrorQr || !qrCardData)
         ) {
-          showToast("Mã xác thực không hợp lệ", "error");
-          // Alert.alert("Lỗi", "Mã xác thực không hợp lệ");
-          resetState();
+          if (!alertShown.current) { 
+            showToast("Mã xác thực không hợp lệ", "error");
+            Alert.alert("Lỗi", "Mã xác thực không hợp lệ", [
+              {
+                text: "OK",
+                onPress: () => {
+                  resetState();
+                  alertShown.current = false;  
+                }
+              }
+            ]);
+            alertShown.current = true;
+          }
         }
       } else if (credentialCardId && !redirected.current) {
         qrLock.current = true;
@@ -483,7 +495,7 @@ const scanQr = () => {
   };
   // console.log("CCCD: ", credentialCardId);
   // console.log("Card id: ", cardVerification);
-  console.log("Log lay anh ben scan: ", checkInData);
+  // console.log("Log lay anh ben scan: ", checkInData);
   return (
     <SafeAreaView style={StyleSheet.absoluteFillObject}>
       <Stack.Screen
