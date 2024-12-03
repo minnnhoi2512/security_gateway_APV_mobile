@@ -17,6 +17,7 @@ import { EvilIcons, MaterialIcons } from "@expo/vector-icons";
 import { CheckInVerWithLP } from "@/Types/checkIn.type";
 import ImageViewer from "react-native-image-zoom-viewer";
 import { MapPinIcon } from "lucide-react-native";
+import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 
 interface Visitor {
   visitorId: number;
@@ -88,26 +89,196 @@ const ValidCheckInScreen = () => {
     { data: response, error, isLoading: isLoadingValidRes },
   ] = useValidCheckInMutation();
 
+  // useEffect(() => {
+  //   const validateCheckIn = async () => {
+  //     try {
+  //       const dataValid = Array.isArray(params.dataValid)
+  //         ? params.dataValid[0]
+  //         : params.dataValid;
+
+  //       const parsedValidData = JSON.parse(dataValid) as ParsedValidData;
+  //       console.log("Parsed Valid Data:", parsedValidData);
+
+  //       console.log("ImageShoe data type:", typeof parsedValidData.ImageShoe);
+  //       console.log("ImageShoe content:", parsedValidData.ImageShoe);
+
+  //       let imageShoeData: Array<{ imageFile: string }> = [];
+
+  //       if (typeof parsedValidData.ImageShoe === "string") {
+  //         console.log("Processing single image string");
+  //         imageShoeData = [{ imageFile: parsedValidData.ImageShoe }];
+  //       } else if (Array.isArray(parsedValidData.ImageShoe)) {
+  //         console.log("Processing image array");
+  //         imageShoeData = parsedValidData.ImageShoe.filter(
+  //           (path): path is string => typeof path === "string" && path !== ""
+  //         ).map((path) => ({ imageFile: path }));
+  //       } else if (
+  //         parsedValidData.ImageShoe &&
+  //         typeof parsedValidData.ImageShoe === "object"
+  //       ) {
+  //         console.log("Processing image object");
+  //         const imgFile = (parsedValidData.ImageShoe as any).imageFile;
+  //         if (imgFile) {
+  //           imageShoeData = [{ imageFile: imgFile }];
+  //         }
+  //       }
+
+  //       console.log("Processed imageShoeData:", imageShoeData);
+
+  //       if (imageShoeData.length === 0) {
+  //         console.error(
+  //           "No valid image data to send. Original data:",
+  //           parsedValidData.ImageShoe
+  //         );
+  //         return;
+  //       }
+
+  //       const validCheckInData: ValidCheckInData = {
+  //         CredentialCard: parsedValidData.CredentialCard || null,
+  //         QRCardVerification: parsedValidData.QRCardVerification,
+  //         ImageShoe: imageShoeData,
+  //       };
+
+  //       console.log("Final data being sent to API:", validCheckInData);
+  //       await validCheckIn(validCheckInData);
+  //     } catch (error: any) {
+  //       console.error("ValidCheckIn Error:", error);
+
+  //       if (error instanceof Error) {
+  //         console.error("Error name:", error.name);
+  //         console.error("Error message:", error.message);
+  //         console.error("Error stack:", error.stack);
+  //       }
+
+  //       const errorMessage =
+  //         error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
+
+  //       Alert.alert("Đã có lỗi xảy ra", errorMessage, [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+  //             router.push("/(tabs)/checkin");
+  //           },
+  //         },
+  //       ]);
+  //     }
+  //   };
+
+  //   validateCheckIn();
+  // }, [params.dataValid]);
+
+  // useEffect(() => {
+  //   const validateCheckIn = async () => {
+  //     try {
+  //       const dataValid = Array.isArray(params.dataValid)
+  //         ? params.dataValid[0]
+  //         : params.dataValid;
+
+  //       const parsedValidData = JSON.parse(dataValid) as ParsedValidData;
+  //       let imageShoeData: Array<{ imageFile: string }> = [];
+
+  //       if (typeof parsedValidData.ImageShoe === "string") {
+  //         imageShoeData = [{ imageFile: parsedValidData.ImageShoe }];
+  //       } else if (Array.isArray(parsedValidData.ImageShoe)) {
+  //         imageShoeData = parsedValidData.ImageShoe.filter(
+  //           (path): path is string => typeof path === "string" && path !== ""
+  //         ).map((path) => ({ imageFile: path }));
+  //       } else if (
+  //         parsedValidData.ImageShoe &&
+  //         typeof parsedValidData.ImageShoe === "object"
+  //       ) {
+  //         const imgFile = (parsedValidData.ImageShoe as any).imageFile;
+  //         if (imgFile) {
+  //           imageShoeData = [{ imageFile: imgFile }];
+  //         }
+  //       }
+
+  //       if (imageShoeData.length === 0) {
+  //         console.error(
+  //           "No valid image data to send. Original data:",
+  //           parsedValidData.ImageShoe
+  //         );
+  //         return;
+  //       }
+
+  //       const validCheckInData: ValidCheckInData = {
+  //         CredentialCard: parsedValidData.CredentialCard || null,
+  //         QRCardVerification: parsedValidData.QRCardVerification,
+  //         ImageShoe: imageShoeData,
+  //       };
+
+  //       try {
+  //         const result = await validCheckIn(validCheckInData);
+  //         console.log("rs: ", result);
+
+  //         if (response.error) {
+  //           const error = response.error as FetchBaseQueryError;
+  //           if (
+  //             "data" in error &&
+  //             error.data &&
+  //             typeof error.data === "object" &&
+  //             "message" in error.data
+  //           ) {
+  //             Alert.alert(
+  //               "Lỗi",
+  //               `${(error.data as { message: string }).message}`
+  //             );
+  //           } else {
+  //             Alert.alert("Lỗi", "Đã xảy ra lỗi không xác định");
+  //           }
+  //         } else {
+  //           Alert.alert("Thành công", "Xác nhận ra thành công");
+  //         }
+  //       } catch (error: any) {
+  //         if (error && error.status === 400) {
+  //           const errorMessage =
+  //             error.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
+
+  //           Alert.alert("Lỗi", errorMessage, [
+  //             {
+  //               text: "OK",
+  //               onPress: () => {
+  //                 router.push("/(tabs)/checkin");
+  //               },
+  //             },
+  //           ]);
+  //           return;
+  //         }
+
+  //         throw error;
+  //       }
+  //     } catch (error: any) {
+  //       const errorMessage =
+  //         error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
+
+  //       Alert.alert("Đã có lỗi xảy ra", errorMessage, [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+  //             router.push("/(tabs)/checkin");
+  //           },
+  //         },
+  //       ]);
+  //     }
+  //   };
+
+  //   validateCheckIn();
+  // }, [params.dataValid]);
+
   useEffect(() => {
     const validateCheckIn = async () => {
       try {
+        // Parse và xử lý dữ liệu đầu vào
         const dataValid = Array.isArray(params.dataValid)
           ? params.dataValid[0]
           : params.dataValid;
 
         const parsedValidData = JSON.parse(dataValid) as ParsedValidData;
-        console.log("Parsed Valid Data:", parsedValidData);
-
-        console.log("ImageShoe data type:", typeof parsedValidData.ImageShoe);
-        console.log("ImageShoe content:", parsedValidData.ImageShoe);
-
         let imageShoeData: Array<{ imageFile: string }> = [];
 
         if (typeof parsedValidData.ImageShoe === "string") {
-          console.log("Processing single image string");
           imageShoeData = [{ imageFile: parsedValidData.ImageShoe }];
         } else if (Array.isArray(parsedValidData.ImageShoe)) {
-          console.log("Processing image array");
           imageShoeData = parsedValidData.ImageShoe.filter(
             (path): path is string => typeof path === "string" && path !== ""
           ).map((path) => ({ imageFile: path }));
@@ -115,14 +286,11 @@ const ValidCheckInScreen = () => {
           parsedValidData.ImageShoe &&
           typeof parsedValidData.ImageShoe === "object"
         ) {
-          console.log("Processing image object");
           const imgFile = (parsedValidData.ImageShoe as any).imageFile;
           if (imgFile) {
             imageShoeData = [{ imageFile: imgFile }];
           }
         }
-
-        console.log("Processed imageShoeData:", imageShoeData);
 
         if (imageShoeData.length === 0) {
           console.error(
@@ -138,23 +306,46 @@ const ValidCheckInScreen = () => {
           ImageShoe: imageShoeData,
         };
 
-        console.log("Final data being sent to API:", validCheckInData);
-        await validCheckIn(validCheckInData);
-      } catch (error: any) {
-        console.error("ValidCheckIn Error:", error);
+        // Gọi API
+        const result = await validCheckIn(validCheckInData);
+        console.log("API Response:", result);
 
-        if (error instanceof Error) {
-          console.error("Error name:", error.name);
-          console.error("Error message:", error.message);
-          console.error("Error stack:", error.stack);
+        // Kiểm tra lỗi từ server
+        if (result?.error) {
+          const error = result.error as FetchBaseQueryError;
+
+          if (
+            error.data &&
+            typeof error.data === "object" &&
+            "message" in error.data
+          ) {
+            const message = (error.data as { message: string }).message;
+            Alert.alert("Lỗi", message, [
+              {
+                text: "OK",
+
+                onPress: () => {
+                  router.navigate("/(tabs)/checkin");
+                },
+              },
+            ]);
+          } else {
+            Alert.alert("Lỗi", "Đã xảy ra lỗi không xác định từ API.");
+          }
+        } else {
+          Alert.alert("Thành công", "Xác nhận ra thành công");
         }
+      } catch (error: any) {
+        console.error("Unexpected Error:", error);
 
         const errorMessage =
-          error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
-
-        Alert.alert("Đã có lỗi xảy ra", errorMessage, [
+          error?.data?.message ||
+          error?.message ||
+          "Đã xảy ra lỗi không xác định.";
+        Alert.alert("Lỗi", errorMessage, [
           {
             text: "OK",
+
             onPress: () => {
               router.push("/(tabs)/checkin");
             },
@@ -438,8 +629,6 @@ const ValidCheckInScreen = () => {
                     visitorImage={response?.visitor.visitorCredentialFrontImage}
                   />
                 )}
-              
-               
               </View>
             </Section>
           </View>

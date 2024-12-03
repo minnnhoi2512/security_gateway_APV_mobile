@@ -24,6 +24,7 @@ import * as FileSystem from "expo-file-system";
 import { useShoeDetectMutation } from "@/redux/services/qrcode.service";
 import { uploadToFirebase } from "@/firebase-config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 
 const fetchCaptureImage = async (
   url: string,
@@ -120,7 +121,6 @@ interface ImageFile {
 }
 const CheckOutNormal = () => {
   const { qrString } = useLocalSearchParams();
-   console.log(qrString)
   const router = useRouter();
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
@@ -137,6 +137,7 @@ const CheckOutNormal = () => {
       skip: !gateId,
     }
   );
+  const [validData, setValidData] = useState<boolean>(false);
   const [validImageShoeUrl, setValidImageShoeUrl] = useState<string>("");
   const [validImageBodyUrl, setValidImageBodyUrl] = useState<string>("");
 
@@ -145,13 +146,26 @@ const CheckOutNormal = () => {
   const {
     data: checkInData,
     isLoading,
-   refetch,
+    refetch,
   } = useGetVissitorSessionByCardverifiedQuery(qrString as string);
-  //  console.log("log nhieu vc  2: ", checkInData);
-  //  console.log(isLoading);
-  //  console.log(isFetching)
+  const resetData = async () => {
+    setTimeout(async () => {
+      const result = await refetch();
+      if (result.error) {
+        const error = result.error as FetchBaseQueryError;
+        if ("status" in error && error.status === 400) {
+          handleBack();
+          Alert.alert("Lỗi", "Vui lòng gán thông tin người dùng lên thẻ");
+        }
+      } else {
+        setValidData(true);
+      }
+    }, 3000); // 3-second timeout
+  };
   const [shoeDetectMutation] = useShoeDetectMutation();
-
+  useEffect(() => {
+    resetData();
+  }, []);
   const captureImageShoe = async () => {
     if (checkInData && Array.isArray(cameraGate)) {
       const camera = cameraGate.find(
@@ -222,12 +236,16 @@ const CheckOutNormal = () => {
     }
   };
   useEffect(() => {
-    captureImageShoe();
-    captureImageBody();
-  }, [cameraGate]);
+    if (validData) {
+      captureImageShoe();
+      captureImageBody();
+    }
+  }, [cameraGate, validData]);
 
   const handleBack = () => {
-    router.back();
+    router.navigate({
+      pathname: "/(tabs)/checkout",
+    });
   };
 
   const InfoRow = ({
@@ -327,26 +345,44 @@ const CheckOutNormal = () => {
         "Bạn có muốn xác nhận ra không?",
         [
           {
-            text: "Đồng ý",
-            onPress: async () => {
-              try {
-                await checkOutWithCard({
-                  qrCardVerifi: qrString as string,
-                  checkoutData: checkOutData,
-                });
-                await refetch();
-                router.push({
-                  pathname: "/(tabs)/checkout",
-                });
-              } catch (error) {
-                Alert.alert("Lỗi", "Đã xảy ra lỗi khi xác nhận ra");
-              }
-            },
-          },
-          {
             text: "Hủy",
             onPress: () => {
               // Handle cancel action if needed
+            },
+          },
+          {
+            text: "Đồng ý",
+            onPress: async () => {
+              try {
+                const response = await checkOutWithCard({
+                  qrCardVerifi: qrString as string,
+                  checkoutData: checkOutData,
+                });
+                router.navigate({
+                  pathname: "/(tabs)/checkout",
+                });
+                if (response.error) {
+                  const error = response.error as FetchBaseQueryError;
+                  if (
+                    "data" in error &&
+                    error.data &&
+                    typeof error.data === "object" &&
+                    "message" in error.data
+                  ) {
+                    Alert.alert(
+                      "Lỗi",
+                      `${(error.data as { message: string }).message}`
+                    );
+                  } else {
+                    Alert.alert("Lỗi", "Đã xảy ra lỗi không xác định");
+                  }
+                } else {
+                  Alert.alert("Thành công", "Xác nhận ra thành công");
+                }
+              } catch (error) {
+                console.log(error);
+                Alert.alert("Lỗi", "Đã xảy ra lỗi khi xác nhận ra");
+              }
             },
           },
         ],
@@ -371,7 +407,6 @@ const CheckOutNormal = () => {
   //   handleBack();
   //   Alert.alert("Lỗi", "Vui lòng gán thông tin người dùng lên thẻ");
   // }
-
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
       <View>
@@ -386,12 +421,7 @@ const CheckOutNormal = () => {
 
       <ScrollView>
         <GestureHandlerRootView className="flex-1 p-5">
-          {!handleValidShoe ? (
-            <View className="flex-1 justify-center items-center p-4">
-              <ActivityIndicator size="large" color="#3B82F6" />
-              <Text className="text-gray-600 mt-4">Đang xử lý thông tin</Text>
-            </View>
-          ) : !isLoading && checkInData ? (
+          {!isLoading && checkInData ? (
             <View className="bg-backgroundApp p-4 rounded-lg shadow">
               <View className="mb-4 bg-green-50 p-3 rounded-lg">
                 <Text className="text-green-600 font-bold text-center text-lg mb-2">
@@ -411,6 +441,12 @@ const CheckOutNormal = () => {
                     <InfoRow
                       label="Cổng vào"
                       value={checkInData.gateIn.gateName}
+                    />
+                  )}
+                  {checkInData.gateIn && (
+                    <InfoRow
+                      label="Khách"
+                      value={checkInData.visitDetail.visitor.visitorName}
                     />
                   )}
                   {checkInData.securityIn && (
