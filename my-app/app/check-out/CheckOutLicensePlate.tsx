@@ -156,20 +156,22 @@ const CheckOutLicensePlate = () => {
   const [shoeDetectMutation] = useShoeDetectMutation();
   const [checkOutWithCard] = useCheckOutWithCardMutation();
   const [validData, setValidData] = useState<boolean>(false);
-  const [validLicensePlateNumber, setValidLicensePlateNumber] = useState<boolean>(false);
+  const [validLicensePlateNumber, setValidLicensePlateNumber] =
+    useState<boolean>(false);
   const resetData = async () => {
     setTimeout(async () => {
       const result = await refetch();
-      if (result?.data?.vehicleSession == null){
-        Alert.alert("Khách này không sử dụng phương tiện", "Vui lòng thử lại.");
-        handleBack();
-      }
       if (result.error) {
         const error = result.error as FetchBaseQueryError;
         if ("status" in error && error.status === 400) {
           handleBack();
-          Alert.alert("Lỗi", "Vui lòng gán thông tin khách lên thẻ");
+          Alert.alert("Lỗi", "Vui lòng gán thông tin khách lên thẻ hoặc đổi phương thức xác thực.");
+          return;
         }
+      } else if (result?.data?.vehicleSession == null) {
+        Alert.alert("Khách này không sử dụng phương tiện", "Vui lòng thử lại.");
+        handleBack();
+        return;
       } else {
         setValidData(true);
       }
@@ -184,7 +186,7 @@ const CheckOutLicensePlate = () => {
       captureImageShoe();
       captureImageBody();
     }
-  }, [cameraGate, validData,validLicensePlateNumber]);
+  }, [cameraGate, validData, validLicensePlateNumber]);
   const captureImageShoe = async () => {
     if (checkInData && Array.isArray(cameraGate)) {
       const camera = cameraGate.find(
@@ -284,8 +286,8 @@ const CheckOutLicensePlate = () => {
       );
 
       const result = await response.json();
-     
-      if (checkInData.vehicleSession.licensePlate == result.licensePlate){
+
+      if (checkInData.vehicleSession.licensePlate == result.licensePlate) {
         setValidLicensePlateNumber(true);
         const { downloadUrl: vehicleValidImageUrl } = await uploadToFirebase(
           imageUri,
@@ -299,7 +301,7 @@ const CheckOutLicensePlate = () => {
           `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
           [{ text: "OK" }]
         );
-      }else {
+      } else {
         Alert.alert("Biển số xe không trùng khớp", "Vui lòng thử lại");
         Alert.alert(
           "Kết quả nhận dạng",
@@ -307,7 +309,6 @@ const CheckOutLicensePlate = () => {
           [{ text: "OK" }]
         );
       }
-      
     } catch (error) {
       Alert.alert("Lỗi", "Hệ thống xử lý ảnh có vấn đề. Vui lòng thử lại.");
     } finally {
@@ -329,7 +330,6 @@ const CheckOutLicensePlate = () => {
       if (!result.canceled && result.assets[0]) {
         await uploadImageToAPI(result.assets[0].uri);
         setHandleValidCar(false);
-   
       }
     } catch (error) {
       console.error("Failed to take picture:", error);
@@ -528,7 +528,7 @@ const CheckOutLicensePlate = () => {
         </View>
       </SafeAreaView>
     );
-  }else if ((!handleValidShoe && handleValidCar) || !validLicensePlateNumber)
+  } else if ((!handleValidShoe && handleValidCar) || !validLicensePlateNumber)
     return (
       <View className="flex-1 justify-center items-center p-4">
         <ActivityIndicator size="large" color="#3B82F6" />
@@ -780,13 +780,11 @@ const CheckOutLicensePlate = () => {
         </ScrollView>
       </SafeAreaView>
     );
-  }
-  else {(
+  } else {
     <View className="flex-1 justify-center items-center p-4">
-      
       <Text className="text-gray-600 mt-4">Đang xử lý thông tin</Text>
-    </View>
-  )}
+    </View>;
+  }
 };
 
 export default CheckOutLicensePlate;
