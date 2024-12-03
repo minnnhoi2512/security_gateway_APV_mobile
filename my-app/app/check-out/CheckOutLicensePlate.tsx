@@ -16,7 +16,10 @@ import * as ImagePicker from "expo-image-picker";
 import { RootState } from "@/redux/store/store";
 import { EvilIcons, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useCheckOutWithCardMutation, useGetVissitorSessionByCardverifiedQuery } from "@/redux/services/checkout.service";
+import {
+  useCheckOutWithCardMutation,
+  useGetVissitorSessionByCardverifiedQuery,
+} from "@/redux/services/checkout.service";
 import { uploadToFirebase } from "@/firebase-config";
 import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
 import * as FileSystem from "expo-file-system";
@@ -57,15 +60,14 @@ interface ICheckOutData {
   gateOutId: number;
   vehicleSession?: {
     licensePlate: string;
-    vehicleImages: vehicleImagesType[]
+    vehicleImages: vehicleImagesType[];
   };
   images?: updateImage[];
 }
-type vehicleImagesType = 
-  {
-    imageType: string;
-    imageURL: string;
-  };
+type vehicleImagesType = {
+  imageType: string;
+  imageURL: string;
+};
 
 type updateImage = {
   imageType: string;
@@ -147,24 +149,26 @@ const CheckOutLicensePlate = () => {
   const [handleValidShoe, setHandleValidShoe] = useState(false);
   const [handleValidCar, setHandleValidCar] = useState(false);
   const router = useRouter();
-  const [fileImage, setFileImage] = useState("");
   const [capturedImage, setCapturedImage] = useState<string>("");
-  const [isUploading, setIsUploading] = useState(false);
   const [licensePlateNumber, setLicensePlateNumber] = useState<string>("");
   const [validImageShoeUrl, setValidImageShoeUrl] = useState<string>("");
   const [validImageBodyUrl, setValidImageBodyUrl] = useState<string>("");
   const [shoeDetectMutation] = useShoeDetectMutation();
   const [checkOutWithCard] = useCheckOutWithCardMutation();
   const [validData, setValidData] = useState<boolean>(false);
-
+  const [validLicensePlateNumber, setValidLicensePlateNumber] = useState<boolean>(false);
   const resetData = async () => {
     setTimeout(async () => {
       const result = await refetch();
+      if (result?.data?.vehicleSession == null){
+        Alert.alert("Khách này không sử dụng phương tiện", "Vui lòng thử lại.");
+        handleBack();
+      }
       if (result.error) {
         const error = result.error as FetchBaseQueryError;
         if ("status" in error && error.status === 400) {
           handleBack();
-          Alert.alert("Lỗi", "Vui lòng gán thông tin người dùng lên thẻ");
+          Alert.alert("Lỗi", "Vui lòng gán thông tin khách lên thẻ");
         }
       } else {
         setValidData(true);
@@ -176,11 +180,11 @@ const CheckOutLicensePlate = () => {
     resetData();
   }, []);
   useEffect(() => {
-    if (validData) {
+    if (validData && validLicensePlateNumber) {
       captureImageShoe();
       captureImageBody();
     }
-  }, [cameraGate, validData]);
+  }, [cameraGate, validData,validLicensePlateNumber]);
   const captureImageShoe = async () => {
     if (checkInData && Array.isArray(cameraGate)) {
       const camera = cameraGate.find(
@@ -279,38 +283,33 @@ const CheckOutLicensePlate = () => {
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
       const result = await response.json();
-      const { downloadUrl: vehicleValidImageUrl } = await uploadToFirebase(
-        imageUri,
-        `vehicleCheckout_${Date.now()}.jpg`
-      );
-      setCapturedImage(vehicleValidImageUrl);
-      setLicensePlateNumber(result.licensePlate || "Không nhận dạng được");
-      // setCheckoutData((prevData) => ({
-      //   ...prevData,
-      //   vehicleSession: {
-      //     licensePlate: result.licensePlate || "",
-      //     vehicleImages: [
-      //       {
-      //         imageType: "LicensePlate_Out",
-      //         imageURL: "",
-      //       },
-      //     ],
-      //   },
-      // }));
-
-      Alert.alert(
-        "Kết quả nhận dạng",
-        `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
-        [{ text: "OK" }]
-      );
+     
+      if (checkInData.vehicleSession.licensePlate == result.licensePlate){
+        setValidLicensePlateNumber(true);
+        const { downloadUrl: vehicleValidImageUrl } = await uploadToFirebase(
+          imageUri,
+          `vehicleCheckout_${Date.now()}.jpg`
+        );
+        setCapturedImage(vehicleValidImageUrl);
+        setLicensePlateNumber(result.licensePlate || "Không nhận dạng được");
+        Alert.alert("Thành công", "Đã xử lý ảnh thành công!");
+        Alert.alert(
+          "Kết quả nhận dạng",
+          `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
+          [{ text: "OK" }]
+        );
+      }else {
+        Alert.alert("Biển số xe không trùng khớp", "Vui lòng thử lại");
+        Alert.alert(
+          "Kết quả nhận dạng",
+          `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
+          [{ text: "OK" }]
+        );
+      }
+      
     } catch (error) {
-      console.error("Error processing image:", error);
-      Alert.alert("Lỗi", "Không thể xử lý ảnh. Vui lòng thử lại.");
+      Alert.alert("Lỗi", "Hệ thống xử lý ảnh có vấn đề. Vui lòng thử lại.");
     } finally {
       // setIsProcessing(false);
     }
@@ -330,7 +329,7 @@ const CheckOutLicensePlate = () => {
       if (!result.canceled && result.assets[0]) {
         await uploadImageToAPI(result.assets[0].uri);
         setHandleValidCar(false);
-        Alert.alert("Thành công", "Đã xử lý ảnh thành công!");
+   
       }
     } catch (error) {
       console.error("Failed to take picture:", error);
@@ -352,7 +351,6 @@ const CheckOutLicensePlate = () => {
             imageType: "CheckOut_Shoe",
             imageURL: validImageShoeUrl,
           },
-
         ],
         vehicleSession: {
           licensePlate: licensePlateNumber,
@@ -362,7 +360,7 @@ const CheckOutLicensePlate = () => {
               imageURL: capturedImage,
             },
           ],
-        }
+        },
       };
 
       Alert.alert(
@@ -516,7 +514,9 @@ const CheckOutLicensePlate = () => {
               onPress={takePhoto}
             >
               <Ionicons name="camera" size={24} color="white" />
-              <Text className="text-white font-medium">Chụp ảnh biển số xe</Text>
+              <Text className="text-white font-medium">
+                Chụp ảnh biển số xe
+              </Text>
             </TouchableOpacity>
           </View>
           {handleValidCar && (
@@ -528,15 +528,14 @@ const CheckOutLicensePlate = () => {
         </View>
       </SafeAreaView>
     );
-  }
-  if (!handleValidShoe && handleValidCar)
+  }else if ((!handleValidShoe && handleValidCar) || !validLicensePlateNumber)
     return (
       <View className="flex-1 justify-center items-center p-4">
         <ActivityIndicator size="large" color="#3B82F6" />
         <Text className="text-gray-600 mt-4">Đang xử lý thông tin</Text>
       </View>
     );
-  else {
+  else if (validLicensePlateNumber) {
     return (
       <SafeAreaView className="flex-1 bg-gray-100 mb-4">
         <View>
@@ -563,7 +562,7 @@ const CheckOutLicensePlate = () => {
                     icon={
                       <View className="w-6 h-6 bg-purple-500 rounded-full" />
                     }
-                    title="Trạng thái"
+                    title="Trạng thái "
                   >
                     <InfoRow
                       label="Thời gian vào công ty"
@@ -588,7 +587,7 @@ const CheckOutLicensePlate = () => {
                       />
                     )}
                     <InfoRow
-                      label="Trạng thái"
+                      label="Trạng thái khách"
                       value={
                         checkInData.status === "CheckIn"
                           ? "Đã vào"
@@ -598,10 +597,10 @@ const CheckOutLicensePlate = () => {
                       }
                     />
 
-                    {/* <InfoRow
-                        label="ID phiên"
-                        value={checkoutResponse.visitorSessionId}
-                      /> */}
+                    <InfoRow
+                      label="Trạng thái chuyến thăm"
+                      value={checkInData.visitDetail.visit.visitStatus}
+                    />
                   </Section>
 
                   <SectionDropDown
@@ -674,19 +673,31 @@ const CheckOutLicensePlate = () => {
                   >
                     <View>
                       <Text className="text-xl font-bold">Ảnh lúc vào</Text>
-
-                      <Image
-                        source={{
-                          uri: "https://ototai247.com/wp-content/uploads/2020/07/quy-dinh-bien-so-xe.jpg",
-                        }}
-                        style={{
-                          width: "100%",
-                          height: 200,
-                          borderRadius: 10,
-                          marginVertical: 10,
-                        }}
-                        resizeMode="contain"
-                      />
+                      {checkInData?.vehicleSession &&
+                        checkInData?.vehicleSession?.images
+                          .filter(
+                            (image: { imageType: string }) =>
+                              image.imageType !== ""
+                          )
+                          .map(
+                            (
+                              image: { imageURL: string; imageType: string },
+                              index: number
+                            ) => (
+                              <View key={index}>
+                                <Image
+                                  source={{ uri: image.imageURL }}
+                                  style={{
+                                    width: "100%",
+                                    height: 200,
+                                    borderRadius: 10,
+                                    marginVertical: 10,
+                                  }}
+                                  resizeMode="contain"
+                                />
+                              </View>
+                            )
+                          )}
 
                       {checkInData.visitorSessionsImages &&
                         checkInData.visitorSessionsImages
@@ -770,6 +781,12 @@ const CheckOutLicensePlate = () => {
       </SafeAreaView>
     );
   }
+  else {(
+    <View className="flex-1 justify-center items-center p-4">
+      
+      <Text className="text-gray-600 mt-4">Đang xử lý thông tin</Text>
+    </View>
+  )}
 };
 
 export default CheckOutLicensePlate;

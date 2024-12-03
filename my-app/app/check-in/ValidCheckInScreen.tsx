@@ -86,8 +86,8 @@ const ValidCheckInScreen = () => {
     { data: response, error, isLoading: isLoadingValidRes },
   ] = useValidCheckInMutation();
 
-  console.log("Check in da: ", params.dataValid);
-  console.log("Check in da res: ", response);
+  // console.log("Check in da: ", params.dataValid);
+  // console.log("Check in da res: ", response);
 
   useEffect(() => {
     const validateCheckIn = async () => {
