@@ -163,15 +163,13 @@ const ValidCheckInScreen = () => {
             "message" in error.data
           ) {
             const message = (error.data as { message: string }).message;
+            router.navigate("/(tabs)/checkin");
             Alert.alert("Lỗi", message, [
               {
                 text: "OK",
-
-                onPress: () => {
-                  router.navigate("/(tabs)/checkin");
-                },
               },
             ]);
+            return;
           } else {
             Alert.alert("Lỗi", "Đã xảy ra lỗi không xác định từ API.");
           }
@@ -185,15 +183,13 @@ const ValidCheckInScreen = () => {
           error?.data?.message ||
           error?.message ||
           "Đã xảy ra lỗi không xác định.";
+        router.push("/(tabs)/checkin");
         Alert.alert("Lỗi", errorMessage, [
           {
             text: "OK",
-
-            onPress: () => {
-              router.push("/(tabs)/checkin");
-            },
           },
         ]);
+        return;
       }
     };
 
@@ -674,14 +670,6 @@ const ValidCheckInScreen = () => {
     <View className="flex-1 bg-gray-50">
       <ScrollView className="flex-1 bg-gray-50">
         <View className="relative pb-20">
-          <Pressable
-            onPress={handleGoBack}
-            className="absolute top-6 left-2 flex flex-row items-center space-x-2 px-4 py-2 rounded-lg mt-4 z-10"
-          >
-            <MaterialIcons name="arrow-back" size={24} color="white" />
-            <Text className="text-white font-medium">Quay về</Text>
-          </Pressable>
-
           <ImageBackground
             source={{
               uri: "https://images.pexels.com/photos/269077/pexels-photo-269077.jpeg",

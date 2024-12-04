@@ -637,7 +637,7 @@ const CheckInOverall = () => {
     );
   }
 
-  console.log("Valid c dâta ben ovrr", dataCheckIn);
+  // console.log("Valid c dâta ben ovrr", dataCheckIn);
   // console.log("RS DATA", resultData);
 
   return (

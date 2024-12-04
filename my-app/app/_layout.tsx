@@ -151,6 +151,10 @@ export default function RootLayout() {
               name="createVisit/FormCreate"
               options={{ headerShown: false }}
             />
+             <Stack.Screen
+              name="tabs/CreateCustomer"
+              options={{ headerShown: false }}
+            />
             <Stack.Screen
               name="createVisitor/CreateVisitor"
               options={{ headerShown: false }}

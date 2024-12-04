@@ -63,7 +63,7 @@ const fetchCaptureImage = async (
     };
   } catch (error) {
     // console.error(`Failed to fetch ${imageType} image:`, error);
-   
+
     return { ImageType: imageType, ImageFile: null };
   }
 };
@@ -639,30 +639,38 @@ const CheckOutCard = () => {
                     </View>
                     <View>
                       <Text className="text-xl font-bold">Ảnh lúc ra</Text>
-                      <Image
-                        source={{
-                          uri: validImageShoeUrl,
-                        }}
-                        style={{
-                          width: "100%",
-                          height: 200,
-                          borderRadius: 10,
-                          marginVertical: 10,
-                        }}
-                        resizeMode="contain"
-                      />
-                      <Image
-                        source={{
-                          uri: validImageBodyUrl,
-                        }}
-                        style={{
-                          width: "100%",
-                          height: 200,
-                          borderRadius: 10,
-                          marginVertical: 10,
-                        }}
-                        resizeMode="contain"
-                      />
+                      {validImageShoeUrl != "" ? (
+                        <Image
+                          source={{
+                            uri: validImageShoeUrl,
+                          }}
+                          style={{
+                            width: "100%",
+                            height: 200,
+                            borderRadius: 10,
+                            marginVertical: 10,
+                          }}
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <ActivityIndicator size="large" color="#0000ff" />
+                      )}
+                      {validImageBodyUrl != "" ? (
+                        <Image
+                          source={{
+                            uri: validImageBodyUrl,
+                          }}
+                          style={{
+                            width: "100%",
+                            height: 200,
+                            borderRadius: 10,
+                            marginVertical: 10,
+                          }}
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <ActivityIndicator size="large" color="#0000ff" />
+                      )}
                     </View>
                   </SectionDropDown>
 

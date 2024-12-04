@@ -122,9 +122,7 @@ const CheckOutNormal = () => {
   );
   const [handleValidShoe, setHandleValidShoe] = useState(false);
   const gateId = Number(selectedGateId) || 0;
-  const {
-    data: cameraGate,
-  } = useGetCameraByGateIdQuery(
+  const { data: cameraGate } = useGetCameraByGateIdQuery(
     { gateId },
     {
       skip: !gateId,
@@ -662,30 +660,38 @@ const CheckOutNormal = () => {
                     </View>
                     <View>
                       <Text className="text-xl font-bold">Ảnh lúc ra</Text>
-                      <Image
-                        source={{
-                          uri: validImageShoeUrl,
-                        }}
-                        style={{
-                          width: "100%",
-                          height: 200,
-                          borderRadius: 10,
-                          marginVertical: 10,
-                        }}
-                        resizeMode="contain"
-                      />
-                      <Image
-                        source={{
-                          uri: validImageBodyUrl,
-                        }}
-                        style={{
-                          width: "100%",
-                          height: 200,
-                          borderRadius: 10,
-                          marginVertical: 10,
-                        }}
-                        resizeMode="contain"
-                      />
+                      {validImageShoeUrl != "" ? (
+                        <Image
+                          source={{
+                            uri: validImageShoeUrl,
+                          }}
+                          style={{
+                            width: "100%",
+                            height: 200,
+                            borderRadius: 10,
+                            marginVertical: 10,
+                          }}
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <ActivityIndicator size="large" color="#0000ff" />
+                      )}
+                      {validImageBodyUrl != "" ? (
+                        <Image
+                          source={{
+                            uri: validImageBodyUrl,
+                          }}
+                          style={{
+                            width: "100%",
+                            height: 200,
+                            borderRadius: 10,
+                            marginVertical: 10,
+                          }}
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <ActivityIndicator size="large" color="#0000ff" />
+                      )}
                     </View>
                   </SectionDropDown>
 

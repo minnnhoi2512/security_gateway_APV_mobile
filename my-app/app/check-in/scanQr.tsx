@@ -29,12 +29,13 @@ import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
 import { MaterialIcons } from "@expo/vector-icons";
 interface ScanData {
   id: string;
-  nationalId: string;
+  nationalId?: string;
   name: string;
   dateOfBirth: string;
-  gender: string;
-  address: string;
-  issueDate: string;
+  gender?: string;
+  address?: string;
+  issueDate?: string;
+  level?: string;
 }
 interface ImageData {
   ImageType: "Shoe";
@@ -307,11 +308,20 @@ const scanQr = () => {
     }
     return null;
   };
-
+  const parseQRLicensePlateData = (qrData: string): ScanData | null => {
+    const parts = qrData.split("\n");
+    if (parts.length === 5) {
+      const [id, name, dateOfBirth, level, address] = parts;
+      return { id, name, dateOfBirth, level, address };
+    }
+    return null;
+  };
   const isCredentialCard = (data: string): boolean => {
     return data.includes("|");
   };
-
+  const isLicensePlate = (data: string): boolean => {
+    return data.includes("\n");
+  };
   const resetState = () => {
     console.log("Resetting state...");
     setScannedData("");
@@ -332,6 +342,17 @@ const scanQr = () => {
     if (scannedData) {
       if (isCredentialCard(scannedData)) {
         const parsedData = parseQRData(scannedData);
+ 
+        if (parsedData) {
+          setCredentialCardId(parsedData.id);
+          setIsProcessing(true);
+        } else {
+          Alert.alert("Lỗi", "Mã QR không hợp lệ");
+          resetState();
+        }
+      } else if (isLicensePlate(scannedData)) {
+        const parsedData = parseQRLicensePlateData(scannedData);
+
         if (parsedData) {
           setCredentialCardId(parsedData.id);
           setIsProcessing(true);
@@ -373,7 +394,7 @@ const scanQr = () => {
           text: "OK",
           onPress: () => {
             router.push({
-              pathname: "/(tabs)/createCustomer",
+              pathname: "/(tabs)/CreateCustomer",
             });
             resetState();
             visitNotFoundShown.current = false;

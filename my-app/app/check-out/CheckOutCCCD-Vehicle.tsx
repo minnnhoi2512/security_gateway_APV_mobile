@@ -116,7 +116,7 @@ const fetchCaptureImage = async (
     };
   } catch (error) {
     // console.error(`Failed to fetch ${imageType} image:`, error);
-   
+
     return { ImageType: imageType, ImageFile: null };
   }
 };
@@ -206,8 +206,7 @@ const CheckOutCCCD_Vehicle = () => {
         captureImageBody();
         captureImageShoe();
       }, 1000); // Delay in milliseconds (e.g., 1000ms = 1 second)
-  
-    
+
       return () => clearTimeout(timeoutId);
     }
   }, [validData]);
@@ -807,30 +806,38 @@ const CheckOutCCCD_Vehicle = () => {
                         }}
                         resizeMode="contain"
                       />
-                      <Image
-                        source={{
-                          uri: validImageShoeUrl,
-                        }}
-                        style={{
-                          width: "100%",
-                          height: 200,
-                          borderRadius: 10,
-                          marginVertical: 10,
-                        }}
-                        resizeMode="contain"
-                      />
-                      <Image
-                        source={{
-                          uri: validImageBodyUrl,
-                        }}
-                        style={{
-                          width: "100%",
-                          height: 200,
-                          borderRadius: 10,
-                          marginVertical: 10,
-                        }}
-                        resizeMode="contain"
-                      />
+                      {validImageShoeUrl != "" ? (
+                        <Image
+                          source={{
+                            uri: validImageShoeUrl,
+                          }}
+                          style={{
+                            width: "100%",
+                            height: 200,
+                            borderRadius: 10,
+                            marginVertical: 10,
+                          }}
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <ActivityIndicator size="large" color="#0000ff" />
+                      )}
+                      {validImageBodyUrl != "" ? (
+                        <Image
+                          source={{
+                            uri: validImageBodyUrl,
+                          }}
+                          style={{
+                            width: "100%",
+                            height: 200,
+                            borderRadius: 10,
+                            marginVertical: 10,
+                          }}
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <ActivityIndicator size="large" color="#0000ff" />
+                      )}
                     </View>
                   </SectionDropDown>
 

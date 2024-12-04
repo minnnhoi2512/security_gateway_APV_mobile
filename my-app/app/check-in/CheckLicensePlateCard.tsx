@@ -70,7 +70,7 @@ const CheckLicensePlateCard = () => {
     "https://security-gateway-camera-1.tools.kozow.com/capture-image";
 
   const { card } = useLocalSearchParams();
-  console.log("coi co lay dc card k: ", card);
+  // console.log("coi co lay dc card k: ", card);
   const router = useRouter();
   const qrLock = useRef(false);
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
@@ -232,7 +232,7 @@ const CheckLicensePlateCard = () => {
         // Chụp ảnh body
         if (bodyCamera?.cameraURL) {
           const bodyImageUrl = `${bodyCamera.cameraURL}capture-image`;
-          console.log("Attempting to capture body image from:", bodyImageUrl);
+          // console.log("Attempting to capture body image from:", bodyImageUrl);
 
           const bodyImageData = await fetchCaptureImage(
             bodyImageUrl,
@@ -245,14 +245,14 @@ const CheckLicensePlateCard = () => {
               ImageURL: "",
               Image: bodyImageData.ImageFile,
             });
-            console.log("Body image captured successfully");
+            // console.log("Body image captured successfully");
           }
         }
 
         // Chụp ảnh giày
         if (shoeCamera?.cameraURL) {
           const shoeImageUrl = `${shoeCamera.cameraURL}capture-image`;
-          console.log("Attempting to capture shoe image from:", shoeImageUrl);
+          // console.log("Attempting to capture shoe image from:", shoeImageUrl);
 
           const shoeImageData = await fetchCaptureImage(
             shoeImageUrl,
@@ -265,12 +265,12 @@ const CheckLicensePlateCard = () => {
               ImageURL: "",
               Image: shoeImageData.ImageFile,
             });
-            console.log("Shoe image captured successfully");
+            // console.log("Shoe image captured successfully");
           }
         }
 
         if (images.length > 0) {
-          console.log("Setting state with captured images:", images.length);
+          // console.log("Setting state with captured images:", images.length);
 
           // Cập nhật checkInData
           setCheckInData((prevData) => ({
@@ -289,14 +289,14 @@ const CheckLicensePlateCard = () => {
               QRCardVerification: card as string,
               ImageBody: shoeImage.Image,
             }));
-            console.log("ValidCheckInData updated with shoe image");
+            // console.log("ValidCheckInData updated with shoe image");
           }
         } else {
-          console.error("No images were captured successfully");
+          // console.error("No images were captured successfully");
           Alert.alert("Warning", "Không thể chụp ảnh. Vui lòng thử lại.");
         }
       } catch (error) {
-        console.error("Error in capture process:", error);
+        // console.error("Error in capture process:", error);
         Alert.alert(
           "Error",
           "Lỗi khi chụp ảnh. Vui lòng kiểm tra cấu hình camera và thử lại."
@@ -377,7 +377,6 @@ const CheckLicensePlateCard = () => {
 
       if (!result.canceled && result.assets[0]) {
         await uploadImageToAPI(result.assets[0].uri);
-        Alert.alert("Thành công", "Đã xử lý ảnh thành công!");
       }
     } catch (error) {
       console.error("Failed to take picture:", error);
@@ -455,7 +454,7 @@ const CheckLicensePlateCard = () => {
       </View>
     );
   }
-  console.log("check in dâtta: ", checkInData);
+  // console.log("check in dâtta: ", checkInData);
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
       <View>

@@ -61,6 +61,7 @@ const CheckLicensePlate = () => {
   const [hasNavigated, setHasNavigated] = useState(false);
   const [hasScannedQR, setHasScannedQR] = useState(false);
   const [hasPhotoTaken, setHasPhotoTaken] = useState(false);
+  const [isScanDisabled, setIsScanDisabled] = useState(false);
   const [validLicensePlateNumber, setValidLicensePlateNumber] =
     useState<boolean>(false);
   const [isCameraLaunched, setIsCameraLaunched] = useState(false);
@@ -104,11 +105,12 @@ const CheckLicensePlate = () => {
     isError,
   } = useGetVisitDetailByIdQuery(visitId);
 
-  const {
-    data: qrCardData,
-    isLoading: isLoadingQr,
-    isError: isErrorQr,
-  } = useGetDataByCardVerificationQuery(checkInData.QrCardVerification);
+  const { data: qrCardData, refetch } = useGetDataByCardVerificationQuery(
+    checkInData.QrCardVerification,
+    {
+      skip: checkInData.QrCardVerification == "",
+    }
+  );
 
   // Check camera permissions
   useEffect(() => {
@@ -203,140 +205,119 @@ const CheckLicensePlate = () => {
       return { ImageType: imageType, ImageFile: null };
     }
   };
-  const captureImageFromCamera = async (url: string, images: CapturedImage[]) => {
+  const handleQrDataAndCapture = async () => {
+    if (!Array.isArray(cameraGate)) {
+      console.log("Missing required data:", {
+        isArray: Array.isArray(cameraGate),
+      });
+      return;
+    }
 
-  };
-  useEffect(() => {
-    const handleQrDataAndCapture = async () => {
-      if (
-        !qrCardData.cardVerification ||
-        !cameraGate ||
-        !Array.isArray(cameraGate)
-      ) {
-        console.log("Missing required data:", {
-          cardVerification: qrCardData.cardVerification,
-          cameraGate: !!cameraGate,
-          isArray: Array.isArray(cameraGate),
-        });
-        return;
+    try {
+      // Tìm camera trực tiếp từ mảng cameraGate
+      const bodyCamera = cameraGate.find(
+        (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Body"
+      );
+
+      const shoeCamera = cameraGate.find(
+        (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Shoe"
+      );
+
+      console.log("Found cameras:", {
+        bodyCamera: bodyCamera?.cameraURL,
+        shoeCamera: shoeCamera?.cameraURL,
+      });
+
+      const images: CapturedImage[] = [];
+
+      // Chụp ảnh body
+      if (bodyCamera?.cameraURL) {
+        const bodyImageUrl = `${bodyCamera.cameraURL}capture-image`;
+        console.log("Attempting to capture body image from:", bodyImageUrl);
+
+        const bodyImageData = await fetchCaptureImage(
+          bodyImageUrl,
+          "CheckIn_Body"
+        );
+
+        if (bodyImageData.ImageFile) {
+          images.push({
+            ImageType: "CheckIn_Body",
+
+            Image: bodyImageData.ImageFile,
+          });
+          console.log("Body image captured successfully");
+        }
       }
 
-      try {
-        console.log(
-          "Processing card verification:",
-          qrCardData.cardVerification
+      // Chụp ảnh giày
+      if (shoeCamera?.cameraURL) {
+        const shoeImageUrl = `${shoeCamera.cameraURL}capture-image`;
+        console.log("Attempting to capture shoe image from:", shoeImageUrl);
+
+        const shoeImageData = await fetchCaptureImage(
+          shoeImageUrl,
+          "CheckIn_Shoe"
         );
 
-        // Tìm camera trực tiếp từ mảng cameraGate
-        const bodyCamera = cameraGate.find(
-          (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Body"
-        );
-
-        const shoeCamera = cameraGate.find(
-          (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Shoe"
-        );
-
-        console.log("Found cameras:", {
-          bodyCamera: bodyCamera?.cameraURL,
-          shoeCamera: shoeCamera?.cameraURL,
-        });
-
-        const images: CapturedImage[] = [];
-
-        // Chụp ảnh body
-        if (bodyCamera?.cameraURL) {
-          const bodyImageUrl = `${bodyCamera.cameraURL}capture-image`;
-          console.log("Attempting to capture body image from:", bodyImageUrl);
-
-          const bodyImageData = await fetchCaptureImage(
-            bodyImageUrl,
-            "CheckIn_Body"
-          );
-
-          if (bodyImageData.ImageFile) {
-            images.push({
-              ImageType: "CheckIn_Body",
-
-              Image: bodyImageData.ImageFile,
-            });
-            console.log("Body image captured successfully");
-          }
+        if (shoeImageData.ImageFile) {
+          images.push({
+            ImageType: "CheckIn_Shoe",
+            Image: shoeImageData.ImageFile,
+          });
+          console.log("Shoe image captured successfully");
         }
+      }
 
-        // Chụp ảnh giày
-        if (shoeCamera?.cameraURL) {
-          const shoeImageUrl = `${shoeCamera.cameraURL}capture-image`;
-          console.log("Attempting to capture shoe image from:", shoeImageUrl);
+      if (images.length > 0) {
+        console.log("Setting state with captured images:", images.length);
 
-          const shoeImageData = await fetchCaptureImage(
-            shoeImageUrl,
-            "CheckIn_Shoe"
-          );
+        // Cập nhật checkInData
+        setCheckInData((prevData) => ({
+          ...prevData,
+          QrCardVerification: qrCardData?.cardVerification || "",
+          Images: images,
+        }));
 
-          if (shoeImageData.ImageFile) {
-            images.push({
-              ImageType: "CheckIn_Shoe",
-              Image: shoeImageData.ImageFile,
-            });
-            console.log("Shoe image captured successfully");
-          }
-        }
-
-        if (images.length > 0) {
-          console.log("Setting state with captured images:", images.length);
-
-          // Cập nhật checkInData
-          setCheckInData((prevData) => ({
+        // Cập nhật validCheckInData
+        const shoeImage = images.find(
+          (img) => img.ImageType === "CheckIn_Shoe"
+        );
+        if (shoeImage?.Image) {
+          setValidCheckInData((prevData) => ({
             ...prevData,
-            QrCardVerification: qrCardData.cardVerification,
-            Images: images,
+            QRCardVerification: qrCardData?.cardVerification || "",
+            ImageShoe: shoeImage.Image,
           }));
-
-          // Cập nhật validCheckInData
-          const shoeImage = images.find(
-            (img) => img.ImageType === "CheckIn_Shoe"
-          );
-          if (shoeImage?.Image) {
-            setValidCheckInData((prevData) => ({
-              ...prevData,
-              QRCardVerification: qrCardData.cardVerification,
-              ImageShoe: shoeImage.Image,
-            }));
-            console.log("ValidCheckInData updated with shoe image");
-          }
-        } else {
-          console.error("No images were captured successfully");
-          Alert.alert("Warning", "Không thể chụp ảnh. Vui lòng thử lại.");
+          console.log("ValidCheckInData updated with shoe image");
         }
-      } catch (error) {
-        console.error("Error in capture process:", error);
-        Alert.alert(
-          "Error",
-          "Lỗi khi chụp ảnh. Vui lòng kiểm tra cấu hình camera và thử lại."
-        );
+        return images;
+      } else {
+        console.error("No images were captured successfully");
+        Alert.alert("Warning", "Không thể chụp ảnh. Vui lòng thử lại.");
       }
-    };
-
-    handleQrDataAndCapture().catch((error) => {
-      // console.error("Error in handleQrDataAndCapture:", error);
-    });
-  }, [qrCardData, cameraGate]);
-
-  useEffect(() => {
+    } catch (error) {
+      console.error("Error in capture process:", error);
+      Alert.alert(
+        "Error",
+        "Lỗi khi chụp ảnh. Vui lòng kiểm tra cấu hình camera và thử lại."
+      );
+    }
+  };
+  const directData = async () => {
     if (qrCardData) {
       setIsProcessing(true);
       if (qrCardData.cardImage) {
         setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
       }
-      if (qrCardData.cardVerification) {
-        setCheckInData((prevData) => ({
-          ...prevData,
-          QrCardVerification: qrCardData.cardVerification,
-        }));
+      if (qrCardData?.cardVerification) {
         setHasScannedQR(true);
       }
       setIsProcessing(false);
     }
+  };
+  useEffect(() => {
+    directData();
   }, [qrCardData]);
 
   const uploadImageToAPI = async (imageUri: string) => {
@@ -368,6 +349,8 @@ const CheckLicensePlate = () => {
       }
 
       const result = await response.json();
+      console.log(result);
+      setIsCameraActive(false);
       setCheckInData((prevData) => ({
         ...prevData,
         VehicleSession: {
@@ -390,13 +373,12 @@ const CheckLicensePlate = () => {
         [
           {
             text: "OK",
-            onPress: () =>
-              Alert.alert("Hướng dẫn", "Vui lòng quét mã QR để tiếp tục"),
+            onPress: () => console.log("keke"),
           },
         ]
       );
     } catch (error) {
-      console.error("Error processing image:", error);
+      // console.error("Error processing image:", error);
       setValidLicensePlateNumber(false);
       Alert.alert("Lỗi", "Không thể xử lý ảnh. Vui lòng thử lại.");
     } finally {
@@ -423,75 +405,103 @@ const CheckLicensePlate = () => {
     }
   };
 
-  const handleBarCodeScanned = async ({ data }: { data: string }) => {
-    if (data && !qrLock.current) {
-      qrLock.current = true;
-      setIsProcessing(true);
+  const validateAndNavigate = async (checkInData: CheckInVerWithLP) => {
+    console.log(checkInData);
+    const isDataComplete =
+      checkInData.CredentialCard !== null &&
+      checkInData.SecurityInId !== 0 &&
+      checkInData.GateInId !== 0 &&
+      checkInData.QrCardVerification !== "" &&
+      checkInData.Images.length > 0 &&
+      checkInData.VehicleSession.LicensePlate !== "" &&
+      checkInData.VehicleSession.vehicleImages.length > 0;
+    if (!isDataComplete) {
+      return;
+    }
 
-      try {
-        setCheckInData((prevData) => ({
-          ...prevData,
-          QrCardVerification: data,
-        }));
-        setIsCameraActive(false);
-        setHasScannedQR(true);
-      } catch (error) {
-        console.error("Error handling QR Code:", error);
-        Alert.alert("Error", "Failed to process QR code. Please try again.");
-      } finally {
-        setIsProcessing(false);
-        qrLock.current = false;
+    try {
+      const dataToSend = {
+        ...checkInData,
+        __type: "CheckInVerWithLP",
+      };
+
+      router.push({
+        pathname: "/check-in/ValidCheckInScreen",
+        params: {
+          dataCheckIn: JSON.stringify(dataToSend),
+          dataValid: JSON.stringify({
+            CredentialCard: checkInData.CredentialCard,
+            QRCardVerification: checkInData.QrCardVerification,
+            ImageShoe:
+              checkInData.Images.find((img) => img.ImageType === "CheckIn_Shoe")
+                ?.Image || null,
+          }),
+        },
+      });
+    } catch (error: any) {
+      console.log("ERR", error);
+      const errorMessage =
+        error.data?.message || "Vui lòng đảm bảo đã có đầy đủ thông tin";
+      Alert.alert("Đã xảy ra lỗi", errorMessage);
+    }
+  };
+  const handleBarCodeScanned = async ({ data }: { data: string }) => {
+    // console.log(data);
+    // if (!data.includes("-") && !hasScannedQR) {
+    //   setHasScannedQR(false);
+    //   return Alert.alert("Lỗi", "QR Code không hợp lệ. Vui lòng thử lại.");
+    // }
+    if (data && !qrLock.current) {
+      if (!data.includes("-") && !hasScannedQR) {
+        // Alert.alert("Lỗi", "QR Code không hợp lệ. Vui lòng thử lại.");
+      } else {
+        qrLock.current = true;
+        setIsProcessing(true);
+        try {
+          setCheckInData((prevData) => ({
+            ...prevData,
+            QrCardVerification: data,
+          }));
+          setIsCameraActive(false);
+          setHasScannedQR(true);
+          const captureImage: CapturedImage[] | undefined =
+            await handleQrDataAndCapture();
+          await validateAndNavigate({
+            ...checkInData,
+            Images: captureImage || [],
+            QrCardVerification: data,
+          });
+        } catch (error) {
+          console.error("Error handling QR Code:", error);
+          Alert.alert("Error", "Failed to process QR code. Please try again.");
+        } finally {
+          setIsProcessing(false);
+          qrLock.current = false;
+        }
       }
     }
   };
+  // const handleBarCodeScanned = async ({ data }: { data: string }) => {
+  //   if (data && !qrLock.current) {
+  //     qrLock.current = true;
+  //     setIsProcessing(true);
 
-  useEffect(() => {
-    const validateAndNavigate = async () => {
-      const isDataComplete =
-        checkInData.CredentialCard !== null &&
-        checkInData.SecurityInId !== 0 &&
-        checkInData.GateInId !== 0 &&
-        checkInData.QrCardVerification !== "" &&
-        checkInData.Images.length > 0 &&
-        checkInData.VehicleSession.LicensePlate !== "" &&
-        checkInData.VehicleSession.vehicleImages.length > 0;
-      if (!isDataComplete || hasNavigated) {
-        return;
-      }
-
-      try {
-        setHasNavigated(true);
-        const dataToSend = {
-          ...checkInData,
-          __type: "CheckInVerWithLP",
-        };
-
-        router.push({
-          pathname: "/check-in/ValidCheckInScreen",
-          params: {
-            dataCheckIn: JSON.stringify(dataToSend),
-            dataValid: JSON.stringify({
-              CredentialCard: checkInData.CredentialCard,
-              QRCardVerification: checkInData.QrCardVerification,
-              ImageShoe:
-                checkInData.Images.find(
-                  (img) => img.ImageType === "CheckIn_Shoe"
-                )?.Image || null,
-            }),
-          },
-        });
-      } catch (error: any) {
-        console.log("ERR", error);
-        const errorMessage =
-          error.data?.message || "Vui lòng đảm bảo đã có đầy đủ thông tin";
-        Alert.alert("Đã xảy ra lỗi", errorMessage);
-        setHasNavigated(false);
-      }
-    };
-
-    validateAndNavigate();
-  }, [checkInData, hasNavigated]);
-
+  //     try {
+  //       setCheckInData((prevData) => ({
+  //         ...prevData,
+  //         QrCardVerification: data,
+  //       }));
+  //       setIsCameraActive(false);
+  //       setHasScannedQR(true);
+  //     } catch (error) {
+  //       console.error("Error handling QR Code:", error);
+  //       Alert.alert("Error", "Failed to process QR code. Please try again.");
+  //     } finally {
+  //       setIsProcessing(false);
+  //       qrLock.current = false;
+  //     }
+  //   }
+  // };
   if (!isPermissionGranted) {
     return (
       <View className="flex-1 justify-center items-center">
@@ -516,7 +526,14 @@ const CheckLicensePlate = () => {
       </View>
     );
   }
-
+  if (hasScannedQR) {
+    return (
+      <View className="flex-1 items-center justify-center bg-backgroundApp">
+        <ActivityIndicator size="large" color="#ffffff" />
+        <Text className="text-white mt-4">Đang xử lý...</Text>
+      </View>
+    );
+  }
   // console.log("check in data thuong: ", checkInData);
 
   return (
@@ -540,7 +557,9 @@ const CheckLicensePlate = () => {
               onPress={takePhoto}
             >
               <Ionicons name="camera" size={24} color="white" />
-              <Text className="text-white font-medium">Chụp ảnh</Text>
+              <Text className="text-white font-medium">
+                Chụp lại ảnh nhận dạng xe
+              </Text>
             </TouchableOpacity>
 
             {capturedImage.length > 0 && (
@@ -562,7 +581,7 @@ const CheckLicensePlate = () => {
           </View>
 
           {/* QR Scanner */}
-          {validLicensePlateNumber && (
+          {
             <View className="aspect-[2/4] relative mb-4">
               <CameraView
                 style={StyleSheet.absoluteFillObject}
@@ -577,7 +596,7 @@ const CheckLicensePlate = () => {
                 </Text>
               </View>
             </View>
-          )}
+          }
 
           {/* Status Indicators */}
           <View className="mt-4 p-4 bg-white rounded-lg">
