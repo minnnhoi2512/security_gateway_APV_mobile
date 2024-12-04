@@ -115,10 +115,7 @@ const fetchCaptureImage = async (
     };
   } catch (error) {
     // console.error(`Failed to fetch ${imageType} image:`, error);
-    Alert.alert(
-      "Error",
-      `Failed to fetch ${imageType} image. Please try again.`
-    );
+   
     return { ImageType: imageType, ImageFile: null };
   }
 };

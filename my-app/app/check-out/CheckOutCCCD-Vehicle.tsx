@@ -116,10 +116,7 @@ const fetchCaptureImage = async (
     };
   } catch (error) {
     // console.error(`Failed to fetch ${imageType} image:`, error);
-    Alert.alert(
-      "Error",
-      `Failed to fetch ${imageType} image. Please try again.`
-    );
+   
     return { ImageType: imageType, ImageFile: null };
   }
 };
@@ -205,8 +202,13 @@ const CheckOutCCCD_Vehicle = () => {
   }, [cccd]);
   useEffect(() => {
     if (validData) {
-      captureImageBody();
-      captureImageShoe();
+      const timeoutId = setTimeout(() => {
+        captureImageBody();
+        captureImageShoe();
+      }, 1000); // Delay in milliseconds (e.g., 1000ms = 1 second)
+  
+    
+      return () => clearTimeout(timeoutId);
     }
   }, [validData]);
   const fetchWithTimeout = (promise: any, timeout: any) => {
