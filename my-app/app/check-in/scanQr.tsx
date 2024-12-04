@@ -480,7 +480,7 @@ const scanQr = () => {
       qrLock.current = true;
       setScannedData(data);
       setIsProcessing(true);
-      console.log("Scanned QR Code Data:", data);
+      // console.log("Scanned QR Code Data:", data);
     }
   };
   const handleGoBack = () => {

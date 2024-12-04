@@ -233,7 +233,7 @@ const CheckInOverall = () => {
           }
         }
 
-        console.log("Form data being sent:", formData);
+        // console.log("Form data being sent:", formData);
 
         const response = await checkIn(formData).unwrap();
         setResultData(response);
@@ -241,7 +241,7 @@ const CheckInOverall = () => {
         setCheckInMessage("Bạn vừa check in thành công!");
         showToast("Bạn vừa check in thành công!", "success");
       } catch (error: any) {
-        console.log("err check in:", error);
+        // console.log("err check in:", error);
         setCheckInStatus("error");
         const errorMessage =
           error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
@@ -250,7 +250,10 @@ const CheckInOverall = () => {
           {
             text: "OK",
             onPress: () => {
-              router.push("/(tabs)/checkin");
+              router.navigate({
+                pathname: "/check-in/ListVisit",
+                params: { credentialCardId: parsedDataCheckIn?.CredentialCard },
+              });
             },
           },
         ]);
@@ -260,7 +263,7 @@ const CheckInOverall = () => {
     performCheckIn();
   }, []);
 
-  console.log("chedck da: ", checkInData);
+  // console.log("chedck da: ", checkInData);
 
   const handleGoBack = () => {
     router.back();

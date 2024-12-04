@@ -10,6 +10,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface Visit {
   visitDetailId: number;
@@ -38,6 +39,7 @@ const ListVisit: React.FC = () => {
   const { credentialCardId } = useLocalSearchParams<{
     credentialCardId: string;
   }>();
+  
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const {
