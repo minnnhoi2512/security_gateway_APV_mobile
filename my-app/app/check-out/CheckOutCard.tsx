@@ -151,15 +151,26 @@ const CheckOutCard = () => {
   const resetData = async () => {
     setTimeout(async () => {
       const result = await refetch();
-      if (result?.data?.vehicleSession != null){
+      if (result?.data?.vehicleSession != null) {
         Alert.alert("Khách này sử dụng phương tiện", "Vui lòng thử lại.");
         handleBack();
+        return;
       }
       if (result.error) {
         const error = result.error as FetchBaseQueryError;
-        if ("status" in error && error.status === 400) {
+        if (
+          "data" in error &&
+          error.data &&
+          typeof error.data === "object" &&
+          "message" in error.data
+        ) {
+          Alert.alert("Lỗi", `${(error.data as { message: string }).message}`);
           handleBack();
-          Alert.alert("Lỗi", "Vui lòng gán thông tin người dùng lên thẻ");
+          return;
+        } else {
+          Alert.alert("Lỗi", "Đã xảy ra lỗi không xác định");
+          handleBack();
+          return;
         }
       } else {
         setValidData(true);
