@@ -156,37 +156,66 @@ const CheckOutLicensePlate = () => {
   const [shoeDetectMutation] = useShoeDetectMutation();
   const [checkOutWithCard] = useCheckOutWithCardMutation();
   const [validData, setValidData] = useState<boolean>(false);
+  const [cameraReady, setCameraReady] = useState<boolean>(false);
   const [validLicensePlateNumber, setValidLicensePlateNumber] =
     useState<boolean>(false);
   const resetData = async () => {
     setTimeout(async () => {
       const result = await refetch();
+
       if (result.error) {
         const error = result.error as FetchBaseQueryError;
-        if ("status" in error && error.status === 400) {
-          handleBack();
-          Alert.alert("Lỗi", "Vui lòng gán thông tin khách lên thẻ hoặc đổi phương thức xác thực.");
-          return;
+        if (
+          "data" in error &&
+          error.data &&
+          typeof error.data === "object" &&
+          "message" in error.data
+        ) {
+          return (() => {
+            Alert.alert(
+              "Lỗi",
+              `${(error.data as { message: string }).message}`
+            );
+            handleBack();
+          })();
+        } else {
+          return (() => {
+            handleBack();
+            Alert.alert("Lỗi", "Đã xảy ra lỗi không xác định");
+          })();
         }
-      } else if (result?.data?.vehicleSession == null) {
-        Alert.alert("Khách này không sử dụng phương tiện", "Vui lòng thử lại.");
-        handleBack();
-        return;
       } else {
         setValidData(true);
       }
-    }, 3000); // 3-second timeout
+      if (result?.data?.vehicleSession == null) {
+        return (() => {
+          handleBack();
+          Alert.alert(
+            "Khách này không sử dụng phương tiện",
+            "Vui lòng thử lại."
+          );
+        })();
+      }
+    }, 3000);
   };
 
   useEffect(() => {
     resetData();
-  }, []);
+  }, [qrString]);
   useEffect(() => {
-    if (validData && validLicensePlateNumber) {
-      captureImageShoe();
+    if (validData) {
       captureImageBody();
+      captureImageShoe();
     }
-  }, [cameraGate, validData, validLicensePlateNumber]);
+  }, [validData]);
+  const fetchWithTimeout = (promise: any, timeout: any) => {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Request timed out")), timeout)
+      ),
+    ]);
+  };
   const captureImageShoe = async () => {
     if (checkInData && Array.isArray(cameraGate)) {
       const camera = cameraGate.find(
@@ -194,11 +223,28 @@ const CheckOutLicensePlate = () => {
       );
       if (camera) {
         try {
-          const checkOutShoe = await fetchCaptureImage(
-            `${camera.cameraURL}capture-image`,
-            "CheckOut_Shoe"
-          );
-
+          let checkOutShoe: { ImageType: string; ImageFile: string | null } = {
+            ImageType: "checkOutShoe",
+            ImageFile: null,
+          };
+          try {
+            checkOutShoe = await fetchWithTimeout(
+              fetchCaptureImage(
+                `${camera.cameraURL}capture-image`,
+                "CheckOut_Shoe"
+              ),
+              3000
+            );
+          } catch (error) {
+            Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
+            handleBack();
+            return;
+          }
+          if (checkOutShoe.ImageFile === null) {
+            handleBack();
+            Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
+            return;
+          }
           const imageValid: ImageFile = {
             name: "CheckOut_Shoe",
             type: "image/jpeg",
@@ -209,6 +255,7 @@ const CheckOutLicensePlate = () => {
           if (validShoe.error) {
             handleBack();
             Alert.alert("Lỗi", "Giày không hợp lệ");
+            return;
           } else if (validShoe.data.confidence > 50) {
             const { downloadUrl: shoeValidImageUrl } = await uploadToFirebase(
               imageValid.uri,
@@ -220,10 +267,12 @@ const CheckOutLicensePlate = () => {
           } else {
             handleBack();
             Alert.alert("Lỗi", "Giày không hợp lệ");
+            return;
           }
         } catch (error) {
           handleBack();
           Alert.alert("Lỗi", "Đã xảy ra lỗi khi xác minh giày");
+          return;
         }
       }
     }
@@ -231,18 +280,37 @@ const CheckOutLicensePlate = () => {
   const captureImageBody = async () => {
     if (checkInData && Array.isArray(cameraGate)) {
       const camera = cameraGate.find(
-        (camera) => camera?.cameraType?.cameraTypeId === 3
+        (camera) => camera?.cameraType?.cameraTypeId === 4
       );
       if (camera) {
         try {
-          const checkOutShoe = await fetchCaptureImage(
-            `${camera.cameraURL}capture-image`,
-            "CheckOut_Body"
-          );
+          let checkOutBody: { ImageType: string; ImageFile: string | null } = {
+            ImageType: "CheckOut_Body",
+            ImageFile: null,
+          };
+
+          try {
+            checkOutBody = await fetchWithTimeout(
+              fetchCaptureImage(
+                `${camera.cameraURL}capture-image`,
+                "CheckOut_Body"
+              ),
+              3000
+            );
+          } catch (error) {
+            Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
+            handleBack();
+            return;
+          }
+          if (checkOutBody.ImageFile === null) {
+            handleBack();
+            Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
+            return;
+          }
           const imageValid: ImageFile = {
             name: "CheckOut_Body",
             type: "image/jpeg",
-            uri: checkOutShoe.ImageFile || "",
+            uri: checkOutBody.ImageFile || "",
           };
           const { downloadUrl: bodyValidImageUrl } = await uploadToFirebase(
             imageValid.uri,
@@ -251,7 +319,8 @@ const CheckOutLicensePlate = () => {
           setValidImageBodyUrl(bodyValidImageUrl);
         } catch (error) {
           handleBack();
-          Alert.alert("Lỗi", "Đã xảy ra lỗi khi xác minh giày");
+          Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
+          return;
         }
       }
     }

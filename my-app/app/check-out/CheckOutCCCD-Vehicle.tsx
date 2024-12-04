@@ -155,7 +155,7 @@ const CheckOutCCCD_Vehicle = () => {
   const [validImageShoeUrl, setValidImageShoeUrl] = useState<string>("");
   const [validImageBodyUrl, setValidImageBodyUrl] = useState<string>("");
   const [shoeDetectMutation] = useShoeDetectMutation();
-  const [checkOutWithCard] = useCheckOutWithCardMutation();
+  const [cameraReady, setCameraReady] = useState<boolean>(false);
   const [validData, setValidData] = useState<boolean>(false);
   const [checkOutWithCCCDWithVehicle] = useCheckOutWithCredentialCardMutation();
   const [validLicensePlateNumber, setValidLicensePlateNumber] =
@@ -163,31 +163,60 @@ const CheckOutCCCD_Vehicle = () => {
   const resetData = async () => {
     setTimeout(async () => {
       const result = await refetch();
-      if (result?.data?.vehicleSession == null) {
-        Alert.alert("Khách này không sử dụng phương tiện", "Vui lòng thử lại.");
-        handleBack();
-      }
+
       if (result.error) {
         const error = result.error as FetchBaseQueryError;
-        if ("status" in error && error.status === 400) {
-          handleBack();
-          Alert.alert("Lỗi", "Vui lòng gán thông tin người dùng lên thẻ");
+        if (
+          "data" in error &&
+          error.data &&
+          typeof error.data === "object" &&
+          "message" in error.data
+        ) {
+          return (() => {
+            Alert.alert(
+              "Lỗi",
+              `${(error.data as { message: string }).message}`
+            );
+            handleBack();
+          })();
+        } else {
+          return (() => {
+            handleBack();
+            Alert.alert("Lỗi", "Đã xảy ra lỗi không xác định");
+          })();
         }
       } else {
         setValidData(true);
       }
-    }, 3000); // 3-second timeout
+      if (result?.data?.vehicleSession == null) {
+        return (() => {
+          handleBack();
+          Alert.alert(
+            "Khách này không sử dụng phương tiện",
+            "Vui lòng thử lại."
+          );
+        })();
+      }
+    }, 3000);
   };
 
   useEffect(() => {
     resetData();
-  }, []);
+  }, [cccd]);
   useEffect(() => {
-    if (validData && validLicensePlateNumber) {
-      captureImageShoe();
+    if (validData) {
       captureImageBody();
+      captureImageShoe();
     }
-  }, [cameraGate, validData, validLicensePlateNumber]);
+  }, [validData]);
+  const fetchWithTimeout = (promise: any, timeout: any) => {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Request timed out")), timeout)
+      ),
+    ]);
+  };
   const captureImageShoe = async () => {
     if (checkInData && Array.isArray(cameraGate)) {
       const camera = cameraGate.find(
@@ -195,11 +224,28 @@ const CheckOutCCCD_Vehicle = () => {
       );
       if (camera) {
         try {
-          const checkOutShoe = await fetchCaptureImage(
-            `${camera.cameraURL}capture-image`,
-            "CheckOut_Shoe"
-          );
-
+          let checkOutShoe: { ImageType: string; ImageFile: string | null } = {
+            ImageType: "checkOutShoe",
+            ImageFile: null,
+          };
+          try {
+            checkOutShoe = await fetchWithTimeout(
+              fetchCaptureImage(
+                `${camera.cameraURL}capture-image`,
+                "CheckOut_Shoe"
+              ),
+              3000
+            );
+          } catch (error) {
+            Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
+            handleBack();
+            return;
+          }
+          if (checkOutShoe.ImageFile === null) {
+            handleBack();
+            Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
+            return;
+          }
           const imageValid: ImageFile = {
             name: "CheckOut_Shoe",
             type: "image/jpeg",
@@ -210,6 +256,7 @@ const CheckOutCCCD_Vehicle = () => {
           if (validShoe.error) {
             handleBack();
             Alert.alert("Lỗi", "Giày không hợp lệ");
+            return;
           } else if (validShoe.data.confidence > 50) {
             const { downloadUrl: shoeValidImageUrl } = await uploadToFirebase(
               imageValid.uri,
@@ -221,10 +268,12 @@ const CheckOutCCCD_Vehicle = () => {
           } else {
             handleBack();
             Alert.alert("Lỗi", "Giày không hợp lệ");
+            return;
           }
         } catch (error) {
           handleBack();
           Alert.alert("Lỗi", "Đã xảy ra lỗi khi xác minh giày");
+          return;
         }
       }
     }
@@ -232,18 +281,37 @@ const CheckOutCCCD_Vehicle = () => {
   const captureImageBody = async () => {
     if (checkInData && Array.isArray(cameraGate)) {
       const camera = cameraGate.find(
-        (camera) => camera?.cameraType?.cameraTypeId === 3
+        (camera) => camera?.cameraType?.cameraTypeId === 4
       );
       if (camera) {
         try {
-          const checkOutShoe = await fetchCaptureImage(
-            `${camera.cameraURL}capture-image`,
-            "CheckOut_Body"
-          );
+          let checkOutBody: { ImageType: string; ImageFile: string | null } = {
+            ImageType: "CheckOut_Body",
+            ImageFile: null,
+          };
+
+          try {
+            checkOutBody = await fetchWithTimeout(
+              fetchCaptureImage(
+                `${camera.cameraURL}capture-image`,
+                "CheckOut_Body"
+              ),
+              3000
+            );
+          } catch (error) {
+            Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
+            handleBack();
+            return;
+          }
+          if (checkOutBody.ImageFile === null) {
+            handleBack();
+            Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
+            return;
+          }
           const imageValid: ImageFile = {
             name: "CheckOut_Body",
             type: "image/jpeg",
-            uri: checkOutShoe.ImageFile || "",
+            uri: checkOutBody.ImageFile || "",
           };
           const { downloadUrl: bodyValidImageUrl } = await uploadToFirebase(
             imageValid.uri,
@@ -252,7 +320,8 @@ const CheckOutCCCD_Vehicle = () => {
           setValidImageBodyUrl(bodyValidImageUrl);
         } catch (error) {
           handleBack();
-          Alert.alert("Lỗi", "Đã xảy ra lỗi khi xác minh giày");
+          Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
+          return;
         }
       }
     }

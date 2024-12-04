@@ -62,11 +62,6 @@ const fetchCaptureImage = async (
       ImageFile: fileSaved,
     };
   } catch (error) {
-    // console.error(`Failed to fetch ${imageType} image:`, error);
-    Alert.alert(
-      "Error",
-      `Failed to fetch ${imageType} image. Please try again.`
-    );
     return { ImageType: imageType, ImageFile: null };
   }
 };
@@ -129,8 +124,6 @@ const CheckOutNormal = () => {
   const gateId = Number(selectedGateId) || 0;
   const {
     data: cameraGate,
-    isLoading: gateLoading,
-    isError: isErrorCamera,
   } = useGetCameraByGateIdQuery(
     { gateId },
     {
@@ -140,7 +133,6 @@ const CheckOutNormal = () => {
   const [validData, setValidData] = useState<boolean>(false);
   const [validImageShoeUrl, setValidImageShoeUrl] = useState<string>("");
   const [validImageBodyUrl, setValidImageBodyUrl] = useState<string>("");
-
   const [checkOutWithCard] = useCheckOutWithCardMutation();
 
   const {
@@ -151,11 +143,7 @@ const CheckOutNormal = () => {
   const resetData = async () => {
     setTimeout(async () => {
       const result = await refetch();
-      if (result?.data?.vehicleSession != null) {
-        Alert.alert("Khách này sử dụng phương tiện", "Vui lòng thử lại.");
-        handleBack();
-        return;
-      }
+
       if (result.error) {
         const error = result.error as FetchBaseQueryError;
         if (
@@ -164,23 +152,49 @@ const CheckOutNormal = () => {
           typeof error.data === "object" &&
           "message" in error.data
         ) {
-          Alert.alert("Lỗi", `${(error.data as { message: string }).message}`);
-          handleBack();
-          return;
+          return (() => {
+            Alert.alert(
+              "Lỗi",
+              `${(error.data as { message: string }).message}`
+            );
+            handleBack();
+          })();
         } else {
-          Alert.alert("Lỗi", "Đã xảy ra lỗi không xác định");
-          handleBack();
-          return;
+          return (() => {
+            handleBack();
+            Alert.alert("Lỗi", "Đã xảy ra lỗi không xác định");
+          })();
         }
       } else {
         setValidData(true);
       }
-    }, 3000); // 3-second timeout
+      if (result?.data?.vehicleSession != null) {
+        return (() => {
+          handleBack();
+          Alert.alert("Khách này sử dụng phương tiện", "Vui lòng thử lại.");
+        })();
+      }
+    }, 5000);
   };
   const [shoeDetectMutation] = useShoeDetectMutation();
   useEffect(() => {
     resetData();
-  }, []);
+  }, [qrString]);
+  useEffect(() => {
+    if (validData) {
+      captureImageBody();
+      captureImageShoe();
+    }
+  }, [validData]);
+
+  const fetchWithTimeout = (promise: any, timeout: any) => {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Request timed out")), timeout)
+      ),
+    ]);
+  };
   const captureImageShoe = async () => {
     if (checkInData && Array.isArray(cameraGate)) {
       const camera = cameraGate.find(
@@ -188,11 +202,28 @@ const CheckOutNormal = () => {
       );
       if (camera) {
         try {
-          const checkOutShoe = await fetchCaptureImage(
-            `${camera.cameraURL}capture-image`,
-            "CheckOut_Shoe"
-          );
-
+          let checkOutShoe: { ImageType: string; ImageFile: string | null } = {
+            ImageType: "checkOutShoe",
+            ImageFile: null,
+          };
+          try {
+            checkOutShoe = await fetchWithTimeout(
+              fetchCaptureImage(
+                `${camera.cameraURL}capture-image`,
+                "CheckOut_Shoe"
+              ),
+              3000
+            );
+          } catch (error) {
+            Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
+            handleBack();
+            return;
+          }
+          if (checkOutShoe.ImageFile === null) {
+            handleBack();
+            Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
+            return;
+          }
           const imageValid: ImageFile = {
             name: "CheckOut_Shoe",
             type: "image/jpeg",
@@ -203,6 +234,7 @@ const CheckOutNormal = () => {
           if (validShoe.error) {
             handleBack();
             Alert.alert("Lỗi", "Giày không hợp lệ");
+            return;
           } else if (validShoe.data.confidence > 50) {
             const { downloadUrl: shoeValidImageUrl } = await uploadToFirebase(
               imageValid.uri,
@@ -214,10 +246,12 @@ const CheckOutNormal = () => {
           } else {
             handleBack();
             Alert.alert("Lỗi", "Giày không hợp lệ");
+            return;
           }
         } catch (error) {
           handleBack();
           Alert.alert("Lỗi", "Đã xảy ra lỗi khi xác minh giày");
+          return;
         }
       }
     }
@@ -225,18 +259,37 @@ const CheckOutNormal = () => {
   const captureImageBody = async () => {
     if (checkInData && Array.isArray(cameraGate)) {
       const camera = cameraGate.find(
-        (camera) => camera?.cameraType?.cameraTypeId === 3
+        (camera) => camera?.cameraType?.cameraTypeId === 4
       );
       if (camera) {
         try {
-          const checkOutShoe = await fetchCaptureImage(
-            `${camera.cameraURL}capture-image`,
-            "CheckOut_Body"
-          );
+          let checkOutBody: { ImageType: string; ImageFile: string | null } = {
+            ImageType: "CheckOut_Body",
+            ImageFile: null,
+          };
+
+          try {
+            checkOutBody = await fetchWithTimeout(
+              fetchCaptureImage(
+                `${camera.cameraURL}capture-image`,
+                "CheckOut_Body"
+              ),
+              3000
+            );
+          } catch (error) {
+            Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
+            handleBack();
+            return;
+          }
+          if (checkOutBody.ImageFile === null) {
+            handleBack();
+            Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
+            return;
+          }
           const imageValid: ImageFile = {
             name: "CheckOut_Body",
             type: "image/jpeg",
-            uri: checkOutShoe.ImageFile || "",
+            uri: checkOutBody.ImageFile || "",
           };
           const { downloadUrl: bodyValidImageUrl } = await uploadToFirebase(
             imageValid.uri,
@@ -245,18 +298,12 @@ const CheckOutNormal = () => {
           setValidImageBodyUrl(bodyValidImageUrl);
         } catch (error) {
           handleBack();
-          Alert.alert("Lỗi", "Đã xảy ra lỗi khi xác minh giày");
+          Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
+          return;
         }
       }
     }
   };
-  useEffect(() => {
-    if (validData) {
-      captureImageShoe();
-      captureImageBody();
-    }
-  }, [cameraGate, validData]);
-
   const handleBack = () => {
     router.navigate({
       pathname: "/(tabs)/checkout",
@@ -331,11 +378,6 @@ const CheckOutNormal = () => {
         {isOpen && <View className="p-4">{children}</View>}
       </View>
     );
-  };
-  const handleNext = () => {
-    router.push({
-      pathname: "/(tabs)/checkout",
-    });
   };
   const handleCheckOut = async () => {
     const storedUserId = await AsyncStorage.getItem("userId");

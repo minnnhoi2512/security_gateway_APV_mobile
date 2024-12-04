@@ -206,18 +206,40 @@ const Checkout = () => {
   const handleBarCodeScannedCCCD = useCallback(
     ({ data }: { data: string }) => {
       setChangeCCCD(data);
-      if (!data.includes("|") && !hasScanned) {
+
+      if (data.includes("-") && !hasScanned) {
         setHasScanned(true);
-        Alert.alert("Lỗi", "Định dạng CCCD không hợp lệ. Vui lòng thử lại.");
+        Alert.alert("Lỗi", "Định dạng thẻ không hợp lệ. Vui lòng thử lại.");
         return;
       }
       if (data && data.includes("|")) {
         try {
           // Lấy phần tử đầu tiên trước dấu |
-
-          const credentialId = data.split("|")[0];
+          setHasScanned(false);
           setIsCameraCCCDActive(false); // Tắt camera sau khi quét thành công
-          router.navigate({
+          const credentialId = data.split("|")[0];
+        
+
+          return router.navigate({
+            pathname: "/check-out/CheckOutCard",
+            params: {
+              cccd: credentialId,
+            },
+          });
+        } catch (error) {
+          console.error("Error processing CCCD:", error);
+          Alert.alert("Lỗi", "Định dạng CCCD không hợp lệ. Vui lòng thử lại.");
+        }
+      }
+      if (data && data.includes("\n")) {
+        try {
+          // Lấy phần tử đầu tiên trước dấu |
+          setHasScanned(false);
+          setIsCameraCCCDActive(false); // Tắt camera sau khi quét thành công
+          const credentialId = data.split("\n")[0];
+         
+
+          return router.navigate({
             pathname: "/check-out/CheckOutCard",
             params: {
               cccd: credentialId,
@@ -229,21 +251,45 @@ const Checkout = () => {
         }
       }
     },
-    [hasScanned, router,changeCCCD]
+    [hasScanned, router, changeCCCD]
   );
+
   const handleBarCodeScannedCCCDWithVehicle = useCallback(
     ({ data }: { data: string }) => {
       setChangeCCCD(data);
-      if (!data.includes("|") && !hasScanned) {
+      if (data.includes("-") && !hasScanned) {
         setHasScanned(true);
-        Alert.alert("Lỗi", "Định dạng CCCD không hợp lệ. Vui lòng thử lại.");
+        Alert.alert("Lỗi", "Định dạng thẻ không hợp lệ. Vui lòng thử lại.");
         return;
       }
       if (data && data.includes("|")) {
         try {
-          const credentialId = data.split("|")[0];
+          // Lấy phần tử đầu tiên trước dấu |
+          setHasScanned(false);
           setIsCameraCCCDActive(false); // Tắt camera sau khi quét thành công
-          router.navigate({
+          const credentialId = data.split("|")[0];
+         
+
+          return router.navigate({
+            pathname: "/check-out/CheckOutCCCD-Vehicle",
+            params: {
+              cccd: credentialId,
+            },
+          });
+        } catch (error) {
+          console.error("Error processing CCCD:", error);
+          Alert.alert("Lỗi", "Định dạng CCCD không hợp lệ. Vui lòng thử lại.");
+        }
+      }
+      if (data && data.includes("\n")) {
+        try {
+          // Lấy phần tử đầu tiên trước dấu |
+          setHasScanned(false);
+          setIsCameraCCCDActive(false); // Tắt camera sau khi quét thành công
+          const credentialId = data.split("\n")[0];
+          
+
+          return router.navigate({
             pathname: "/check-out/CheckOutCCCD-Vehicle",
             params: {
               cccd: credentialId,
