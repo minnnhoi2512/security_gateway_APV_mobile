@@ -26,6 +26,7 @@ import { RootState } from "@/redux/store/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useToast } from "@/components/Toast/ToastContext";
 import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
+import { MaterialIcons } from "@expo/vector-icons";
 interface ScanData {
   id: string;
   nationalId: string;
@@ -58,6 +59,7 @@ const scanQr = () => {
   const [cardVerification, setCardVerification] = useState<string | null>(null);
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const alertShown = useRef(false);
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
@@ -105,8 +107,6 @@ const scanQr = () => {
       skip: !gateId,
     }
   );
-
-  console.log("Gate camera: ", cameraGate);
 
   const fetchCaptureImage = async (
     url: string,
@@ -169,10 +169,10 @@ const scanQr = () => {
       }
 
       try {
-        console.log(
-          "Processing card verification:",
-          qrCardData.cardVerification
-        );
+        // console.log(
+        //   "Processing card verification:",
+        //   qrCardData.cardVerification
+        // );
 
         // Tìm camera trực tiếp từ mảng cameraGate
         const bodyCamera = cameraGate.find(
@@ -183,17 +183,17 @@ const scanQr = () => {
           (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Shoe"
         );
 
-        console.log("Found cameras:", {
-          bodyCamera: bodyCamera?.cameraURL,
-          shoeCamera: shoeCamera?.cameraURL,
-        });
+        // console.log("Found cameras:", {
+        //   bodyCamera: bodyCamera?.cameraURL,
+        //   shoeCamera: shoeCamera?.cameraURL,
+        // });
 
         const images: CapturedImage[] = [];
 
         // Chụp ảnh body
         if (bodyCamera?.cameraURL) {
           const bodyImageUrl = `${bodyCamera.cameraURL}capture-image`;
-          console.log("Attempting to capture body image from:", bodyImageUrl);
+          // console.log("Attempting to capture body image from:", bodyImageUrl);
 
           const bodyImageData = await fetchCaptureImage(
             bodyImageUrl,
@@ -206,14 +206,14 @@ const scanQr = () => {
               ImageURL: "",
               Image: bodyImageData.ImageFile,
             });
-            console.log("Body image captured successfully");
+            // console.log("Body image captured successfully");
           }
         }
 
         // Chụp ảnh giày
         if (shoeCamera?.cameraURL) {
           const shoeImageUrl = `${shoeCamera.cameraURL}capture-image`;
-          console.log("Attempting to capture shoe image from:", shoeImageUrl);
+          // console.log("Attempting to capture shoe image from:", shoeImageUrl);
 
           const shoeImageData = await fetchCaptureImage(
             shoeImageUrl,
@@ -226,12 +226,11 @@ const scanQr = () => {
               ImageURL: "",
               Image: shoeImageData.ImageFile,
             });
-            console.log("Shoe image captured successfully");
           }
         }
 
         if (images.length > 0) {
-          console.log("Setting state with captured images:", images.length);
+          // console.log("Setting state with captured images:", images.length);
 
           // Cập nhật checkInData
           setCheckInData((prevData) => ({
@@ -250,7 +249,7 @@ const scanQr = () => {
               QRCardVerification: qrCardData.cardVerification,
               ImageBody: shoeImage.Image,
             }));
-            console.log("ValidCheckInData updated with shoe image");
+            // console.log("ValidCheckInData updated with shoe image");
           }
         } else {
           console.error("No images were captured successfully");
@@ -423,14 +422,25 @@ const scanQr = () => {
           });
 
           resetState();
+          alertShown.current = false;
         } else if (
           !isLoadingQr &&
           !isFetchingQr &&
           (isErrorQr || !qrCardData)
         ) {
-          showToast("Mã xác thực không hợp lệ", "error");
-          // Alert.alert("Lỗi", "Mã xác thực không hợp lệ");
-          resetState();
+          if (!alertShown.current) {
+            showToast("Mã xác thực không hợp lệ", "error");
+            Alert.alert("Lỗi", "Mã xác thực không hợp lệ", [
+              {
+                text: "OK",
+                onPress: () => {
+                  resetState();
+                  alertShown.current = false;
+                },
+              },
+            ]);
+            alertShown.current = true;
+          }
         }
       } else if (credentialCardId && !redirected.current) {
         qrLock.current = true;
@@ -483,15 +493,51 @@ const scanQr = () => {
   };
   // console.log("CCCD: ", credentialCardId);
   // console.log("Card id: ", cardVerification);
-  console.log("Log lay anh ben scan: ", checkInData);
+  // console.log("Log lay anh ben scan: ", checkInData);
   return (
+    // <SafeAreaView style={StyleSheet.absoluteFillObject}>
+    //   <Stack.Screen
+    //     options={{
+    //       title: "Overview",
+    //       headerShown: false,
+    //     }}
+    //   />
+    //   {Platform.OS === "android" ? <StatusBar hidden /> : null}
+    //   <CameraView
+    //     style={StyleSheet.absoluteFillObject}
+    //     facing="back"
+    //     onBarcodeScanned={handleBarCodeScanned}
+    //   />
+    //   <Overlay />
+    //   {(isProcessing ||
+    //     isLoadingVisit ||
+    //     isFetchingVisit ||
+    //     isLoadingQr ||
+    //     isFetchingQr) && (
+    //     <View style={styles.loadingContainer}>
+    //       <ActivityIndicator size="large" color="#ffffff" />
+    //       <Text className="text-xl" style={styles.loadingText}>
+    //         Đang xử lý...
+    //       </Text>
+    //     </View>
+    //   )}
+    //   <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
+    //     <Text className="text-green-700 text-sm font-semibold">
+    //       Camera Checkin
+    //     </Text>
+    //   </View>
+    //   <TouchableOpacity
+    //     className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
+    //     onPress={handleGoBack}
+    //   >
+    //     <Text className="text-white">Thoát Camera</Text>
+    //   </TouchableOpacity>
+    //   <TouchableOpacity style={styles.switchButton} onPress={handleGoToScanQr2}>
+    //     <Text style={styles.switchButtonText}>Check in với xe</Text>
+    //   </TouchableOpacity>
+    // </SafeAreaView>
     <SafeAreaView style={StyleSheet.absoluteFillObject}>
-      <Stack.Screen
-        options={{
-          title: "Overview",
-          headerShown: false,
-        }}
-      />
+      <Stack.Screen options={{ title: "Overview", headerShown: false }} />
       {Platform.OS === "android" ? <StatusBar hidden /> : null}
       <CameraView
         style={StyleSheet.absoluteFillObject}
@@ -499,6 +545,18 @@ const scanQr = () => {
         onBarcodeScanned={handleBarCodeScanned}
       />
       <Overlay />
+
+      <View className="absolute top-60 left-0 right-0 items-center">
+        <View className="bg-white/90 px-6 py-3 rounded-lg shadow-lg">
+          <View className="flex-row items-center space-x-2">
+            <MaterialIcons name="camera" size={20} color="#16a34a" />
+            <Text className="text-green-700 text-sm font-bold">
+              Camera Checkin
+            </Text>
+          </View>
+        </View>
+      </View>
+
       {(isProcessing ||
         isLoadingVisit ||
         isFetchingVisit ||
@@ -506,24 +564,36 @@ const scanQr = () => {
         isFetchingQr) && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#ffffff" />
-          <Text className="text-xl" style={styles.loadingText}>
-            Đang xử lý...
-          </Text>
+          <Text className="text-xl text-white mt-2">Đang xử lý...</Text>
         </View>
       )}
-      <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
-        <Text className="text-green-700 text-sm font-semibold">
-          Camera Checkin
-        </Text>
-      </View>
+
       <TouchableOpacity
-        className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
+        className="absolute top-16 right-4 bg-black/50 p-3 rounded-lg flex-row items-center space-x-2"
         onPress={handleGoBack}
       >
-        <Text className="text-white">Thoát Camera</Text>
+        <MaterialIcons name="close" size={20} color="white" />
+        <Text className="text-white font-medium">Thoát</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.switchButton} onPress={handleGoToScanQr2}>
+
+      {/* <TouchableOpacity
+        style={[
+          styles.switchButton,
+          { flexDirection: "row", alignItems: "center", gap: 8 },
+        ]}
+        onPress={handleGoToScanQr2}
+      >
+        <MaterialIcons name="directions-car" size={24} color="white" />
         <Text style={styles.switchButtonText}>Check in với xe</Text>
+      </TouchableOpacity> */}
+      <TouchableOpacity
+        className="absolute bottom-5 ml-[95px] -translate-x-1/2 bg-blue-600 px-6 py-3 rounded-xl flex-row items-center space-x-2 shadow-lg"
+        onPress={handleGoToScanQr2}
+      >
+        <MaterialIcons name="directions-car" size={24} color="white" />
+        <Text className="text-white font-semibold text-lg">
+          Check in với xe
+        </Text>
       </TouchableOpacity>
     </SafeAreaView>
   );

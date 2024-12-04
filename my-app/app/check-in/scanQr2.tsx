@@ -21,6 +21,7 @@ import { CheckInVer02 } from "@/Types/checkIn.type";
 import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
 import Overlay from "./OverLay";
+import { MaterialIcons } from "@expo/vector-icons";
 
 interface ScanData {
   id: string;
@@ -65,8 +66,6 @@ const ScanQr2 = () => {
     Images: [],
   });
 
-
-
   const {
     data: qrCardData,
     isLoading: isLoadingQr,
@@ -75,7 +74,6 @@ const ScanQr2 = () => {
   } = useGetDataByCardVerificationQuery(cardVerification || "", {
     skip: !cardVerification,
   });
-  
 
   useFocusEffect(
     useCallback(() => {
@@ -238,7 +236,7 @@ const ScanQr2 = () => {
     cardVerification,
     checkInData,
   ]);
-  
+
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (data && !qrLock.current) {
       qrLock.current = true;
@@ -257,13 +255,49 @@ const ScanQr2 = () => {
   };
 
   return (
+    // <SafeAreaView style={StyleSheet.absoluteFillObject}>
+    //   <Stack.Screen
+    //     options={{
+    //       title: "Overview",
+    //       headerShown: false,
+    //     }}
+    //   />
+    //   {Platform.OS === "android" ? <StatusBar hidden /> : null}
+    //   <CameraView
+    //     style={StyleSheet.absoluteFillObject}
+    //     facing="back"
+    //     onBarcodeScanned={handleBarCodeScanned}
+    //   />
+    //   <Overlay />
+    //   {(isProcessing ||
+    //     isLoadingVisit ||
+    //     isFetchingVisit ||
+    //     isLoadingQr ||
+    //     isFetchingQr) && (
+    //     <View style={styles.loadingContainer}>
+    //       <ActivityIndicator size="large" color="#ffffff" />
+    //       <Text className="text-xl" style={styles.loadingText}>
+    //         Đang xử lý...
+    //       </Text>
+    //     </View>
+    //   )}
+    //   <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
+    //     <Text className="text-green-700 text-sm font-semibold">
+    //       Camera Checkin 2
+    //     </Text>
+    //   </View>
+    //   <TouchableOpacity
+    //     className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
+    //     onPress={handleGoBack}
+    //   >
+    //     <Text className="text-white">Thoát Camera</Text>
+    //   </TouchableOpacity>
+    //   <TouchableOpacity style={styles.switchButton} onPress={handleGoToScanQr1}>
+    //     <Text style={styles.switchButtonText}>Check in bình thường</Text>
+    //   </TouchableOpacity>
+    // </SafeAreaView>
     <SafeAreaView style={StyleSheet.absoluteFillObject}>
-      <Stack.Screen
-        options={{
-          title: "Overview",
-          headerShown: false,
-        }}
-      />
+      <Stack.Screen options={{ title: "Overview", headerShown: false }} />
       {Platform.OS === "android" ? <StatusBar hidden /> : null}
       <CameraView
         style={StyleSheet.absoluteFillObject}
@@ -271,6 +305,18 @@ const ScanQr2 = () => {
         onBarcodeScanned={handleBarCodeScanned}
       />
       <Overlay />
+
+      <View className="absolute top-60 left-0 right-0 items-center">
+        <View className="bg-white/90 px-6 py-3 rounded-lg shadow-lg">
+          <View className="flex-row items-center space-x-2">
+            <MaterialIcons name="camera" size={20} color="#16a34a" />
+            <Text className="text-green-700 text-sm font-bold">
+              Camera Checkin với xe
+            </Text>
+          </View>
+        </View>
+      </View>
+
       {(isProcessing ||
         isLoadingVisit ||
         isFetchingVisit ||
@@ -278,24 +324,26 @@ const ScanQr2 = () => {
         isFetchingQr) && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#ffffff" />
-          <Text className="text-xl" style={styles.loadingText}>
-            Đang xử lý...
-          </Text>
+          <Text className="text-xl text-white mt-2">Đang xử lý...</Text>
         </View>
       )}
-      <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
-        <Text className="text-green-700 text-sm font-semibold">
-          Camera Checkin 2
-        </Text>
-      </View>
+
       <TouchableOpacity
-        className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
+        className="absolute top-16 right-4 bg-black/50 p-3 rounded-lg flex-row items-center space-x-2"
         onPress={handleGoBack}
       >
-        <Text className="text-white">Thoát Camera</Text>
+        <MaterialIcons name="close" size={20} color="white" />
+        <Text className="text-white font-medium">Thoát</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.switchButton} onPress={handleGoToScanQr1}>
-        <Text style={styles.switchButtonText}>Check in bình thường</Text>
+
+      <TouchableOpacity
+        className="absolute bottom-5 ml-[70px] -translate-x-1/2 bg-blue-600 px-6 py-3 rounded-xl flex-row items-center space-x-2 shadow-lg"
+        onPress={handleGoToScanQr1}
+      >
+        <MaterialIcons name="directions-car" size={24} color="white" />
+        <Text className="text-white font-semibold text-lg">
+          Check in bình thường
+        </Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
