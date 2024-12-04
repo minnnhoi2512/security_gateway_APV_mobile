@@ -1,4 +1,4 @@
-import { Visitor } from "@/Types/visitor.type";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
@@ -18,7 +18,7 @@ export const visitorApi = createApi({
         },
     }),
     endpoints: (builder) => ({
-        createVisitor: builder.mutation<any, FormData>({
+        createVisitor: builder.mutation<Visitor, FormData>({
             query: (formData) => ({
               url: '/Visitor',
               method: 'POST',

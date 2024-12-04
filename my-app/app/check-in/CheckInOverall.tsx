@@ -9,6 +9,7 @@ import {
   Pressable,
   StyleSheet,
   Modal,
+  ImageBackground,
 } from "react-native";
 import { EvilIcons, MaterialIcons } from "@expo/vector-icons";
 import { ActivityIndicator } from "react-native";
@@ -398,6 +399,23 @@ const CheckInOverall = () => {
     );
   };
 
+  const InfoRowTime = ({
+    label,
+    value1,
+    value2,
+  }: {
+    label: string;
+    value1: string | number;
+    value2: string | number;
+  }) => (
+    <View className="flex-row justify-between py-2">
+      <Text className="text-gray-500 text-sm">{label}</Text>
+      <Text className="text-black text-sm font-medium">
+        {value1} - {value2}
+      </Text>
+    </View>
+  );
+
   const ImageSection: React.FC<ImageSectionProps> = ({ visitorImage }) => {
     const [isImageViewVisible, setIsImageViewVisible] = useState(false);
 
@@ -491,79 +509,70 @@ const CheckInOverall = () => {
   // console.log("RS DATA", resultData);
 
   return (
-    <ScrollView className="flex-1 bg-backgroundApp">
-      <View className="mt-[15%] bg-backgroundApp">
-        <Pressable
-          onPress={handleGoBack}
-          className="flex flex-row items-center space-x-2 px-4 py-2 bg-backgroundApp rounded-lg active:bg-gray-200"
-        >
-          <MaterialIcons name="arrow-back" size={24} color="white" />
-          <Text className="text-white font-medium">Quay về</Text>
-        </Pressable>
-      </View>
-      <View className="flex-1 mt-[5%]">
-        <View className="p-4">
-          {/* <Section title="Thông tin cơ bản">
-            <View className="flex-row items-center mb-4">
-              <Text className="text-gray-600 text-lg">
-                Hôm nay, {resultData.expectedStartHour}
-              </Text>
-            </View>
-            <InfoRow label="Giờ bắt đầu" value={resultData.expectedStartHour} />
-            <InfoRow label="Giờ kết thúc" value={resultData.expectedEndHour} />
-            <InfoRow label="Tên cuộc thăm" value={resultData.visit.visitName} />
-            <InfoRow label="Số lượng" value={resultData.visit.visitQuantity} />
-            <InfoRow
-              label="Loại lịch"
-              value={resultData.visit.scheduleTypeName}
-            />
-            <Text>Thông tin khách hàng</Text>
-            <InfoRow label="Tên khách" value={resultData.visitor.visitorName} />
-            <InfoRow label="Công ty" value={resultData.visitor.companyName} />
-            <InfoRow
-              label="Số điện thoại"
-              value={resultData.visitor.phoneNumber}
-            />
-            <InfoRow
-              label="CMND/CCCD"
-              value={resultData.visitor.credentialsCard}
-            />
-          </Section> */}
+    <ScrollView className="flex-1 bg-gray-50">
+    <View className="relative">
+      <Pressable
+        onPress={handleGoBack}
+        className="absolute top-6 left-2 flex flex-row items-center space-x-2 px-4 py-2 rounded-lg mt-4 z-10"
+      >
+        <MaterialIcons name="arrow-back" size={24} color="white" />
+        <Text className="text-white font-medium">Quay về</Text>
+      </Pressable>
+
+      <ImageBackground
+        source={{
+          uri: "https://images.pexels.com/photos/269077/pexels-photo-269077.jpeg",
+        }}
+        className="w-full h-72"
+        resizeMode="cover"
+      >
+        <View className="absolute inset-0 bg-black/40" />
+      </ImageBackground>
+
+      <View className="p-4 bottom-[160px]">
+        <View className="mb-8">
           <Section title="Thông tin cơ bản">
-            <View className="flex-row items-center mb-4">
-              <Text className="text-gray-600 text-lg">
-                Hôm nay, {resultData?.expectedStartHour}
-              </Text>
+            <View className="items-center mb-4">
+              <View className="flex-row items-center mt-1">
+                {/* <MapPinIcon size={28} className="text-blue-600 mr-2" /> */}
+                <Text className="text-xl font-bold text-teal-600 text-center">
+                  {resultData?.visit.visitName}
+                </Text>
+              </View>
+              <View className="w-2/3 h-0.5 bg-gray-200 mt-2" />
             </View>
-            <InfoRow
-              label="Giờ bắt đầu"
-              value={resultData?.expectedStartHour}
-            />
-            <InfoRow label="Giờ kết thúc" value={resultData?.expectedEndHour} />
-            <InfoRow
-              label="Tên cuộc thăm"
-              value={resultData?.visit.visitName}
+            <InfoRowTime
+              label="Thời gian (dự kiến)"
+              value1={resultData?.expectedStartHour}
+              value2={resultData?.expectedEndHour}
             />
             <InfoRow
               label="Tên khách"
               value={resultData?.visitor.visitorName}
             />
+            {/* {resultData?.visitor.visitorCredentialFrontImage && (
+              <ImageSection
+                visitorImage={resultData?.visitor.visitorCredentialFrontImage}
+              />
+            )} */}
           </Section>
+        </View>
+
+        <View className="bg-gray-50 rounded-3xl mb-4">
+          <Text className="text-2xl font-semibold mb-6 text-[#34495e]">
+            Thông tin chi tiết
+          </Text>
           <SectionDropDown
             title="Thông tin chuyến thăm"
             icon={<View className="w-6 h-6 bg-orange-500 rounded-full" />}
           >
-            {/* <InfoRow
-              label="Thời gian dự kiến"
-              value={resultData?.expectedStartHour - resultData?.expectedEndHour}
-            /> */}
-            {/* <InfoRow
-              label="Tên chuyến thăm"
-              value={response?.expectedStartHour - response?.expectedEndHour}
-            /> */}
-
+            <InfoRow label="Chuyến thăm" value={resultData?.visit.visitName} />
+            <InfoRowTime
+              label="Thời gian (dự kiến)"
+              value1={resultData?.expectedStartHour}
+              value2={resultData?.expectedEndHour}
+            />
             <InfoRow label="Số lượng" value={resultData?.visit.visitQuantity} />
-            {/* <InfoRow label="Loại chuyến thăm" value={response?.visit.visitQuantity} /> */}
           </SectionDropDown>
           <SectionDropDown
             title="Thông tin khách"
@@ -593,13 +602,12 @@ const CheckInOverall = () => {
             title="Thông tin thẻ"
             icon={<View className="w-6 h-6 bg-green-500 rounded-full" />}
           >
-  
-            {resultData.cardRes.cardImage && (
+            {resultData?.cardRes.cardImage && (
               <View className="mt-4 items-center">
                 <Text className="text-gray-500 text-sm mb-2">QR Code</Text>
                 <Image
                   source={{
-                    uri: `data:image/png;base64,${resultData.cardRes.cardImage}`,
+                    uri: `data:image/png;base64,${resultData?.cardRes.cardImage}`,
                   }}
                   className="w-32 h-32"
                   resizeMode="contain"
@@ -608,39 +616,22 @@ const CheckInOverall = () => {
             )}
           </SectionDropDown>
 
-          {/* <SectionDropDown
-            title="Hình ảnh giày"
-            icon={<View className="w-6 h-6 bg-yellow-500 rounded-full" />}
-          >
-            {checkInData.Images.length > 0 && checkInData.Images[0].Image && (
-              <Image
-                source={{ uri: checkInData.Images[0].Image }}
-                style={{
-                  width: "100%",
-                  height: 200,
-                  borderRadius: 10,
-                  marginVertical: 10,
-                }}
-                resizeMode="contain"
-              />
-            )}
-          </SectionDropDown> */}
           <ImageSectionDropdown
-            title="Hình ảnh giày và body"
+            title="Hình ảnh check in"
             icon={<View className="w-6 h-6 bg-yellow-500 rounded-full" />}
             imageUris={[
-              checkInData?.Images?.[0]?.Image, 
-              checkInData?.Images?.[1]?.Image,  
-            ].filter(Boolean)} 
+              checkInData?.Images?.[0]?.Image,
+              checkInData?.Images?.[1]?.Image,
+            ].filter(Boolean)}
           />
 
-          {checkInData.VehicleSession?.vehicleImages?.[0]?.Image && (
+          {checkInData?.VehicleSession?.vehicleImages?.[0]?.Image && (
             <SectionDropDown
               title="Hình ảnh biển số xe"
               icon={<View className="w-6 h-6 bg-pink-500 rounded-full" />}
             >
               <View>
-                {checkInData.VehicleSession.LicensePlate && (
+                {checkInData.VehicleSession?.LicensePlate && (
                   <View className="mb-4 p-3 bg-gray-100 rounded-lg">
                     <Text className="text-gray-800 text-center text-lg font-semibold">
                       Biển số: {checkInData.VehicleSession.LicensePlate}
@@ -663,7 +654,9 @@ const CheckInOverall = () => {
                       size={12}
                       color="white"
                     />
-                    <Text className="text-white text-xs ml-1">Ảnh biển số</Text>
+                    <Text className="text-white text-xs ml-1">
+                      Ảnh biển số
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -676,17 +669,11 @@ const CheckInOverall = () => {
             <Text className="text-lg mr-2">Xong</Text>
             <EvilIcons name="arrow-right" size={30} color="black" />
           </TouchableOpacity>
+
         </View>
       </View>
-      {isCheckingIn && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#ffffff" />
-          <Text className="text-3xl" style={styles.loadingText}>
-            Đang xử lý...
-          </Text>
-        </View>
-      )}
-    </ScrollView>
+    </View>
+  </ScrollView>
   );
 };
 

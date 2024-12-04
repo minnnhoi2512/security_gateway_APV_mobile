@@ -493,17 +493,17 @@ const CheckLicensePlate = () => {
       }));
 
       setHasPhotoTaken(true);
-      Alert.alert(
-        "Kết quả nhận dạng",
-        `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
-        [
-          {
-            text: "OK",
-            onPress: () =>
-              Alert.alert("Hướng dẫn", "Vui lòng quét mã QR để tiếp tục"),
-          },
-        ]
-      );
+      // Alert.alert(
+      //   "Kết quả nhận dạng",
+      //   `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
+      //   [
+      //     {
+      //       text: "OK",
+      //       onPress: () =>
+      //         Alert.alert("Hướng dẫn", "Vui lòng quét mã QR để tiếp tục"),
+      //     },
+      //   ]
+      // );
     } catch (error) {
       console.error("Error processing image:", error);
       Alert.alert("Lỗi", "Không thể xử lý ảnh. Vui lòng thử lại.");

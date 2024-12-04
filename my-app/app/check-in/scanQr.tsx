@@ -154,8 +154,6 @@ const scanQr = () => {
   };
 
   useEffect(() => {
-    console.log("Camera Gate Structure:", JSON.stringify(cameraGate, null, 2));
-
     const handleQrDataAndCapture = async () => {
       if (
         !qrCardData?.cardVerification ||

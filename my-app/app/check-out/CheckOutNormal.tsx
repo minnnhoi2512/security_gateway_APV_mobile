@@ -406,17 +406,11 @@ const CheckOutNormal = () => {
       minute: "2-digit",
     });
   };
+
   // if (isError) {
   //   handleBack();
   //   Alert.alert("Lỗi", "Vui lòng gán thông tin người dùng lên thẻ");
   // }
-  if (!handleValidShoe)
-    return (
-      <View className="flex-1 justify-center items-center p-4">
-        <ActivityIndicator size="large" color="#3B82F6" />
-        <Text className="text-gray-600 mt-4">Đang xử lý thông tin</Text>
-      </View>
-    );
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
       <View>

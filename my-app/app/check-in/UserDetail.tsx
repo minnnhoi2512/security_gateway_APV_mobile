@@ -42,7 +42,6 @@ interface CapturedImage {
   Image: string;
 }
 
-
 const UserDetail = () => {
   const { visitId } = useLocalSearchParams<{ visitId: string }>();
   const { data } = useLocalSearchParams<{ data: string }>();
@@ -56,12 +55,8 @@ const UserDetail = () => {
 
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
   const [isCameraActive, setIsCameraActive] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [qrImage, setQrImage] = useState<string | null>(null);
   const [hasNavigated, setHasNavigated] = useState(false);
-  const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
-  const [autoCapture, setAutoCapture] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   // RTK QUERY
@@ -81,13 +76,11 @@ const UserDetail = () => {
     Images: [],
   });
 
-  const [validCheckInData, setValidCheckInData] = useState<ValidCheckIn>({
-    CredentialCard: null,
-    QRCardVerification: "",
-    ImageShoe: [],
-  });
-
-  
+  // const [validCheckInData, setValidCheckInData] = useState<ValidCheckIn>({
+  //   CredentialCard: null,
+  //   QRCardVerification: "",
+  //   ImageShoe: [],
+  // });
 
   const gateId = Number(selectedGateId) || 0;
   const {
@@ -101,19 +94,19 @@ const UserDetail = () => {
     }
   );
 
- 
   const {
     data: qrCardData,
     isLoading: isLoadingQr,
     isError: isErrorQr,
-  } = useGetDataByCardVerificationQuery(checkInData.QrCardVerification);
+  } = useGetDataByCardVerificationQuery(checkInData.QrCardVerification, {
+    skip: !checkInData.QrCardVerification,
+  });
 
   useEffect(() => {
     const fetchUserId = async () => {
       try {
         const storedUserId = await AsyncStorage.getItem("userId");
         if (storedUserId) {
-          setUserId(storedUserId);
           setCheckInData((prevState) => ({
             ...prevState,
             SecurityInId: Number(storedUserId) || 0,
@@ -140,10 +133,10 @@ const UserDetail = () => {
         ...prevData,
         CredentialCard: credentialCard,
       }));
-      setValidCheckInData((prevData) => ({
-        ...prevData,
-        CredentialCard: credentialCard,
-      }));
+      // setValidCheckInData((prevData) => ({
+      //   ...prevData,
+      //   CredentialCard: credentialCard,
+      // }));
     }
   }, [visitDetail]);
 
@@ -213,10 +206,12 @@ const UserDetail = () => {
   };
 
   useEffect(() => {
-    console.log("Camera Gate Structure:", JSON.stringify(cameraGate, null, 2));
-
     const handleQrDataAndCapture = async () => {
-      if (!qrCardData.cardVerification || !cameraGate || !Array.isArray(cameraGate)) {
+      if (
+        !qrCardData.cardVerification ||
+        !cameraGate ||
+        !Array.isArray(cameraGate)
+      ) {
         console.log("Missing required data:", {
           cardVerification: qrCardData.cardVerification,
           cameraGate: !!cameraGate,
@@ -226,9 +221,11 @@ const UserDetail = () => {
       }
 
       try {
-        console.log("Processing card verification:", qrCardData.cardVerification);
+        console.log(
+          "Processing card verification:",
+          qrCardData.cardVerification
+        );
 
-        // Tìm camera trực tiếp từ mảng cameraGate
         const bodyCamera = cameraGate.find(
           (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Body"
         );
@@ -295,17 +292,17 @@ const UserDetail = () => {
           }));
 
           // Cập nhật validCheckInData
-          const shoeImage = images.find(
-            (img) => img.ImageType === "CheckIn_Shoe"
-          );
-          if (shoeImage?.Image) {
-            setValidCheckInData((prevData) => ({
-              ...prevData,
-              QRCardVerification: qrCardData.cardVerification,
-              ImageBody: shoeImage.Image,
-            }));
-            console.log("ValidCheckInData updated with shoe image");
-          }
+          // const shoeImage = images.find(
+          //   (img) => img.ImageType === "CheckIn_Shoe"
+          // );
+          // if (shoeImage?.Image) {
+          //   setValidCheckInData((prevData) => ({
+          //     ...prevData,
+          //     QRCardVerification: qrCardData.cardVerification,
+          //     ImageBody: shoeImage.Image,
+          //   }));
+          //   console.log("ValidCheckInData updated with shoe image");
+          // }
         } else {
           console.error("No images were captured successfully");
           Alert.alert("Warning", "Không thể chụp ảnh. Vui lòng thử lại.");
@@ -323,11 +320,9 @@ const UserDetail = () => {
       // console.error("Error in handleQrDataAndCapture:", error);
     });
   }, [qrCardData, cameraGate]);
-  
 
   useEffect(() => {
     if (qrCardData) {
-      // setAutoCapture(true);
       setIsProcessing(true);
       if (qrCardData.cardVerification) {
         setCheckInData((prevData) => ({
@@ -345,10 +340,6 @@ const UserDetail = () => {
   useEffect(() => {
     if (qrCardData) {
       setIsProcessing(true);
-      // setAutoCapture(true);
-      if (qrCardData.cardImage) {
-        setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
-      }
 
       if (qrCardData.cardVerification) {
         setCheckInData((prevData) => ({
@@ -359,50 +350,15 @@ const UserDetail = () => {
     }
   }, [qrCardData]);
 
-  const handleBarCodeScanned = async ({ data }: { data: string }) => {
-    if (!data) {
-      Alert.alert("Lỗi", "Không thể đọc được mã QR. Vui lòng thử lại.");
-      return;
-    }
-
-    if (qrLock.current) {
-      return;
-    }
-
-    try {
+  const handleBarCodeScanned = ({ data }: { data: string }) => {
+    if (data && !qrLock.current) {
       qrLock.current = true;
-      setIsProcessing(true);
-      console.log("Scanned QR Code Data:", data);
-
-      // Validate QR code format trước khi xử lý
-
       setCheckInData((prevData) => ({
         ...prevData,
         QrCardVerification: data,
       }));
-
-      setIsCameraActive(false);
-    } catch (error: any) {
-      console.error("Error handling QR Code:", error);
-
-      // Hiển thị thông báo lỗi cụ thể
-      Alert.alert(
-        "Lỗi quét mã",
-        error.message || "Đã có lỗi xảy ra khi xử lý mã QR. Vui lòng thử lại.",
-        [
-          {
-            text: "Thử lại",
-            onPress: () => {
-              qrLock.current = false;
-              setIsProcessing(false);
-              setIsCameraActive(true);
-            },
-          },
-        ]
-      );
-    } finally {
-      setIsProcessing(false);
-      qrLock.current = false;
+      setIsProcessing(true);
+      console.log("Scanned QR Code Data:", data);
     }
   };
 
@@ -470,54 +426,35 @@ const UserDetail = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-4">
-      <View>
-        <Pressable
-          onPress={handleGoBack}
-          className="flex flex-row items-center space-x-2 px-4 py-2 bg-gray-100 rounded-lg active:bg-gray-200"
-        >
-          <MaterialIcons name="arrow-back" size={24} color="#4B5563" />
-          <Text className="text-gray-600 font-medium">Quay về</Text>
-        </Pressable>
-      </View>
-
       <ScrollView>
-        <GestureHandlerRootView className="flex-1 p-5">
-          {/* MODAL VIEW IMAGE */}
-          <Modal
-            visible={!!selectedImage}
-            transparent={true}
-            animationType="fade"
-            onRequestClose={() => setSelectedImage(null)}
-          >
-            <View className="flex-1 bg-black/90 justify-center items-center">
-              {selectedImage && (
-                <Image
-                  source={{ uri: selectedImage }}
-                  className="w-full h-96"
-                  resizeMode="contain"
-                />
-              )}
-              <TouchableOpacity
-                className="m-1 bg-white p-y-2 p-x-1 rounded-md"
-                onPress={() => setSelectedImage(null)}
-              >
-                <Text className="text-red text-xl font-bold">✕</Text>
-              </TouchableOpacity>
-            </View>
-          </Modal>
-
+        <GestureHandlerRootView className="flex-1 ">
           <View className="w-full aspect-[2/4] relative mb-4">
             <CameraView
               className="flex-1 w-full h-full"
               onBarcodeScanned={handleBarCodeScanned}
             />
             <Overlay />
-
+            {(isProcessing || isLoadingQr) && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#ffffff" />
+                <Text className="text-xl" style={styles.loadingText}>
+                  Đang xử lý...
+                </Text>
+              </View>
+            )}
             <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
               <Text className="text-green-700 text-sm font-semibold">
                 Camera Checkin
               </Text>
             </View>
+            <TouchableOpacity
+              className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-2 rounded-md shadow-lg"
+              onPress={handleGoBack}
+            >
+              <Text className="text-white text-sm font-semibold">
+                Thoát Camera
+              </Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
               className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
@@ -532,20 +469,44 @@ const UserDetail = () => {
 export default UserDetail;
 
 const styles = StyleSheet.create({
-  loadingCentered: {
+  backButton: {
+    position: "absolute",
+    top: 60,
+    left: 20,
+    padding: 10,
+    backgroundColor: "black",
+    borderRadius: 5,
+  },
+  backButtonText: {
+    color: "white",
+  },
+  loadingContainer: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
-    backgroundColor: "transparent",
   },
   loadingText: {
-    color: "red",
-    fontSize: 20,
+    color: "#ffffff",
     marginTop: 10,
+  },
+  switchButton: {
+    position: "absolute",
+    bottom: 20,
+    left: "51%",
+    transform: [{ translateX: -75 }],
+    backgroundColor: "#0072C6",
+    padding: 15,
+    borderRadius: 8,
+  },
+  switchButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
