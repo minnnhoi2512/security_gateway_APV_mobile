@@ -34,7 +34,6 @@ export interface CheckInVerWithLP {
   QrCardVerification: string;
   Images: Array<{
     ImageType: string;
-    ImageURL: string;
     Image: string;
   }>;
   VehicleSession: {

@@ -13,27 +13,19 @@ import {
 } from "react-native";
 import {
   GestureHandlerRootView,
-  TouchableOpacity,
 } from "react-native-gesture-handler";
 import * as FileSystem from "expo-file-system";
-import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { CameraView } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-import Overlay from "./OverLay";
 import {
-  CheckInVer02,
   CheckInVerWithLP,
   ValidCheckIn,
 } from "@/Types/checkIn.type";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
-import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
-import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
-import { uploadToFirebase } from "@/firebase-config";
 import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
 
 interface ImageData {
@@ -360,11 +352,11 @@ const CheckLicensePlateCard = () => {
         },
       }));
 
-      // Alert.alert(
-      //   "Kết quả nhận dạng",
-      //   `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
-      //   [{ text: "OK" }]
-      // );
+      Alert.alert(
+        "Kết quả nhận dạng",
+        `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
+        [{ text: "OK" }]
+      );
     } catch (error) {
       console.error("Error processing image:", error);
       Alert.alert("Lỗi", "Không thể xử lý ảnh. Vui lòng thử lại.");
@@ -478,55 +470,6 @@ const CheckLicensePlateCard = () => {
 
       <ScrollView>
         <GestureHandlerRootView className="flex-1 p-5">
-          <View className="mb-4">
-            {/* <TouchableOpacity
-              className="flex-row items-center justify-center space-x-2 bg-blue-500 p-4 rounded-lg"
-              onPress={takePhoto}
-            >
-              <Ionicons name="camera" size={24} color="white" />
-              <Text className="text-white font-medium">Chụp ảnh</Text>
-            </TouchableOpacity> */}
-
-            {/* {capturedImage.length > 0 && (
-              <View className="mt-4">
-                <Text className="text-gray-700 mb-2">Ảnh đã chụp:</Text>
-                <TouchableOpacity
-                  onPress={() =>
-                    setSelectedImage(capturedImage[0].ImageFile || null)
-                  }
-                >
-                  <Image
-                    source={{ uri: capturedImage[0].ImageFile || "" }}
-                    className="w-full h-40 rounded-lg"
-                    resizeMode="cover"
-                  />
-                </TouchableOpacity>
-              </View>
-            )} */}
-          </View>
-
-          {/* <Modal
-            visible={!!selectedImage}
-            transparent={true}
-            animationType="fade"
-            onRequestClose={() => setSelectedImage(null)}
-          >
-            <View className="flex-1 bg-black/90 justify-center items-center">
-              {selectedImage && (
-                <Image
-                  source={{ uri: selectedImage }}
-                  className="w-full h-96"
-                  resizeMode="contain"
-                />
-              )}
-              <TouchableOpacity
-                className="mt-4 bg-white px-4 py-2 rounded-md"
-                onPress={() => setSelectedImage(null)}
-              >
-                <Text className="text-red-500 font-bold">Đóng</Text>
-              </TouchableOpacity>
-            </View>
-          </Modal> */}
         </GestureHandlerRootView>
       </ScrollView>
     </SafeAreaView>

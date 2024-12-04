@@ -421,239 +421,249 @@ const CheckOutCard = () => {
   //   handleBack();
   //   Alert.alert("Lỗi", "Vui lòng gán thông tin người dùng lên thẻ");
   // }
-  if (!handleValidShoe)
+  if (!validData)
     return (
       <View className="flex-1 justify-center items-center p-4">
         <ActivityIndicator size="large" color="#3B82F6" />
         <Text className="text-gray-600 mt-4">Đang xử lý thông tin</Text>
       </View>
     );
-  return (
-    <SafeAreaView className="flex-1 bg-gray-100 mb-4">
-      <View>
-        <Pressable
-          onPress={handleBack}
-          className="flex flex-row items-center space-x-2 px-4 py-2 bg-gray-100 rounded-lg active:bg-gray-200"
-        >
-          <MaterialIcons name="arrow-back" size={24} color="#4B5563" />
-          <Text className="text-gray-600 font-medium">Quay về</Text>
-        </Pressable>
-      </View>
+  else {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-100 mb-4">
+        <View>
+          <Pressable
+            onPress={handleBack}
+            className="flex flex-row items-center space-x-2 px-4 py-2 bg-gray-100 rounded-lg active:bg-gray-200"
+          >
+            <MaterialIcons name="arrow-back" size={24} color="#4B5563" />
+            <Text className="text-gray-600 font-medium">Quay về</Text>
+          </Pressable>
+        </View>
 
-      <ScrollView>
-        <GestureHandlerRootView className="flex-1 p-5">
-          {!isLoading && checkInData ? (
-            <View className="bg-backgroundApp p-4 rounded-lg shadow">
-              <View className="mb-4 bg-green-50 p-3 rounded-lg">
-                <Text className="text-green-600 font-bold text-center text-lg mb-2">
-                  Bảng thông tin
-                </Text>
-              </View>
-              <View className="p-4">
-                <Section
-                  icon={<View className="w-6 h-6 bg-purple-500 rounded-full" />}
-                  title="Trạng thái"
-                >
-                  <InfoRow
-                    label="Thời gian vào công ty"
-                    value={formatDate(checkInData.checkinTime)}
-                  />
-                  {checkInData.gateIn && (
-                    <InfoRow
-                      label="Cổng vào"
-                      value={checkInData.gateIn.gateName}
-                    />
-                  )}
-                  {checkInData.gateIn && (
-                    <InfoRow
-                      label="Khách"
-                      value={checkInData.visitDetail.visitor.visitorName}
-                    />
-                  )}
-                  {checkInData.securityIn && (
-                    <InfoRow
-                      label="Bảo vệ"
-                      value={checkInData.securityIn.fullName}
-                    />
-                  )}
-                  <InfoRow
-                    label="Trạng thái"
-                    value={
-                      checkInData.status === "CheckIn"
-                        ? "Đã vào"
-                        : checkInData.status === "CheckOut"
-                        ? "Đã ra"
-                        : checkInData.status
+        <ScrollView>
+          <GestureHandlerRootView className="flex-1 p-5">
+            {!isLoading && checkInData ? (
+              <View className="bg-backgroundApp p-4 rounded-lg shadow">
+                <View className="mb-4 bg-green-50 p-3 rounded-lg">
+                  <Text className="text-green-600 font-bold text-center text-lg mb-2">
+                    Bảng thông tin
+                  </Text>
+                </View>
+                <View className="p-4">
+                  <Section
+                    icon={
+                      <View className="w-6 h-6 bg-purple-500 rounded-full" />
                     }
-                  />
+                    title="Trạng thái"
+                  >
+                    <InfoRow
+                      label="Thời gian vào công ty"
+                      value={formatDate(checkInData.checkinTime)}
+                    />
+                    {checkInData.gateIn && (
+                      <InfoRow
+                        label="Cổng vào"
+                        value={checkInData.gateIn.gateName}
+                      />
+                    )}
+                    {checkInData.gateIn && (
+                      <InfoRow
+                        label="Khách"
+                        value={checkInData.visitDetail.visitor.visitorName}
+                      />
+                    )}
+                    {checkInData.securityIn && (
+                      <InfoRow
+                        label="Bảo vệ"
+                        value={checkInData.securityIn.fullName}
+                      />
+                    )}
+                    <InfoRow
+                      label="Trạng thái"
+                      value={
+                        checkInData.status === "CheckIn"
+                          ? "Đã vào"
+                          : checkInData.status === "CheckOut"
+                          ? "Đã ra"
+                          : checkInData.status
+                      }
+                    />
 
-                  <InfoRow
-                    label="Trạng thái chuyến thăm"
-                    value={checkInData.visitDetail.visit.visitStatus}
-                  />
-                </Section>
+                    <InfoRow
+                      label="Trạng thái chuyến thăm"
+                      value={checkInData.visitDetail.visit.visitStatus}
+                    />
+                  </Section>
 
-                <SectionDropDown
-                  icon={<View className="w-6 h-6 bg-green-500 rounded-full" />}
-                  title="Thông tin thẻ"
-                >
-                  <InfoRow
-                    label="Loại thẻ"
-                    value={
-                      checkInData.visitCard.card.qrCardTypename
-                        ? "Loại thẻ: " +
-                          checkInData.visitCard.card.qrCardTypename
-                        : "Theo ngày"
+                  <SectionDropDown
+                    icon={
+                      <View className="w-6 h-6 bg-green-500 rounded-full" />
                     }
-                  />
-                  <InfoRow
-                    label="Mã thẻ"
-                    value={checkInData.visitCard.card.cardVerification}
-                  />
-                  <InfoRow
-                    label="Trạng thái thẻ"
-                    value={
-                      checkInData.visitCard.card.cardStatus === "Active"
-                        ? "Còn hiệu lực"
-                        : checkInData.visitCard.card.cardStatus === "Inactive"
-                        ? "Hết hiệu lực"
-                        : checkInData.visitCard.card.cardStatus === "Lost"
-                        ? "Mất thẻ"
-                        : checkInData.visitCard.card.cardStatus
+                    title="Thông tin thẻ"
+                  >
+                    <InfoRow
+                      label="Loại thẻ"
+                      value={
+                        checkInData.visitCard.card.qrCardTypename
+                          ? "Loại thẻ: " +
+                            checkInData.visitCard.card.qrCardTypename
+                          : "Theo ngày"
+                      }
+                    />
+                    <InfoRow
+                      label="Mã thẻ"
+                      value={checkInData.visitCard.card.cardVerification}
+                    />
+                    <InfoRow
+                      label="Trạng thái thẻ"
+                      value={
+                        checkInData.visitCard.card.cardStatus === "Active"
+                          ? "Còn hiệu lực"
+                          : checkInData.visitCard.card.cardStatus === "Inactive"
+                          ? "Hết hiệu lực"
+                          : checkInData.visitCard.card.cardStatus === "Lost"
+                          ? "Mất thẻ"
+                          : checkInData.visitCard.card.cardStatus
+                      }
+                    />
+                    <InfoRow
+                      label="Hình ảnh thẻ"
+                      value={checkInData.visitCard.card.cardImage}
+                      isImage={true}
+                    />
+                  </SectionDropDown>
+
+                  <SectionDropDown
+                    icon={
+                      <View className="w-6 h-6 bg-orange-500 rounded-full" />
                     }
-                  />
-                  <InfoRow
-                    label="Hình ảnh thẻ"
-                    value={checkInData.visitCard.card.cardImage}
-                    isImage={true}
-                  />
-                </SectionDropDown>
+                    title="Thời gian hiệu lực"
+                  >
+                    <InfoRow
+                      label="Ngày phát hành"
+                      value={formatDate(checkInData.visitCard.issueDate)}
+                    />
+                    <InfoRow
+                      label="Ngày hết hạn"
+                      value={formatDate(checkInData.visitCard.expiryDate)}
+                    />
+                    <InfoRow
+                      label="Giờ bắt đầu"
+                      value={checkInData.visitDetail.expectedStartHour}
+                    />
+                    <InfoRow
+                      label="Giờ kết thúc"
+                      value={checkInData.visitDetail.expectedEndHour}
+                    />
+                  </SectionDropDown>
 
-                <SectionDropDown
-                  icon={<View className="w-6 h-6 bg-orange-500 rounded-full" />}
-                  title="Thời gian hiệu lực"
-                >
-                  <InfoRow
-                    label="Ngày phát hành"
-                    value={formatDate(checkInData.visitCard.issueDate)}
-                  />
-                  <InfoRow
-                    label="Ngày hết hạn"
-                    value={formatDate(checkInData.visitCard.expiryDate)}
-                  />
-                  <InfoRow
-                    label="Giờ bắt đầu"
-                    value={checkInData.visitDetail.expectedStartHour}
-                  />
-                  <InfoRow
-                    label="Giờ kết thúc"
-                    value={checkInData.visitDetail.expectedEndHour}
-                  />
-                </SectionDropDown>
-
-                <SectionDropDown
-                  title="Hình ảnh xác minh"
-                  icon={<View className="w-6 h-6 bg-yellow-500 rounded-full" />}
-                >
-                  <View>
-                    <Text className="text-xl font-bold">Ảnh lúc vào</Text>
-                    {checkInData?.vehicleSession &&
-                      checkInData?.vehicleSession?.images
-                        .filter(
-                          (image: { imageType: string }) =>
-                            image.imageType !== ""
-                        )
-                        .map(
-                          (
-                            image: { imageURL: string; imageType: string },
-                            index: number
-                          ) => (
-                            <View key={index}>
-                              <Image
-                                source={{ uri: image.imageURL }}
-                                style={{
-                                  width: "100%",
-                                  height: 200,
-                                  borderRadius: 10,
-                                  marginVertical: 10,
-                                }}
-                                resizeMode="contain"
-                              />
-                            </View>
+                  <SectionDropDown
+                    title="Hình ảnh xác minh"
+                    icon={
+                      <View className="w-6 h-6 bg-yellow-500 rounded-full" />
+                    }
+                  >
+                    <View>
+                      <Text className="text-xl font-bold">Ảnh lúc vào</Text>
+                      {checkInData?.vehicleSession &&
+                        checkInData?.vehicleSession?.images
+                          .filter(
+                            (image: { imageType: string }) =>
+                              image.imageType !== ""
                           )
-                        )}
-                    {checkInData.visitorSessionsImages &&
-                      checkInData.visitorSessionsImages
-                        .filter(
-                          (image: { imageType: string }) =>
-                            image.imageType !== "CheckOut_Shoe"
-                        )
-                        .map(
-                          (
-                            image: { imageURL: string; imageType: string },
-                            index: number
-                          ) => (
-                            <View key={index}>
-                              <Image
-                                source={{ uri: image.imageURL }}
-                                style={{
-                                  width: "100%",
-                                  height: 200,
-                                  borderRadius: 10,
-                                  marginVertical: 10,
-                                }}
-                                resizeMode="contain"
-                              />
-                              {/* <Text className="text-xl">
-                {image.imageType === "Shoe" ? "Giày" : "Ảnh khách hàng"}
-              </Text> */}
-                            </View>
+                          .map(
+                            (
+                              image: { imageURL: string; imageType: string },
+                              index: number
+                            ) => (
+                              <View key={index}>
+                                <Image
+                                  source={{ uri: image.imageURL }}
+                                  style={{
+                                    width: "100%",
+                                    height: 200,
+                                    borderRadius: 10,
+                                    marginVertical: 10,
+                                  }}
+                                  resizeMode="contain"
+                                />
+                              </View>
+                            )
+                          )}
+                      {checkInData.visitorSessionsImages &&
+                        checkInData.visitorSessionsImages
+                          .filter(
+                            (image: { imageType: string }) =>
+                              image.imageType !== "CheckOut_Shoe"
                           )
-                        )}
-                  </View>
-                  <View>
-                    <Text className="text-xl font-bold">Ảnh lúc ra</Text>
-                    <Image
-                      source={{
-                        uri: validImageShoeUrl,
-                      }}
-                      style={{
-                        width: "100%",
-                        height: 200,
-                        borderRadius: 10,
-                        marginVertical: 10,
-                      }}
-                      resizeMode="contain"
-                    />
-                    <Image
-                      source={{
-                        uri: validImageBodyUrl,
-                      }}
-                      style={{
-                        width: "100%",
-                        height: 200,
-                        borderRadius: 10,
-                        marginVertical: 10,
-                      }}
-                      resizeMode="contain"
-                    />
-                  </View>
-                </SectionDropDown>
+                          .map(
+                            (
+                              image: { imageURL: string; imageType: string },
+                              index: number
+                            ) => (
+                              <View key={index}>
+                                <Image
+                                  source={{ uri: image.imageURL }}
+                                  style={{
+                                    width: "100%",
+                                    height: 200,
+                                    borderRadius: 10,
+                                    marginVertical: 10,
+                                  }}
+                                  resizeMode="contain"
+                                />
+                                {/* <Text className="text-xl">
+                    {image.imageType === "Shoe" ? "Giày" : "Ảnh khách hàng"}
+                  </Text> */}
+                              </View>
+                            )
+                          )}
+                    </View>
+                    <View>
+                      <Text className="text-xl font-bold">Ảnh lúc ra</Text>
+                      <Image
+                        source={{
+                          uri: validImageShoeUrl,
+                        }}
+                        style={{
+                          width: "100%",
+                          height: 200,
+                          borderRadius: 10,
+                          marginVertical: 10,
+                        }}
+                        resizeMode="contain"
+                      />
+                      <Image
+                        source={{
+                          uri: validImageBodyUrl,
+                        }}
+                        style={{
+                          width: "100%",
+                          height: 200,
+                          borderRadius: 10,
+                          marginVertical: 10,
+                        }}
+                        resizeMode="contain"
+                      />
+                    </View>
+                  </SectionDropDown>
 
-                <TouchableOpacity
-                  onPress={handleCheckOut}
-                  className="p-4 mb-4 bg-white rounded-full flex-row items-center justify-center"
-                >
-                  <Text className="text-lg mr-2">Xác nhận</Text>
-                  <EvilIcons name="arrow-right" size={30} color="black" />
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleCheckOut}
+                    className="p-4 mb-4 bg-white rounded-full flex-row items-center justify-center"
+                  >
+                    <Text className="text-lg mr-2">Xác nhận</Text>
+                    <EvilIcons name="arrow-right" size={30} color="black" />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          ) : null}
-        </GestureHandlerRootView>
-      </ScrollView>
-    </SafeAreaView>
-  );
+            ) : null}
+          </GestureHandlerRootView>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 };
 
 export default CheckOutCard;

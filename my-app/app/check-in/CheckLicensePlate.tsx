@@ -41,11 +41,8 @@ interface ImageData {
   ImageFile: string | null;
 }
 
-
-
 interface CapturedImage {
   ImageType: string;
-  ImageURL: string;
   Image: string;
 }
 
@@ -64,6 +61,8 @@ const CheckLicensePlate = () => {
   const [hasNavigated, setHasNavigated] = useState(false);
   const [hasScannedQR, setHasScannedQR] = useState(false);
   const [hasPhotoTaken, setHasPhotoTaken] = useState(false);
+  const [validLicensePlateNumber, setValidLicensePlateNumber] =
+    useState<boolean>(false);
   const [isCameraLaunched, setIsCameraLaunched] = useState(false);
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
@@ -79,7 +78,6 @@ const CheckLicensePlate = () => {
       skip: !gateId,
     }
   );
- 
 
   const [checkInData, setCheckInData] = useState<CheckInVerWithLP>({
     CredentialCard: null,
@@ -161,122 +159,6 @@ const CheckLicensePlate = () => {
     }
   }, [visitDetail]);
 
-  // const fetchCaptureImage = async (): Promise<ImageData | null> => {
-  //   try {
-  //     const response = await fetch(
-  //       "https://security-gateway-camera-1.tools.kozow.com/capture-image",
-  //       {
-  //         method: "GET",
-  //       }
-  //     );
-
-  //     if (!response.ok) {
-  //       console.error("HTTP Response Status:", response.status);
-  //       throw new Error(`HTTP error! Status: ${response.status}`);
-  //     }
-
-  //     const blob = await response.blob();
-  //     const fileUri = `${FileSystem.cacheDirectory}captured-image.jpg`;
-
-  //     const fileSaved = await new Promise<string | null>((resolve, reject) => {
-  //       const fileReader = new FileReader();
-  //       fileReader.onloadend = async () => {
-  //         const base64data = fileReader.result?.toString().split(",")[1];
-  //         if (base64data) {
-  //           await FileSystem.writeAsStringAsync(fileUri, base64data, {
-  //             encoding: FileSystem.EncodingType.Base64,
-  //           });
-  //           resolve(fileUri);
-  //         } else {
-  //           reject(null);
-  //         }
-  //       };
-  //       fileReader.readAsDataURL(blob);
-  //     });
-  //     console.log("file:", fileSaved);
-
-  //     return {
-  //       ImageType: "Shoe",
-  //       ImageURL: null,
-  //       ImageFile: fileSaved,
-  //     };
-  //   } catch (error) {
-  //     console.error("Failed to fetch capture image:", error);
-  //     Alert.alert("Error", "Failed to fetch the image. Please try again.");
-  //     return null;
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   const handleQrDataAndCapture = async () => {
-  //     if (qrCardData) {
-  //       // console.log("QR Card Data received:", qrCardData);
-
-  //       // if (qrCardData.cardImage) {
-  //       //   setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
-  //       // }
-
-  //       if (qrCardData.cardVerification) {
-  //         console.log(
-  //           "Processing card verification:",
-  //           qrCardData.cardVerification
-  //         );
-
-  //         try {
-  //           const capturedImageData = await fetchCaptureImage();
-  //           console.log("Captured image data:", capturedImageData);
-
-  //           if (capturedImageData && capturedImageData.ImageFile) {
-  //             setCapturedImage([capturedImageData]);
-  //             const formattedImage = {
-  //               ImageType: "Shoe",
-  //               ImageURL: "",
-  //               Image: capturedImageData.ImageFile,
-  //             };
-
-  //             // console.log("Formatted image data:", formattedImage);
-  //             setCheckInData((prevData) => {
-  //               const newData = {
-  //                 ...prevData,
-  //                 QrCardVerification: qrCardData.cardVerification,
-  //                 Images: [formattedImage],
-  //               };
-  //               console.log("Updated checkInData:", newData);
-  //               return newData;
-  //             });
-
-  //             setValidCheckInData((prevData) => {
-  //               const newData = {
-  //                 ...prevData,
-  //                 QRCardVerification: qrCardData.cardVerification,
-  //                 Images: [formattedImage],
-  //               };
-  //               console.log("Updated checkInData:", newData);
-  //               return newData;
-  //             });
-
-  //             setValidCheckInData((prevData) => ({
-  //               ...prevData,
-  //               ImageShoe: capturedImageData.ImageFile,
-  //             }));
-  //           } else {
-  //             console.error("No image data captured");
-  //           }
-  //         } catch (error) {
-  //           console.error("Error in capture process:", error);
-  //           Alert.alert("Error", "Failed to capture and save image");
-  //         }
-  //       }
-  //     }
-  //   };
-
-  //   handleQrDataAndCapture().catch((error) => {
-  //     console.error("Error in handleQrDataAndCapture:", error);
-  //   });
-  // }, [qrCardData]);
-
-  // Handle QR data
- 
   const fetchCaptureImage = async (
     url: string,
     imageType: string
@@ -321,12 +203,16 @@ const CheckLicensePlate = () => {
       return { ImageType: imageType, ImageFile: null };
     }
   };
+  const captureImageFromCamera = async (url: string, images: CapturedImage[]) => {
 
+  };
   useEffect(() => {
-    console.log("Camera Gate Structure:", JSON.stringify(cameraGate, null, 2));
-
     const handleQrDataAndCapture = async () => {
-      if (!qrCardData.cardVerification || !cameraGate || !Array.isArray(cameraGate)) {
+      if (
+        !qrCardData.cardVerification ||
+        !cameraGate ||
+        !Array.isArray(cameraGate)
+      ) {
         console.log("Missing required data:", {
           cardVerification: qrCardData.cardVerification,
           cameraGate: !!cameraGate,
@@ -336,7 +222,10 @@ const CheckLicensePlate = () => {
       }
 
       try {
-        console.log("Processing card verification:", qrCardData.cardVerification);
+        console.log(
+          "Processing card verification:",
+          qrCardData.cardVerification
+        );
 
         // Tìm camera trực tiếp từ mảng cameraGate
         const bodyCamera = cameraGate.find(
@@ -367,7 +256,7 @@ const CheckLicensePlate = () => {
           if (bodyImageData.ImageFile) {
             images.push({
               ImageType: "CheckIn_Body",
-              ImageURL: "",
+
               Image: bodyImageData.ImageFile,
             });
             console.log("Body image captured successfully");
@@ -387,7 +276,6 @@ const CheckLicensePlate = () => {
           if (shoeImageData.ImageFile) {
             images.push({
               ImageType: "CheckIn_Shoe",
-              ImageURL: "",
               Image: shoeImageData.ImageFile,
             });
             console.log("Shoe image captured successfully");
@@ -412,7 +300,7 @@ const CheckLicensePlate = () => {
             setValidCheckInData((prevData) => ({
               ...prevData,
               QRCardVerification: qrCardData.cardVerification,
-              ImageBody: shoeImage.Image,
+              ImageShoe: shoeImage.Image,
             }));
             console.log("ValidCheckInData updated with shoe image");
           }
@@ -433,7 +321,7 @@ const CheckLicensePlate = () => {
       // console.error("Error in handleQrDataAndCapture:", error);
     });
   }, [qrCardData, cameraGate]);
- 
+
   useEffect(() => {
     if (qrCardData) {
       setIsProcessing(true);
@@ -473,11 +361,13 @@ const CheckLicensePlate = () => {
       );
 
       if (!response.ok) {
-        throw new Error("Network response was not ok");
+        return Alert.alert(
+          "Lỗi",
+          "Hệ thống không thể xử lý ảnh. Vui lòng thử lại"
+        );
       }
 
       const result = await response.json();
-
       setCheckInData((prevData) => ({
         ...prevData,
         VehicleSession: {
@@ -493,19 +383,21 @@ const CheckLicensePlate = () => {
       }));
 
       setHasPhotoTaken(true);
-      // Alert.alert(
-      //   "Kết quả nhận dạng",
-      //   `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
-      //   [
-      //     {
-      //       text: "OK",
-      //       onPress: () =>
-      //         Alert.alert("Hướng dẫn", "Vui lòng quét mã QR để tiếp tục"),
-      //     },
-      //   ]
-      // );
+      setValidLicensePlateNumber(true);
+      Alert.alert(
+        "Kết quả nhận dạng",
+        `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
+        [
+          {
+            text: "OK",
+            onPress: () =>
+              Alert.alert("Hướng dẫn", "Vui lòng quét mã QR để tiếp tục"),
+          },
+        ]
+      );
     } catch (error) {
       console.error("Error processing image:", error);
+      setValidLicensePlateNumber(false);
       Alert.alert("Lỗi", "Không thể xử lý ảnh. Vui lòng thử lại.");
     } finally {
       setIsProcessing(false);
@@ -563,16 +455,6 @@ const CheckLicensePlate = () => {
         checkInData.Images.length > 0 &&
         checkInData.VehicleSession.LicensePlate !== "" &&
         checkInData.VehicleSession.vehicleImages.length > 0;
-      // console.log("Validation status:", {
-      //   hasCredential: checkInData.CredentialCard !== null,
-      //   hasSecurityId: checkInData.SecurityInId !== 0,
-      //   hasGateId: checkInData.GateInId !== 0,
-      //   hasQrCode: checkInData.QrCardVerification !== "",
-      //   hasImages: checkInData.Images.length > 0,
-      //   hasLicensePlate: checkInData.VehicleSession.LicensePlate !== "",
-      //   hasVehicleImages: checkInData.VehicleSession.vehicleImages.length > 0,
-      // });
-
       if (!isDataComplete || hasNavigated) {
         return;
       }
@@ -680,20 +562,22 @@ const CheckLicensePlate = () => {
           </View>
 
           {/* QR Scanner */}
-          <View className="aspect-[2/4] relative mb-4">
-            <CameraView
-              style={StyleSheet.absoluteFillObject}
-              facing="back"
-              onBarcodeScanned={handleBarCodeScanned}
-            />
-            <Overlay />
+          {validLicensePlateNumber && (
+            <View className="aspect-[2/4] relative mb-4">
+              <CameraView
+                style={StyleSheet.absoluteFillObject}
+                facing="back"
+                onBarcodeScanned={handleBarCodeScanned}
+              />
+              <Overlay />
 
-            <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
-              <Text className="text-green-700 text-sm font-semibold">
-                Quét QR Code
-              </Text>
+              <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
+                <Text className="text-green-700 text-sm font-semibold">
+                  Quét QR Code
+                </Text>
+              </View>
             </View>
-          </View>
+          )}
 
           {/* Status Indicators */}
           <View className="mt-4 p-4 bg-white rounded-lg">
