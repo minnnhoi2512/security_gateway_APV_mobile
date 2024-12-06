@@ -62,6 +62,7 @@ const CheckLicensePlate = () => {
   const [hasScannedQR, setHasScannedQR] = useState(false);
   const [hasPhotoTaken, setHasPhotoTaken] = useState(false);
   const [isScanDisabled, setIsScanDisabled] = useState(false);
+  const [hasShownError, setHasShownError] = useState(false);
   const [validLicensePlateNumber, setValidLicensePlateNumber] =
     useState<boolean>(false);
   const [isCameraLaunched, setIsCameraLaunched] = useState(false);
@@ -105,12 +106,13 @@ const CheckLicensePlate = () => {
     isError,
   } = useGetVisitDetailByIdQuery(visitId);
 
-  const { data: qrCardData, refetch } = useGetDataByCardVerificationQuery(
-    checkInData.QrCardVerification,
-    {
-      skip: checkInData.QrCardVerification == "",
-    }
-  );
+  const {
+    data: qrCardData,
+    isError: isErrorQr,
+    refetch,
+  } = useGetDataByCardVerificationQuery(checkInData.QrCardVerification, {
+    skip: checkInData.QrCardVerification == "",
+  });
 
   // Check camera permissions
   useEffect(() => {
@@ -320,6 +322,8 @@ const CheckLicensePlate = () => {
     directData();
   }, [qrCardData]);
 
+  console.log("check in data: ", checkInData);
+
   const uploadImageToAPI = async (imageUri: string) => {
     try {
       setIsProcessing(true);
@@ -445,42 +449,98 @@ const CheckLicensePlate = () => {
       Alert.alert("Đã xảy ra lỗi", errorMessage);
     }
   };
+
+  useEffect(() => {
+    if (isErrorQr && !hasShownError) {
+      setHasShownError(true);
+      Alert.alert("Lỗi", "Không tìm thấy dữ liệu QR. Vui lòng thử lại.", [
+        {
+          text: "OK",
+          onPress: () => {
+            qrLock.current = false;
+            setIsProcessing(false);
+            setCheckInData((prev) => ({ ...prev, QrCardVerification: "" }));
+            router.back();
+          },
+        },
+      ]);
+    }
+  }, [isErrorQr]);
+
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
-    // console.log(data);
-    // if (!data.includes("-") && !hasScannedQR) {
-    //   setHasScannedQR(false);
-    //   return Alert.alert("Lỗi", "QR Code không hợp lệ. Vui lòng thử lại.");
-    // }
     if (data && !qrLock.current) {
-      if (!data.includes("-") && !hasScannedQR) {
-        // Alert.alert("Lỗi", "QR Code không hợp lệ. Vui lòng thử lại.");
-      } else {
-        qrLock.current = true;
-        setIsProcessing(true);
-        try {
-          setCheckInData((prevData) => ({
-            ...prevData,
-            QrCardVerification: data,
-          }));
-          setIsCameraActive(false);
-          setHasScannedQR(true);
-          const captureImage: CapturedImage[] | undefined =
-            await handleQrDataAndCapture();
-          await validateAndNavigate({
-            ...checkInData,
-            Images: captureImage || [],
-            QrCardVerification: data,
-          });
-        } catch (error) {
-          console.error("Error handling QR Code:", error);
-          Alert.alert("Error", "Failed to process QR code. Please try again.");
-        } finally {
-          setIsProcessing(false);
-          qrLock.current = false;
-        }
+      qrLock.current = true;
+      setIsProcessing(true);
+      try {
+        setCheckInData((prevData) => ({
+          ...prevData,
+          QrCardVerification: data,
+        }));
+        console.log("Scanned QR Code Data:", data);
+        setIsCameraActive(false);
+        setHasScannedQR(true);
+        const captureImage: CapturedImage[] | undefined =
+          await handleQrDataAndCapture();
+        await validateAndNavigate({
+          ...checkInData,
+          Images: captureImage || [],
+          QrCardVerification: data,
+        });
+      } catch (error) {
+        console.error("Error handling QR Code:", error);
+        Alert.alert("Error", "Failed to process QR code. Please try again.");
+      } finally {
+        setIsProcessing(false);
+        qrLock.current = false;
       }
     }
   };
+
+  // const handleBarCodeScanned = async ({ data }: { data: string }) => {
+  //   if (data && !qrLock.current) {
+  //     if (!data.includes("-") && !hasScannedQR) {
+  //       // Alert.alert("Lỗi", "QR Code không hợp lệ. Vui lòng thử lại.");
+  //     } else {
+  //       qrLock.current = true;
+  //       setIsProcessing(true);
+  //       try {
+  //         setCheckInData((prevData) => ({
+  //           ...prevData,
+  //           QrCardVerification: data,
+  //         }));
+  //         console.log("Scanned QR Code Data:", data);
+  //         setIsCameraActive(false);
+  //         setHasScannedQR(true);
+  //         const captureImage: CapturedImage[] | undefined =
+  //           await handleQrDataAndCapture();
+  //         await validateAndNavigate({
+  //           ...checkInData,
+  //           Images: captureImage || [],
+  //           QrCardVerification: data,
+  //         });
+  //       } catch (error) {
+  //         console.error("Error handling QR Code:", error);
+  //         Alert.alert("Error", "Failed to process QR code. Please try again.");
+  //       } finally {
+  //         setIsProcessing(false);
+  //         qrLock.current = false;
+  //       }
+  //     }
+  //   }
+  // };
+
+  // const handleBarCodeScanned = ({ data }: { data: string }) => {
+  //   if (data && !qrLock.current) {
+  //     qrLock.current = true;
+  //     setCheckInData((prevData) => ({
+  //       ...prevData,
+  //       QrCardVerification: data,
+  //     }));
+  //     setIsProcessing(true);
+  //     console.log("Scanned QR Code Data:", data);
+  //   }
+  // };
+
   // const handleBarCodeScanned = async ({ data }: { data: string }) => {
   //   if (data && !qrLock.current) {
   //     qrLock.current = true;
