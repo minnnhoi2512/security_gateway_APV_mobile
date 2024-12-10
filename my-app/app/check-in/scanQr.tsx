@@ -394,7 +394,7 @@ const scanQr = () => {
           text: "OK",
           onPress: () => {
             router.push({
-              pathname: "/(tabs)/CreateCustomer",
+              pathname: "/(tabs)/createCustomer",
             });
             resetState();
             visitNotFoundShown.current = false;

@@ -180,7 +180,7 @@ const CreateVisitDailyForStaffScreen1: React.FC = () => {
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ padding: 16 }}
-        keyboardShouldPersistTaps="handled"
+        // keyboardShouldPersistTaps="always"
       >
         <View className="bg-white rounded-3xl p-6 shadow-lg">
           <InputField

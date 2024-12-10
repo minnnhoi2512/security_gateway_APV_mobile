@@ -224,7 +224,7 @@ const CheckInOverall = () => {
 
             formData.append(
               "VehicleSession.VehicleImages[0].ImageType",
-              "LicensePlate_In"
+              "CheckIn_Vehicle"
             );
             formData.append(
               "VehicleSession.VehicleImages[0].ImageURL",
@@ -233,9 +233,10 @@ const CheckInOverall = () => {
           }
         }
 
-        // console.log("Form data being sent:", formData);
+        console.log("Form data being sent:", formData);
 
         const response = await checkIn(formData).unwrap();
+        
         setResultData(response);
         setCheckInStatus("success");
         setCheckInMessage("Bạn vừa check in thành công!");

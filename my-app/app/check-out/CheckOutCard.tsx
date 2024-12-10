@@ -187,7 +187,7 @@ const CheckOutCard = () => {
                 `${camera.cameraURL}capture-image`,
                 "CheckOut_Shoe"
               ),
-              3000
+              10000
             );
           } catch (error) {
             Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
@@ -249,7 +249,7 @@ const CheckOutCard = () => {
                 `${camera.cameraURL}capture-image`,
                 "CheckOut_Body"
               ),
-              3000
+              10000
             );
           } catch (error) {
             Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
@@ -284,6 +284,7 @@ const CheckOutCard = () => {
       pathname: "/(tabs)/checkout",
     });
   };
+  // console.log("CHECKIN DATA: ", checkInData);
 
   const InfoRow = ({
     label,
@@ -461,7 +462,7 @@ const CheckOutCard = () => {
         <ScrollView>
           <GestureHandlerRootView className="flex-1 p-5">
             {!isLoading && checkInData ? (
-              <View className="bg-backgroundApp p-4 rounded-lg shadow">
+              <View className="  rounded-lg shadow">
                 <View className="mb-4 bg-green-50 p-3 rounded-lg">
                   <Text className="text-green-600 font-bold text-center text-lg mb-2">
                     Bảng thông tin
@@ -630,9 +631,6 @@ const CheckOutCard = () => {
                                   }}
                                   resizeMode="contain"
                                 />
-                                {/* <Text className="text-xl">
-                    {image.imageType === "Shoe" ? "Giày" : "Ảnh khách hàng"}
-                  </Text> */}
                               </View>
                             )
                           )}
@@ -672,6 +670,7 @@ const CheckOutCard = () => {
                         <ActivityIndicator size="large" color="#0000ff" />
                       )}
                     </View>
+                    
                   </SectionDropDown>
 
                   <TouchableOpacity

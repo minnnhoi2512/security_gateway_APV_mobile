@@ -152,7 +152,7 @@ export default function RootLayout() {
               options={{ headerShown: false }}
             />
              <Stack.Screen
-              name="tabs/CreateCustomer"
+              name="tabs/createCustomer"
               options={{ headerShown: false }}
             />
             <Stack.Screen
