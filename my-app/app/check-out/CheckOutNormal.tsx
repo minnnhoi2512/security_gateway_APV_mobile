@@ -210,7 +210,7 @@ const CheckOutNormal = () => {
                 `${camera.cameraURL}capture-image`,
                 "CheckOut_Shoe"
               ),
-              3000
+              10000
             );
           } catch (error) {
             Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
@@ -272,7 +272,7 @@ const CheckOutNormal = () => {
                 `${camera.cameraURL}capture-image`,
                 "CheckOut_Body"
               ),
-              3000
+              10000
             );
           } catch (error) {
             Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
@@ -485,13 +485,13 @@ const CheckOutNormal = () => {
         <ScrollView>
           <GestureHandlerRootView className="flex-1 p-5">
             {!isLoading && checkInData ? (
-              <View className="bg-backgroundApp p-4 rounded-lg shadow">
+              <View className="rounded-lg shadow">
                 <View className="mb-4 bg-green-50 p-3 rounded-lg">
                   <Text className="text-green-600 font-bold text-center text-lg mb-2">
                     Bảng thông tin
                   </Text>
                 </View>
-                <View className="p-4">
+                <View className="">
                   <Section
                     icon={
                       <View className="w-6 h-6 bg-purple-500 rounded-full" />
@@ -552,10 +552,10 @@ const CheckOutNormal = () => {
                           : "Theo ngày"
                       }
                     />
-                    <InfoRow
+                    {/* <InfoRow
                       label="Mã thẻ"
                       value={checkInData.visitCard.card.cardVerification}
-                    />
+                    /> */}
                     <InfoRow
                       label="Trạng thái thẻ"
                       value={

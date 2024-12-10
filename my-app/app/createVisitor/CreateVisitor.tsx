@@ -46,6 +46,7 @@ const CreateVisitor = () => {
     visitorName: userData?.name || "",
     companyName: "",
     phoneNumber: "",
+    email: "",
     credentialsCard: userData?.id || "",
     credentialCardTypeId: 1,
     visitorCredentialFrontImageFromRequest: null,
@@ -122,6 +123,7 @@ const CreateVisitor = () => {
       visitorName,
       companyName,
       phoneNumber,
+      email,
       visitorCredentialFrontImageFromRequest,
       visitorCredentialBackImageFromRequest
     } = visitor;
@@ -131,6 +133,10 @@ const CreateVisitor = () => {
     }
     if (!phoneNumber) {
       Alert.alert("Validation Error", "Please provide a phone number.");
+      return false;
+    }
+    if (!email) {
+      Alert.alert("Validation Error", "Please provide a email.");
       return false;
     }
     if (!companyName) {
@@ -158,6 +164,7 @@ const CreateVisitor = () => {
     formData.append("visitorName", visitor.visitorName);
     formData.append("companyName", visitor.companyName);
     formData.append("phoneNumber", visitor.phoneNumber);
+    formData.append("email", visitor.email);
     formData.append("credentialsCard", visitor.credentialsCard);
     formData.append(
       "credentialCardTypeId",
@@ -249,6 +256,17 @@ const CreateVisitor = () => {
               value={visitor.phoneNumber}
               onChangeText={(text) => handleInputChange("phoneNumber", text)}
               placeholder="Nhập số điện thoại"
+            />
+          </View>
+          <View className="mb-4">
+            <Text className="text-sm font-semibold text-white mb-2">
+              Email
+            </Text>
+            <TextInput
+              className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-backgroundApp"
+              value={visitor.email}
+              onChangeText={(text) => handleInputChange("email", text)}
+              placeholder="Nhập email"
             />
           </View>
           <View className="mb-4">

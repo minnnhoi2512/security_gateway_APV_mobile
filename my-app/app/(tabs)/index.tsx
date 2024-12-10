@@ -30,11 +30,14 @@ export default function HomeScreen() {
     isError,
     refetch,
   } = useGetAllVisitsByCurrentDateQuery(
-    { pageSize: 10, pageNumber: 1 },
+    { pageSize: 50, pageNumber: 1 },
     {
       refetchOnMountOrArgChange: true,
     }
   );
+
+  // console.log("VIsit home: ", visits);
+  
 
   const {
     data: staffList,

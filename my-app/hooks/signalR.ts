@@ -24,7 +24,7 @@ const SetSignalR = async (
     const startConnection = async () => {
       try {
         await connection.current?.start();
-        console.log("Connected to NotificationHub " + connection.current?.connectionId);
+        // console.log("Connected to NotificationHub " + connection.current?.connectionId);
         dispatch(setConnection(connection));
         connection.current?.on("ReceiveMessage", (title, message) => {
           // console.log(message)
@@ -41,7 +41,7 @@ const SetSignalR = async (
         //     title: title,
         //     message: message,
         //   });
-            console.log("New notification")
+            // console.log("New notification")
           // const notiList = JSON.parse(localStorage.getItem("notification") as string) as NotificationType[]
           // if(notiList){
           //   notiList.push(notification)
@@ -60,7 +60,7 @@ const SetSignalR = async (
         });
         await connection.current?.invoke("JoinHub", user);
       } catch (error) {
-        console.error("SignalR Connection Error: ", error);
+        // console.error("SignalR Connection Error: ", error  );
       }
     };
 
@@ -78,7 +78,7 @@ const DisconnectSignalR = (
     connection.current?.stop().then(() => console.log("Disconnected from NotificationHub"));
     dispatch(clearConnection())
   } catch (error) {
-    console.error("SignalR Disconnection Error: ", error);
+    // console.error("SignalR Disconnection Error: ", error);
   }
 }
 

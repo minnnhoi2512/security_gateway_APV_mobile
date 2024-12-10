@@ -230,7 +230,7 @@ const CheckOutLicensePlate = () => {
                 `${camera.cameraURL}capture-image`,
                 "CheckOut_Shoe"
               ),
-              3000
+              10000
             );
           } catch (error) {
             Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
@@ -292,7 +292,7 @@ const CheckOutLicensePlate = () => {
                 `${camera.cameraURL}capture-image`,
                 "CheckOut_Body"
               ),
-              3000
+              10000
             );
           } catch (error) {
             Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
@@ -617,7 +617,7 @@ const CheckOutLicensePlate = () => {
         <ScrollView>
           <GestureHandlerRootView className="flex-1 p-5">
             {!isLoading && checkInData ? (
-              <View className="bg-backgroundApp p-4 rounded-lg shadow">
+              <View className="  rounded-lg shadow">
                 <View className="mb-4 bg-green-50 p-3 rounded-lg">
                   <Text className="text-green-600 font-bold text-center text-lg mb-2">
                     Bảng thông tin
