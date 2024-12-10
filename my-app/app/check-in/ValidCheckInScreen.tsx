@@ -207,10 +207,6 @@ const ValidCheckInScreen = () => {
 
   //  console.log("Response valid: ", response);
 
-  const handleGoBack = () => {
-    router.back();
-  };
-
   const InfoRow = ({
     label,
     value,
