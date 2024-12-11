@@ -120,6 +120,8 @@ const CheckOutNormal = () => {
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
+  const [imageBody, setImageBody] = useState<any>(null);
+  const [imageShoe, setImageShoe] = useState<any>(null);
   const [handleValidShoe, setHandleValidShoe] = useState(false);
   const gateId = Number(selectedGateId) || 0;
   const { data: cameraGate } = useGetCameraByGateIdQuery(
@@ -221,6 +223,8 @@ const CheckOutNormal = () => {
             handleBack();
             Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
             return;
+          } else {
+            setImageShoe(checkOutShoe.ImageFile);
           }
           const imageValid: ImageFile = {
             name: "CheckOut_Shoe",
@@ -283,6 +287,8 @@ const CheckOutNormal = () => {
             handleBack();
             Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
             return;
+          } else {
+            setImageBody(checkOutBody.ImageFile);
           }
           const imageValid: ImageFile = {
             name: "CheckOut_Body",
@@ -660,10 +666,10 @@ const CheckOutNormal = () => {
                     </View>
                     <View>
                       <Text className="text-xl font-bold">Ảnh lúc ra</Text>
-                      {validImageShoeUrl != "" ? (
+                      {imageShoe != "" ? (
                         <Image
                           source={{
-                            uri: validImageShoeUrl,
+                            uri: imageShoe,
                           }}
                           style={{
                             width: "100%",
@@ -676,10 +682,10 @@ const CheckOutNormal = () => {
                       ) : (
                         <ActivityIndicator size="large" color="#0000ff" />
                       )}
-                      {validImageBodyUrl != "" ? (
+                      {imageBody != "" ? (
                         <Image
                           source={{
-                            uri: validImageBodyUrl,
+                            uri: imageBody,
                           }}
                           style={{
                             width: "100%",
