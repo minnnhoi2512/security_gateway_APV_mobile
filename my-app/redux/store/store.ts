@@ -16,6 +16,7 @@ import { visitorSessionApi } from "../services/visitorSession.service";
 import { checkOutApi } from "../services/checkout.service";
 import hubConnectionReducer from "../slices/hubConnection.slice";
 import notificationReducer from "../slices/notification.slice";
+import { notificationAPI } from "../services/notificationApi.service";
 
 export const store = configureStore({
   reducer: {
@@ -30,6 +31,7 @@ export const store = configureStore({
     [visitorApi.reducerPath]: visitorApi.reducer,
     [userApi.reducerPath]: userApi.reducer,
     [pythonAPI.reducerPath]: pythonAPI.reducer,
+    [notificationAPI.reducerPath]: notificationAPI.reducer,
     hubConnection : hubConnectionReducer,
     notification : notificationReducer,
     auth: authSlice,
@@ -48,7 +50,8 @@ export const store = configureStore({
       checkOutApi.middleware,
       visitorSessionApi.middleware, 
       visitorApi.middleware, 
-      userApi.middleware
+      userApi.middleware,
+      notificationAPI.middleware
     ),
 });
 

@@ -13,6 +13,17 @@ import SetSignalR from '../../hooks/signalR';
 import { useDispatch, useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import UserConnectionHubType from "@/Types/userConnectionHubType";
+import * as Notifications from 'expo-notifications';
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
+
+
+
 export default function TabLayout() {
   const [role, setRole] = useState<string | null>(null);
   const colorScheme = useColorScheme();
@@ -24,6 +35,19 @@ export default function TabLayout() {
   // const role = useSelector((state: any) => state.auth.role);
   // console.log("ROLE NE: ", role);
   const router = useRouter();
+  
+  async function handleNotification() {
+    await Notifications.requestPermissionsAsync()
+    const {status} = await Notifications.getPermissionsAsync()
+    if(status !== "granted"){
+      alert("you must allow notification")
+      return
+    }
+  }
+
+  useEffect(() =>{
+    handleNotification();
+  },[])
 
   useEffect(() => {
     const fetchRole = async () => {
@@ -46,7 +70,7 @@ export default function TabLayout() {
     };
     fetchRole();
   }, []);
-
+  
   // if (role === null) {
   //   return null;  
   // }
@@ -134,10 +158,10 @@ export default function TabLayout() {
             ),
           }}
         /> */}
-      <Tabs.Screen
+      <Tabs.Screen 
         name="createCustomer"
         options={{
-          href: role === "Staff" || role === "Security" ? null : "/(tabs)/createCustomer",
+          href: role === "Staff" || role === "Security" ? null : "/(tabs)/CreateCustomer",
           title: "Tạo mới",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name="create-outline" size={24} color={color} />

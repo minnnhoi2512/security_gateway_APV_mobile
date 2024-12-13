@@ -27,6 +27,7 @@ const VisitDetail = () => {
     isLoading,
     isError,
   } = useGetVisitDetailByIdQuery(visitData.visitId as string);
+  console.log(visitData)
   const router = useRouter();
   const [expandedItem, setExpandedItem] = useState<number | null>(null);
   const handleGoBack = () => {

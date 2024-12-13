@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { CameraView } from "expo-camera";
 import { Stack, useRouter } from "expo-router";
 import {
   ActivityIndicator,
   Alert,
   AppState,
+  Dimensions,
   Image,
   Platform,
   Pressable,
@@ -26,7 +27,7 @@ import { RootState } from "@/redux/store/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useToast } from "@/components/Toast/ToastContext";
 import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 interface ScanData {
   id: string;
   nationalId?: string;
@@ -48,6 +49,8 @@ interface CapturedImage {
   ImageURL: string;
   Image: string;
 }
+type CameraType = "QR" | "LICENSE" | "OTHER_TYPE";
+const { width, height } = Dimensions.get("window");
 const scanQr = () => {
   const qrLock = useRef(false);
   const appState = useRef(AppState.currentState);
@@ -60,10 +63,25 @@ const scanQr = () => {
   const [cardVerification, setCardVerification] = useState<string | null>(null);
   const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isCameraReady, setIsCameraReady] = useState(false);
+  const [scanType, setScanType] = useState<"normal" | "license">("normal");
   const alertShown = useRef(false);
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
+  const [cameraType, setCameraType] = useState<CameraType>("OTHER_TYPE");
+  const [activeCamera, setActiveCamera] = useState<"QR" | "LICENSE">("QR");
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [hasScanned, setHasScanned] = useState(false);
+  useEffect(() => {
+    // Đợi một chút để đảm bảo view đã render xong
+    const timer = setTimeout(() => {
+      setIsCameraReady(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   const { showToast } = useToast();
   const {
     data: visitOfUser,
@@ -170,12 +188,6 @@ const scanQr = () => {
       }
 
       try {
-        // console.log(
-        //   "Processing card verification:",
-        //   qrCardData.cardVerification
-        // );
-
-        // Tìm camera trực tiếp từ mảng cameraGate
         const bodyCamera = cameraGate.find(
           (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Body"
         );
@@ -184,18 +196,11 @@ const scanQr = () => {
           (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Shoe"
         );
 
-        // console.log("Found cameras:", {
-        //   bodyCamera: bodyCamera?.cameraURL,
-        //   shoeCamera: shoeCamera?.cameraURL,
-        // });
-
         const images: CapturedImage[] = [];
 
-        // Chụp ảnh body
         if (bodyCamera?.cameraURL) {
           const bodyImageUrl = `${bodyCamera.cameraURL}capture-image`;
           // console.log("Attempting to capture body image from:", bodyImageUrl);
-
           const bodyImageData = await fetchCaptureImage(
             bodyImageUrl,
             "CheckIn_Body"
@@ -211,7 +216,6 @@ const scanQr = () => {
           }
         }
 
-        // Chụp ảnh giày
         if (shoeCamera?.cameraURL) {
           const shoeImageUrl = `${shoeCamera.cameraURL}capture-image`;
           // console.log("Attempting to capture shoe image from:", shoeImageUrl);
@@ -233,14 +237,12 @@ const scanQr = () => {
         if (images.length > 0) {
           // console.log("Setting state with captured images:", images.length);
 
-          // Cập nhật checkInData
           setCheckInData((prevData) => ({
             ...prevData,
             QrCardVerification: qrCardData.cardVerification,
             Images: images,
           }));
 
-          // Cập nhật validCheckInData
           const shoeImage = images.find(
             (img) => img.ImageType === "CheckIn_Shoe"
           );
@@ -342,7 +344,7 @@ const scanQr = () => {
     if (scannedData) {
       if (isCredentialCard(scannedData)) {
         const parsedData = parseQRData(scannedData);
- 
+
         if (parsedData) {
           setCredentialCardId(parsedData.id);
           setIsProcessing(true);
@@ -394,7 +396,7 @@ const scanQr = () => {
           text: "OK",
           onPress: () => {
             router.push({
-              pathname: "/(tabs)/createCustomer",
+              pathname: "/(tabs)",
             });
             resetState();
             visitNotFoundShown.current = false;
@@ -410,67 +412,129 @@ const scanQr = () => {
       ]
     );
   };
+
   useEffect(() => {
-    const handleNavigation = async () => {
-      if (isLoadingVisit || isFetchingVisit) return;
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      const hasRequiredData =
-        checkInData.QrCardVerification && checkInData.Images.length > 0;
+    if (scanType !== "normal" || !scannedData) return;
+
+    if (isLoadingVisit || isFetchingVisit) return;
+
+    const hasRequiredData =
+      checkInData.QrCardVerification && checkInData.Images.length > 0;
+
+    if (cardVerification && !redirected.current) {
+      qrLock.current = true;
+      if (
+        qrCardData &&
+        !isLoadingQr &&
+        !isFetchingQr &&
+        !isErrorQr &&
+        hasRequiredData
+      ) {
+        redirected.current = true;
+
+        router.push({
+          pathname: "/check-in/ValidCheckInScreen",
+          params: {
+            dataCheckIn: JSON.stringify(checkInData),
+            dataValid: JSON.stringify({
+              CredentialCard: checkInData.CredentialCard,
+              QRCardVerification: checkInData.QrCardVerification,
+              ImageShoe:
+                checkInData.Images.find(
+                  (img) => img.ImageType === "CheckIn_Shoe"
+                )?.Image || null,
+            }),
+          },
+        });
+
+        resetState();
+        alertShown.current = false;
+      } else if (!isLoadingQr && !isFetchingQr && (isErrorQr || !qrCardData)) {
+        if (!alertShown.current) {
+          showToast("Mã xác thực không hợp lệ", "error");
+          Alert.alert("Lỗi", "Mã xác thực không hợp lệ", [
+            {
+              text: "OK",
+              onPress: () => {
+                resetState();
+                alertShown.current = false;
+              },
+            },
+          ]);
+          alertShown.current = true;
+        }
+      }
+    } else if (credentialCardId && !redirected.current) {
+      qrLock.current = true;
+      if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
+        redirected.current = true;
+
+        router.push({
+          pathname: "/check-in/ListVisit",
+          params: { credentialCardId: credentialCardId },
+        });
+        resetState();
+      } else if (
+        !isLoadingVisit &&
+        !isFetchingVisit &&
+        !visitNotFoundShown.current
+      ) {
+        visitNotFoundShown.current = true;
+        showToast("Không tìm thấy thông tin chuyến thăm", "error");
+        handleVisitNotFound();
+      }
+    }
+  }, [
+    scanType,
+    scannedData,
+    visitOfUser,
+    isLoadingVisit,
+    isFetchingVisit,
+    qrCardData,
+    isLoadingQr,
+    isFetchingQr,
+    cardVerification,
+    checkInData,
+  ]);
+
+  useEffect(() => {
+    if (scanType !== "license" || !scannedData) return;
+
+    if (isLoadingVisit || isFetchingVisit) return;
+
+    const handleLicenseScan = async () => {
       if (cardVerification && !redirected.current) {
         qrLock.current = true;
-        if (
-          qrCardData &&
-          !isLoadingQr &&
-          !isFetchingQr &&
-          !isErrorQr &&
-          hasRequiredData
-        ) {
+        if (qrCardData && !isLoadingQr && !isFetchingQr && !isErrorQr) {
           redirected.current = true;
           await new Promise((resolve) => setTimeout(resolve, 500));
-          router.push({
-            pathname: "/check-in/ValidCheckInScreen",
-            params: {
-              dataCheckIn: JSON.stringify(checkInData),
-              dataValid: JSON.stringify({
-                CredentialCard: checkInData.CredentialCard,
-                QRCardVerification: checkInData.QrCardVerification,
-                ImageShoe:
-                  checkInData.Images.find(
-                    (img) => img.ImageType === "CheckIn_Shoe"
-                  )?.Image || null,
-              }),
-            },
-          });
 
+          router.push({
+            pathname: "/check-in/CheckLicensePlateCard",
+            params: { card: cardVerification },
+          });
           resetState();
-          alertShown.current = false;
         } else if (
           !isLoadingQr &&
           !isFetchingQr &&
           (isErrorQr || !qrCardData)
         ) {
-          if (!alertShown.current) {
-            showToast("Mã xác thực không hợp lệ", "error");
-            Alert.alert("Lỗi", "Mã xác thực không hợp lệ", [
-              {
-                text: "OK",
-                onPress: () => {
-                  resetState();
-                  alertShown.current = false;
-                },
-              },
-            ]);
-            alertShown.current = true;
-          }
+          Alert.alert("Lỗi", "Mã xác thực không hợp lệ", [
+            {
+              text: "OK",
+              onPress: resetState,
+            },
+          ]);
         }
       } else if (credentialCardId && !redirected.current) {
         qrLock.current = true;
         if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
           redirected.current = true;
           await new Promise((resolve) => setTimeout(resolve, 500));
+
           router.push({
-            pathname: "/check-in/ListVisit",
-            params: { credentialCardId: credentialCardId },
+            pathname: "/check-in/ListVisitLicensePlate",
+            params: { credentialCardId },
           });
           resetState();
         } else if (
@@ -479,31 +543,131 @@ const scanQr = () => {
           !visitNotFoundShown.current
         ) {
           visitNotFoundShown.current = true;
-          showToast("Không tìm thấy thông tin chuyến thăm", "error");
           handleVisitNotFound();
         }
       }
     };
-    handleNavigation();
+
+    handleLicenseScan();
   }, [
+    scanType,
+    scannedData,
     visitOfUser,
     isLoadingVisit,
     isFetchingVisit,
-    credentialCardId,
     qrCardData,
     isLoadingQr,
     isFetchingQr,
     cardVerification,
-    checkInData,
+    credentialCardId,
   ]);
+
+  const handleLicensePlateScanned = ({ data }: { data: string }) => {
+    if (data && !qrLock.current) {
+      qrLock.current = true;
+      setScannedData(data);
+      setIsProcessing(true);
+      setScanType('license'); 
+      console.log("License Plate Scanned Data:", data);
+    }
+  };
+
+  // useEffect(() => {
+  //   const handleNavigation = async () => {
+  //     if (isLoadingVisit || isFetchingVisit) return;
+  //     await new Promise((resolve) => setTimeout(resolve, 200));
+  //     const hasRequiredData =
+  //       checkInData.QrCardVerification && checkInData.Images.length > 0;
+  //     if (cardVerification && !redirected.current) {
+  //       qrLock.current = true;
+  //       if (
+  //         qrCardData &&
+  //         !isLoadingQr &&
+  //         !isFetchingQr &&
+  //         !isErrorQr &&
+  //         hasRequiredData
+  //       ) {
+  //         redirected.current = true;
+  //         await new Promise((resolve) => setTimeout(resolve, 500));
+  //         router.push({
+  //           pathname: "/check-in/ValidCheckInScreen",
+  //           params: {
+  //             dataCheckIn: JSON.stringify(checkInData),
+  //             dataValid: JSON.stringify({
+  //               CredentialCard: checkInData.CredentialCard,
+  //               QRCardVerification: checkInData.QrCardVerification,
+  //               ImageShoe:
+  //                 checkInData.Images.find(
+  //                   (img) => img.ImageType === "CheckIn_Shoe"
+  //                 )?.Image || null,
+  //             }),
+  //           },
+  //         });
+
+  //         resetState();
+  //         alertShown.current = false;
+  //       } else if (
+  //         !isLoadingQr &&
+  //         !isFetchingQr &&
+  //         (isErrorQr || !qrCardData)
+  //       ) {
+  //         if (!alertShown.current) {
+  //           showToast("Mã xác thực không hợp lệ", "error");
+  //           Alert.alert("Lỗi", "Mã xác thực không hợp lệ", [
+  //             {
+  //               text: "OK",
+  //               onPress: () => {
+  //                 resetState();
+  //                 alertShown.current = false;
+  //               },
+  //             },
+  //           ]);
+  //           alertShown.current = true;
+  //         }
+  //       }
+  //     } else if (credentialCardId && !redirected.current) {
+  //       qrLock.current = true;
+  //       if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
+  //         redirected.current = true;
+  //         await new Promise((resolve) => setTimeout(resolve, 500));
+  //         router.push({
+  //           pathname: "/check-in/ListVisit",
+  //           params: { credentialCardId: credentialCardId },
+  //         });
+  //         resetState();
+  //       } else if (
+  //         !isLoadingVisit &&
+  //         !isFetchingVisit &&
+  //         !visitNotFoundShown.current
+  //       ) {
+  //         visitNotFoundShown.current = true;
+  //         showToast("Không tìm thấy thông tin chuyến thăm", "error");
+  //         handleVisitNotFound();
+  //       }
+  //     }
+  //   };
+  //   handleNavigation();
+  // }, [
+  //   visitOfUser,
+  //   isLoadingVisit,
+  //   isFetchingVisit,
+  //   credentialCardId,
+  //   qrCardData,
+  //   isLoadingQr,
+  //   isFetchingQr,
+  //   cardVerification,
+  //   checkInData,
+  // ]);
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (data && !qrLock.current) {
       qrLock.current = true;
       setScannedData(data);
       setIsProcessing(true);
-      // console.log("Scanned QR Code Data:", data);
+      setScanType("normal");
+      console.log("Normal QR Scanned Data:", data);
     }
   };
+
   const handleGoBack = () => {
     resetState();
     router.back();
@@ -512,127 +676,122 @@ const scanQr = () => {
   const handleGoToScanQr2 = () => {
     router.replace("/check-in/scanQr2");
   };
-  // console.log("CCCD: ", credentialCardId);
-  // console.log("Card id: ", cardVerification);
-  // console.log("Log lay anh ben scan: ", checkInData);
+
   return (
-    // <SafeAreaView style={StyleSheet.absoluteFillObject}>
-    //   <Stack.Screen
-    //     options={{
-    //       title: "Overview",
-    //       headerShown: false,
-    //     }}
-    //   />
-    //   {Platform.OS === "android" ? <StatusBar hidden /> : null}
-    //   <CameraView
-    //     style={StyleSheet.absoluteFillObject}
-    //     facing="back"
-    //     onBarcodeScanned={handleBarCodeScanned}
-    //   />
-    //   <Overlay />
-    //   {(isProcessing ||
-    //     isLoadingVisit ||
-    //     isFetchingVisit ||
-    //     isLoadingQr ||
-    //     isFetchingQr) && (
-    //     <View style={styles.loadingContainer}>
-    //       <ActivityIndicator size="large" color="#ffffff" />
-    //       <Text className="text-xl" style={styles.loadingText}>
-    //         Đang xử lý...
-    //       </Text>
-    //     </View>
-    //   )}
-    //   <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
-    //     <Text className="text-green-700 text-sm font-semibold">
-    //       Camera Checkin
-    //     </Text>
-    //   </View>
-    //   <TouchableOpacity
-    //     className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
-    //     onPress={handleGoBack}
-    //   >
-    //     <Text className="text-white">Thoát Camera</Text>
-    //   </TouchableOpacity>
-    //   <TouchableOpacity style={styles.switchButton} onPress={handleGoToScanQr2}>
-    //     <Text style={styles.switchButtonText}>Check in với xe</Text>
-    //   </TouchableOpacity>
-    // </SafeAreaView>
-    <SafeAreaView style={StyleSheet.absoluteFillObject}>
-      <Stack.Screen options={{ title: "Overview", headerShown: false }} />
-      {Platform.OS === "android" ? <StatusBar hidden /> : null}
-      <CameraView
-        style={StyleSheet.absoluteFillObject}
-        facing="back"
-        onBarcodeScanned={handleBarCodeScanned}
-      />
+    <View className="flex-1 bg-black justify-center items-center">
+      {(() => {
+        switch (activeCamera) {
+          case "QR":
+            return (
+              <CameraView
+                className="flex-1 w-full h-full"
+                onBarcodeScanned={handleBarCodeScanned}
+              />
+            );
+          case "LICENSE":
+            return (
+              <CameraView
+                className="flex-1 w-full h-full"
+                onBarcodeScanned={handleLicensePlateScanned}
+              />
+            );
+          default:
+            return null;
+        }
+      })()}
       <Overlay />
 
-      <View className="absolute top-60 left-0 right-0 items-center">
-        <View className="bg-white/90 px-6 py-3 rounded-lg shadow-lg">
-          <View className="flex-row items-center space-x-2">
-            <MaterialIcons name="camera" size={20} color="#16a34a" />
-            <Text className="text-green-700 text-sm font-bold">
-              Camera Checkin
-            </Text>
-          </View>
-        </View>
+      <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
+        <Text className="text-green-700 text-sm font-semibold">
+          {activeCamera === "QR"
+            ? "Quét mã QR"
+            : activeCamera === "LICENSE"
+            ? "Quét mã QR với xe"
+            : "Quét CCCD"}
+        </Text>
       </View>
 
-      {(isProcessing ||
-        isLoadingVisit ||
-        isFetchingVisit ||
-        isLoadingQr ||
-        isFetchingQr) && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#ffffff" />
-          <Text className="text-xl text-white mt-2">Đang xử lý...</Text>
-        </View>
-      )}
-
       <TouchableOpacity
-        className="absolute top-16 right-4 bg-black/50 p-3 rounded-lg flex-row items-center space-x-2"
-        onPress={handleGoBack}
+        className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
+        onPress={() => setIsCameraActive(false)}
       >
-        <MaterialIcons name="close" size={20} color="white" />
-        <Text className="text-white font-medium">Thoát</Text>
+        <Text className="text-white">Thoát Camera</Text>
       </TouchableOpacity>
 
-      {/* <TouchableOpacity
-        style={[
-          styles.switchButton,
-          { flexDirection: "row", alignItems: "center", gap: 8 },
-        ]}
-        onPress={handleGoToScanQr2}
-      >
-        <MaterialIcons name="directions-car" size={24} color="white" />
-        <Text style={styles.switchButtonText}>Check in với xe</Text>
-      </TouchableOpacity> */}
-      <TouchableOpacity
-        className="absolute bottom-5 ml-[95px] -translate-x-1/2 bg-blue-600 px-6 py-3 rounded-xl flex-row items-center space-x-2 shadow-lg"
-        onPress={handleGoToScanQr2}
-      >
-        <MaterialIcons name="directions-car" size={24} color="white" />
-        <Text className="text-white font-semibold text-lg">
-          Check in với xe
+      <View className="absolute bottom-20 flex-row justify-center space-x-4 w-full px-4">
+        <TouchableOpacity
+          className={`flex-1 py-3 px-4 rounded-lg ${
+            activeCamera === "QR" ? "bg-blue-500" : "bg-gray-500"
+          }`}
+          onPress={() => {
+            setActiveCamera("QR");
+            setScanType("normal");
+          }}
+        >
+          <View className="flex-row justify-center items-center space-x-2">
+            <Ionicons name="qr-code" size={24} color="white" />
+            <Text className="text-white font-semibold">Quét QR</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          className={`flex-1 py-3 px-4 rounded-lg ${
+            activeCamera === "LICENSE" ? "bg-blue-500" : "bg-gray-500"
+          }`}
+          onPress={() => {
+            setActiveCamera("LICENSE");
+            setScanType("license");
+          }}
+        >
+          <View className="flex-row justify-center items-center space-x-2">
+            <MaterialIcons name="directions-car" size={24} color="white" />
+            <Text className="text-white font-semibold">Quét mã QR với xe</Text>
+          </View>
+        </TouchableOpacity>
+        {/* <TouchableOpacity
+                className={`flex-1 py-3 px-4 rounded-lg ${
+                  activeCamera === "CCCD" ? "bg-blue-500" : "bg-gray-500"
+                }`}
+                onPress={() => setActiveCamera("CCCD")}
+              >
+                <View className="flex-row justify-center items-center space-x-2">
+                  <AntDesign name="idcard" size={24} color="white" />
+                  <Text className="text-white font-semibold">Quét CCCD</Text>
+                </View>
+              </TouchableOpacity> */}
+      </View>
+
+      <View className="absolute bottom-8 w-full">
+        <Text className="text-white text-center">
+          {activeCamera === "QR"
+            ? "Đưa mã QR vào khung hình để quét"
+            : activeCamera === "LICENSE"
+            ? "Đưa mã QR vào khung hình để quét"
+            : ""}
         </Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+      </View>
+    </View>
   );
 };
 
 export default scanQr;
 
 const styles = StyleSheet.create({
-  backButton: {
-    position: "absolute",
-    top: 60,
-    left: 20,
-    padding: 10,
+  container: {
+    flex: 1,
     backgroundColor: "black",
-    borderRadius: 5,
   },
-  backButtonText: {
-    color: "white",
+  camera: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+  },
+  headerContent: {
+    position: "absolute",
+    top: 240,
+    left: 0,
+    right: 0,
+    alignItems: "center",
   },
   loadingContainer: {
     position: "absolute",
@@ -640,27 +799,29 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1000,
+    backgroundColor: "rgba(0,0,0,0.7)",
   },
-  loadingText: {
-    color: "#ffffff",
-    marginTop: 10,
-  },
-  switchButton: {
+  checkInButton: {
     position: "absolute",
     bottom: 20,
-    left: "51%",
-    transform: [{ translateX: -75 }],
-    backgroundColor: "#0072C6",
-    padding: 15,
-    borderRadius: 8,
-  },
-  switchButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
+    left: 95,
+    transform: [{ translateX: -50 }],
+    backgroundColor: "#2563eb",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
 });

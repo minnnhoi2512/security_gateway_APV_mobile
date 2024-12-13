@@ -108,6 +108,8 @@ const CheckOutCard = () => {
   );
   const [validData, setValidData] = useState<boolean>(false);
   const [validImageShoeUrl, setValidImageShoeUrl] = useState<string>("");
+  const [imageBody, setImageBody] = useState<any>(null);
+  const [imageShoe, setImageShoe] = useState<any>(null);
   const [validImageBodyUrl, setValidImageBodyUrl] = useState<string>("");
   const [cameraReady, setCameraReady] = useState<boolean>(false);
   const [checkOutWithCCCD] = useCheckOutWithCredentialCardMutation();
@@ -198,6 +200,8 @@ const CheckOutCard = () => {
             handleBack();
             Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
             return;
+          } else {
+            setImageShoe(checkOutShoe.ImageFile);
           }
           const imageValid: ImageFile = {
             name: "CheckOut_Shoe",
@@ -260,6 +264,8 @@ const CheckOutCard = () => {
             handleBack();
             Alert.alert("Lỗi", "Đã xảy ra lỗi với hệ thống camera");
             return;
+          } else {
+            setImageBody(checkOutBody.ImageFile);
           }
           const imageValid: ImageFile = {
             name: "CheckOut_Body",
@@ -355,6 +361,7 @@ const CheckOutCard = () => {
       </View>
     );
   };
+
   const handleCheckOut = async () => {
     const storedUserId = await AsyncStorage.getItem("userId");
     try {
@@ -637,40 +644,33 @@ const CheckOutCard = () => {
                     </View>
                     <View>
                       <Text className="text-xl font-bold">Ảnh lúc ra</Text>
-                      {validImageShoeUrl != "" ? (
-                        <Image
-                          source={{
-                            uri: validImageShoeUrl,
-                          }}
-                          style={{
-                            width: "100%",
-                            height: 200,
-                            borderRadius: 10,
-                            marginVertical: 10,
-                          }}
-                          resizeMode="contain"
-                        />
-                      ) : (
-                        <ActivityIndicator size="large" color="#0000ff" />
-                      )}
-                      {validImageBodyUrl != "" ? (
-                        <Image
-                          source={{
-                            uri: validImageBodyUrl,
-                          }}
-                          style={{
-                            width: "100%",
-                            height: 200,
-                            borderRadius: 10,
-                            marginVertical: 10,
-                          }}
-                          resizeMode="contain"
-                        />
-                      ) : (
-                        <ActivityIndicator size="large" color="#0000ff" />
-                      )}
+                      (
+                      <Image
+                        source={{
+                          uri: imageShoe,
+                        }}
+                        style={{
+                          width: "100%",
+                          height: 200,
+                          borderRadius: 10,
+                          marginVertical: 10,
+                        }}
+                        resizeMode="contain"
+                      />
+                      )
+                      <Image
+                        source={{
+                          uri: imageBody,
+                        }}
+                        style={{
+                          width: "100%",
+                          height: 200,
+                          borderRadius: 10,
+                          marginVertical: 10,
+                        }}
+                        resizeMode="contain"
+                      />
                     </View>
-                    
                   </SectionDropDown>
 
                   <TouchableOpacity
