@@ -235,7 +235,7 @@ const CheckLicensePlate = () => {
       // Chụp ảnh body
       if (bodyCamera?.cameraURL) {
         const bodyImageUrl = `${bodyCamera.cameraURL}capture-image`;
-        console.log("Attempting to capture body image from:", bodyImageUrl);
+        // console.log("Attempting to capture body image from:", bodyImageUrl);
 
         const bodyImageData = await fetchCaptureImage(
           bodyImageUrl,
@@ -248,7 +248,7 @@ const CheckLicensePlate = () => {
 
             Image: bodyImageData.ImageFile,
           });
-          console.log("Body image captured successfully");
+          // console.log("Body image captured successfully");
         }
       }
 
@@ -322,7 +322,7 @@ const CheckLicensePlate = () => {
     directData();
   }, [qrCardData]);
 
-  console.log("check in data: ", checkInData);
+  // console.log("check in data: ", checkInData);
 
   const uploadImageToAPI = async (imageUri: string) => {
     try {

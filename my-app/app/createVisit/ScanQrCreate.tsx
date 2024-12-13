@@ -19,12 +19,13 @@ import { useGetVisitorByCreadentialCardQuery } from "@/redux/services/visitor.se
 
 interface ScanData {
   id: string;
-  nationalId: string;
+  nationalId?: string;
   name: string;
   dateOfBirth: string;
-  gender: string;
-  address: string;
-  issueDate: string;
+  gender?: string;
+  address?: string;
+  issueDate?: string;
+  level?: string;
 }
 
 export default function ScanQrCreate() {
@@ -40,7 +41,14 @@ export default function ScanQrCreate() {
       qrData.split("|");
     return { id, nationalId, name, dateOfBirth, gender, address, issueDate };
   };
-
+  const parseQRLicensePlateData = (qrData: string): ScanData | null => {
+    const parts = qrData.split("\n");
+    if (parts.length === 5) {
+      const [id, name, dateOfBirth, level, address] = parts;
+      return { id, name, dateOfBirth, level, address };
+    }
+    return null;
+  };
   // const {
   //   data: visitData,
   //   error,
@@ -91,9 +99,12 @@ export default function ScanQrCreate() {
  
 
   useEffect(() => {
-    if (scannedData) {
+    if (scannedData.includes("|")) {
       const parsedData = parseQRData(scannedData);
       setCredentialCardId(parsedData.id);
+    }else if (scannedData.includes("\n")) {
+      const parsedData = parseQRLicensePlateData(scannedData);
+      setCredentialCardId(parsedData ? parsedData.id : null);
     }
   }, [scannedData]);
 
@@ -185,10 +196,11 @@ export default function ScanQrCreate() {
   
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
+    // console.log(data);
     if (data && !qrLock.current && !processingRef.current) {
       qrLock.current = true;
       setScannedData(data);
-      console.log("QR SS QUET MOI", data);
+      // console.log("QR SS QUET MOI", data);
     }
   };
 
