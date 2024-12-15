@@ -38,3 +38,4 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
   
   export const { setVisitStaffCreate, clearVisitStaffCreate } = visitStaffCreateSlice.actions;
   export default visitStaffCreateSlice.reducer;
+  export { initialState };

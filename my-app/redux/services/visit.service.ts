@@ -21,7 +21,20 @@ export const visitApi = createApi({
     getAllVisitsByCurrentDate: builder.query({
       query: () => {
         const currentDate = new Date().toISOString().split('T')[0];
-        return `Visit/Day?pageSize=10&pageNumber=1&date=${currentDate}`;
+        return `Visit/Day?pageSize=-1&pageNumber=1&date=${currentDate}`;
+      },
+    }),
+    getVisitsByCurrentDate: builder.query({
+      query: ({ pageSize, pageNumber }) => {
+        const currentDate = new Date().toISOString().split('T')[0];
+        return {
+          url: `Visit/Day`,
+          params: {
+            pageSize: pageSize,
+            pageNumber: pageNumber,
+            date: currentDate,
+          }
+        };
       },
     }),
     getAllVisitsByCurrentDateByID: builder.query({
@@ -38,7 +51,7 @@ export const visitApi = createApi({
         // return `Visit/CurrentDate/CredentialCard/${credentialCard}?date=${currentDate}`;
         return `Visit/CurrentDate/CredentialCard/${credentialCard}`;
       },
- 
+
     }),
     createVisit: builder.mutation({
       query: (visit: CreateVisit) => ({
@@ -48,16 +61,17 @@ export const visitApi = createApi({
       }),
     }),
     updateVisitStatus: builder.mutation({
-      query: ({visitId, newStatus}) => ({
+      query: ({ visitId, newStatus }) => ({
         url: `Visit/Status/${visitId}?action=${newStatus}`,
         method: 'PUT',
- 
+
       })
     })
   }),
 });
 
 export const {
+  useGetVisitsByCurrentDateQuery,
   useGetAllVisitsByCurrentDateQuery,
   useGetVisitDetailByIdQuery,
   useGetAllVisitsByCurrentDateByIDQuery,

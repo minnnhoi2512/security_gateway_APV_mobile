@@ -10,7 +10,7 @@ import {
 import Header from "@/components/UI/Header";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useGetAllVisitsByCurrentDateQuery } from "@/redux/services/visit.service";
+import { useGetVisitsByCurrentDateQuery } from "@/redux/services/visit.service";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { Visit2 } from "@/redux/Types/visit.type";
 import VisitItem from "../home/VisitItem";
@@ -29,8 +29,8 @@ export default function HomeScreen() {
     isLoading,
     isError,
     refetch,
-  } = useGetAllVisitsByCurrentDateQuery(
-    { pageSize: 50, pageNumber: 1 },
+  } = useGetVisitsByCurrentDateQuery(
+    { pageSize: -1, pageNumber: 1 },
     {
       refetchOnMountOrArgChange: true,
     }

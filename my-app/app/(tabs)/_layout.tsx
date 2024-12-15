@@ -7,7 +7,7 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Entypo from "@expo/vector-icons/Entypo";
-import { View } from "react-native";
+import { LogBox, View } from "react-native";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import SetSignalR from '../../hooks/signalR';
 import { useDispatch, useSelector } from "react-redux";
@@ -22,7 +22,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
-
+LogBox.ignoreAllLogs(true)
 
 export default function TabLayout() {
   const [role, setRole] = useState<string | null>(null);

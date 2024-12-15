@@ -29,7 +29,7 @@ const VistorInforModal: React.FC<{ visitor: any }> = ({ visitor }) => {
     };
     dispatch(setVisitStaffCreate(visitCreateData));
   };
-
+  console.log(visitor);
   return (
     <View className="bg-white rounded-2xl shadow-lg p-6 mx-4 my-2">
       <View className="border-b border-gray-200 pb-4 mb-4">
