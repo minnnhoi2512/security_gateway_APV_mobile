@@ -16,16 +16,31 @@ import {
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
 import RenderHTML from "react-native-render-html";
-import { UpdateVisitStatusModal } from "@/components/UI/UpdateVisitStatusModal ";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import TruncatableTitle from "@/components/UI/Truncatable/TruncatableTitle";
+import { UpdateVisitStatusModal } from "@/components/UI/UpdateVisitStatusModal";
+import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 interface VisitCardProps {
   visit: Visit2;
+  onParentRefresh?: () => Promise<void>;
 }
 
-const VisitItemDetail: React.FC<VisitCardProps> = ({ visit }) => {
+const VisitItemDetail: React.FC<VisitCardProps> = ({
+  visit,
+  onParentRefresh,
+}) => {
   const { width } = useWindowDimensions();
   const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
   const [role, setRole] = useState<string | null>(null);
+  const visitIdString = visit.visitId.toString();
+  const { data: visitDetail, refetch } = useGetVisitDetailByIdQuery(
+    visitIdString,
+    {
+      pollingInterval: 5000,
+    }
+  );
+  const currentStatus = visitDetail?.visitStatus || visit.visitStatus;
   const [refreshing, setRefreshing] = useState(false);
   useEffect(() => {
     const fetchRole = async () => {
@@ -38,8 +53,10 @@ const VisitItemDetail: React.FC<VisitCardProps> = ({ visit }) => {
     setIsUpdateModalVisible(true);
   };
 
-  const handleCloseUpdateModal = () => {
+  const handleCloseUpdateModal = async () => {
     setIsUpdateModalVisible(false);
+
+    await Promise.all([refetch(), onParentRefresh?.()]);
   };
   const [isDescriptionModalVisible, setDescriptionModalVisible] =
     useState(false);
@@ -53,7 +70,7 @@ const VisitItemDetail: React.FC<VisitCardProps> = ({ visit }) => {
   //   setRefreshing(false);
   // };
 
-  // console.log("vissit detail: ", visit);
+  // console.log("vissit detail co gi màymày: ", visit);
 
   const renderDescription = (description: string, maxLength: number = 100) => {
     const plainDesc = getPlainDescription(description);
@@ -77,61 +94,62 @@ const VisitItemDetail: React.FC<VisitCardProps> = ({ visit }) => {
     );
   };
 
-  const renderTruncatedDescription = (
-    description: string,
-    maxLength: number = 100
-  ) => {
-    const plainText = description.replace(/<[^>]+>/g, "");
+  // const renderTruncatedDescription = (
+  //   description: string,
+  //   maxLength: number = 100
+  // ) => {
+  //   const plainText = description.replace(/<[^>]+>/g, "");
 
-    if (plainText.length <= maxLength) {
-      return (
-        <RenderHTML
-          contentWidth={width}
-          source={{ html: description }}
-          classesStyles={{
-            "text-base": { color: "#4a4a4a" },
-          }}
-        />
-      );
-    }
+  //   if (plainText.length <= maxLength) {
+  //     return (
+  //       <RenderHTML
+  //         contentWidth={width}
+  //         source={{ html: description }}
+  //         classesStyles={{
+  //           "text-base": { color: "#4a4a4a" },
+  //         }}
+  //       />
+  //     );
+  //   }
 
-    return (
-      <View>
-        <Text className="text-base text-gray-700">
-          {plainText.slice(0, maxLength)}...{" "}
-          <Text
-            className="text-blue-600 font-bold"
-            onPress={() => setDescriptionModalVisible(true)}
-          >
-            Xem thêm
-          </Text>
-        </Text>
-      </View>
-    );
-  };
+  //   return (
+  //     <View>
+  //       <Text className="text-base text-gray-700">
+  //         {plainText.slice(0, maxLength)}...{" "}
+  //         <Text
+  //           className="text-blue-600 font-bold"
+  //           onPress={() => setDescriptionModalVisible(true)}
+  //         >
+  //           Xem thêm
+  //         </Text>
+  //       </Text>
+  //     </View>
+  //   );
+  // };
 
   return (
     <ScrollView
-      // refreshControl={
-      //   <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      // }
+    // refreshControl={
+    //   <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+    // }
     >
       <View className="bg-white rounded-3xl shadow-lg p-6 mb-4">
         <View className="items-center mb-6">
-          <View className="bg-teal-50 rounded-full px-6 py-2 mb-3">
+          {/* <View className="bg-teal-50 rounded-full px-6 py-2 mb-3">
             <Text className="text-2xl font-bold text-teal-600">
               {visit.visitName}
             </Text>
-          </View>
+          </View> */}
+          <TruncatableTitle text={visit.visitName} />
           <View>
-            {visit.visitStatus === "ActiveTemporary" && role === "Staff" && (
+            {currentStatus === "ActiveTemporary" && role === "Staff" && (
               <Button
                 onPress={handleUpdateStatus}
                 title="Cập nhật trạng thái"
               />
             )}
             <UpdateVisitStatusModal
-              visit={visit}
+              visit={{ ...visit, visitStatus: currentStatus }}
               isVisible={isUpdateModalVisible}
               onClose={handleCloseUpdateModal}
             />
