@@ -118,7 +118,8 @@ const notification = () => {
                 </Text>
               </View>
             </View>
-          {notification.notification.notificationType.name === "Visit" && !notification.notification.title.includes("Check-in") && !notification.notification.title.includes("Check-out") && (
+          {notification.notification.notificationType.name === "Visit" && !notification.notification.title.includes("Check-in") && 
+          !notification.notification.title.includes("Check-out")&& !notification.notification.title.includes("vi phạm") && (
             <View className="flex-row space-x-2 mt-2">
               <TouchableOpacity className="bg-blue-600 px-4 py-1 rounded">
                 <Text className="text-white text-sm">Accept</Text>
