@@ -9,6 +9,7 @@ import {
   AppState,
   Alert,
   ActivityIndicator,
+  BackHandler,
 } from "react-native";
 import { CameraView } from "expo-camera";
 import { Stack, useRouter } from "expo-router";
@@ -48,6 +49,15 @@ const ScanQr2 = () => {
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
+
+  useEffect(() => {
+    return () => {
+      // Cleanup surface resources
+      if (Platform.OS === 'android') {
+        BackHandler.removeEventListener('hardwareBackPress', () => true);
+      }
+    };
+  }, []);
 
   const {
     data: visitOfUser,

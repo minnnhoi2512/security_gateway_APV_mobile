@@ -8,6 +8,8 @@ import {
   ScrollView,
   Alert,
   Pressable,
+  Platform,
+  BackHandler,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -70,6 +72,17 @@ const FormCreate = () => {
   const { data: staffByPhone } = useGetStaffByPhoneQuery(searchPhoneNumber, {
     skip: searchPhoneNumber.length === 0,
   });
+
+  useEffect(() => {
+    const cleanup = () => {
+      // Cleanup any active camera or surface resources
+      if (Platform.OS === 'android') {
+        BackHandler.removeEventListener('hardwareBackPress', () => true);
+      }
+    };
+  
+    return cleanup;
+  }, []);
 
   useEffect(() => {
     const fetchUserId = async () => {

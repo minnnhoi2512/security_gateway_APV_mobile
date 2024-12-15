@@ -12,11 +12,17 @@
         "distribution": "internal"
       },
       "production": {
-        "autoIncrement": true
+        "autoIncrement": true,
+        "android": {
+        "gradleCommand": ":app:bundleRelease"
+      }
       },
       "androidapk": {
         "android": {
-          "buildType":"apk"
+          "buildType":"apk",
+          "gradleCommand": ":app:assembleRelease"
+
+
         },
  
         "env": {

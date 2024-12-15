@@ -10,6 +10,8 @@ import {
   Modal,
   Pressable,
   StyleSheet,
+  Platform,
+  BackHandler,
 } from "react-native";
 import {
   GestureHandlerRootView,
@@ -58,6 +60,15 @@ const UserDetail = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [hasNavigated, setHasNavigated] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      // Cleanup surface resources
+      if (Platform.OS === 'android') {
+        BackHandler.removeEventListener('hardwareBackPress', () => true);
+      }
+    };
+  }, []);
 
   // RTK QUERY
 

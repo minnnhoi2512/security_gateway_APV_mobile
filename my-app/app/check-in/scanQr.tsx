@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Alert,
   AppState,
+  BackHandler,
   Dimensions,
   Image,
   Platform,
@@ -74,6 +75,15 @@ const scanQr = () => {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [hasScanned, setHasScanned] = useState(false);
   const [isCameraInitialized, setIsCameraInitialized] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      // Cleanup surface resources
+      if (Platform.OS === 'android') {
+        BackHandler.removeEventListener('hardwareBackPress', () => true);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const initCamera = async () => {

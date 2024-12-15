@@ -10,6 +10,8 @@ import {
   Modal,
   Pressable,
   StyleSheet,
+  Platform,
+  BackHandler,
 } from "react-native";
 import {
   GestureHandlerRootView,
@@ -69,6 +71,15 @@ const CheckLicensePlate = () => {
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
+
+  useEffect(() => {
+    return () => {
+      // Cleanup surface resources
+      if (Platform.OS === 'android') {
+        BackHandler.removeEventListener('hardwareBackPress', () => true);
+      }
+    };
+  }, []);
   const gateId = Number(selectedGateId) || 0;
   const {
     data: cameraGate,
