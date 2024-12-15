@@ -1,6 +1,7 @@
 import { Redirect } from "expo-router";
 import { useEffect, useState } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LogBox } from "react-native";
 
 const StartPage = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
