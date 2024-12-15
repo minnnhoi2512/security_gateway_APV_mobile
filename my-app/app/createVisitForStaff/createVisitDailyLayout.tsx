@@ -6,12 +6,15 @@ import { MaterialIcons } from "@expo/vector-icons";
 import CreateVisitDailyForStaffScreen1 from "./createVisitDailyForStaffScreen1";
 import CreateVisitDailyForStaffScreen2 from "./createVisitDailyForStaffScreen2";
 import VisitStaffCreate from "@/Types/VisitStaffCreate.Type";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useCreateVisitMutation } from "@/redux/services/visit.service";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import { isApiError } from "@/redux/Types/ApiError";
+import { initialState, setVisitStaffCreate } from "@/redux/slices/visitStaffCreate.slice";
 
 const createVisitDailyLayout = () => {
+  const dispatch = useDispatch();
   const buttonTextStyle = {
     color: "green",
   };
@@ -30,21 +33,59 @@ const createVisitDailyLayout = () => {
   ) as VisitStaffCreate;
   const router = useRouter();
   const [error, SetError] = useState(true);
+  console.log("CheckLayout")
   const onNextStep = () => {
-    if (
-      !visitCreateData.visitName ||
-      !visitCreateData.description ||
-      visitCreateData.visitQuantity == 0 ||
-      !visitCreateData.visitDetail[0].expectedStartHour ||
-      !visitCreateData.visitDetail[0].expectedEndHour
-    ) {
+    const currentDateTime = new Date();
+    const startHourParts = visitCreateData.visitDetail[0].expectedStartHour.split(":");
+    const endHourParts = visitCreateData.visitDetail[0].expectedEndHour.split(":");
+  
+    const startHour = new Date(currentDateTime);
+    startHour.setHours(parseInt(startHourParts[0]), parseInt(startHourParts[1]));
+  
+    const endHour = new Date(currentDateTime);
+    endHour.setHours(parseInt(endHourParts[0]), parseInt(endHourParts[1]));
+  
+    if (!visitCreateData.visitName) {
       SetError(true);
-      Alert.alert("Bạn phải điền vào những trường còn trống!");
-    } else {
-      SetError(false);
+      Alert.alert("Bạn phải điền vào trường tiêu đề!");
+      return;
     }
+    if (!visitCreateData.description) {
+      SetError(true);
+      Alert.alert("Bạn phải điền vào trường mô tả!");
+      return;
+    }
+    if (!visitCreateData.visitDetail[0].expectedStartHour) {
+      SetError(true);
+      Alert.alert("Bạn phải điền vào trường thời gian bắt đầu!");
+      return;
+    }
+    if (!visitCreateData.visitDetail[0].expectedEndHour) {
+      SetError(true);
+      Alert.alert("Bạn phải điền vào trường thời gian kết thúc!");
+      return;
+    }
+    if (startHour < currentDateTime) {
+      SetError(true);
+      Alert.alert("Thời gian bắt đầu phải lớn hơn thời gian hiện tại!");
+      return;
+    }
+    if (startHour >= endHour) {
+      SetError(true);
+      Alert.alert("Thời gian kết thúc phải lớn hơn thời gian bắt đầu!");
+      return;
+    }
+    // Thêm 30 phút vào giờ bắt đầu
+    const startHourPlus30Minutes = new Date(startHour.getTime() + 30 * 60000);
+    if (endHour < startHourPlus30Minutes) {
+      SetError(true);
+      Alert.alert("Thời gian kết thúc phải lớn hơn thời gian bắt đầu ít nhất 30 phút!");
+      return;
+    }
+    SetError(false);
   };
   const onNextStep2 = async () => {
+    
     if (visitCreateData.visitDetail.length === 1) {
       SetError(true);
       Alert.alert("Không có khách nào được chọn");
@@ -53,10 +94,12 @@ const createVisitDailyLayout = () => {
         const userId = await AsyncStorage.getItem("userId");
         var submitData = {
           ...visitCreateData,
-          visitQuantity: Number(visitCreateData.visitQuantity),
+          visitQuantity: visitCreateData.visitDetail.length - 1,
           createById: Number(userId),
           responsiblePersonId: Number(userId),
         };
+        console.log(submitData.visitQuantity);
+
         submitData.visitDetail = submitData.visitDetail.slice(
           1,
           submitData.visitDetail.length
@@ -70,15 +113,31 @@ const createVisitDailyLayout = () => {
             Alert.alert("Thành công", "Tạo lịch ghé thăm thành công!", [
               {
                 text: "OK",
+                onPress: () => {
+                  dispatch(setVisitStaffCreate(initialState));
+                  router.back();               },
               },
             ]);
           });
       } catch (error) {
-        Alert.alert("Create error", "Tạo lịch ghé thăm Khoonbg thành công!", [
-          {
-            text: "OK",
-          },
-        ]);
+        // console.log(error);
+        console.log("Check",isApiError(error))
+        if (isApiError(error)) {
+          Alert.alert("Tạo chuyến thăm lỗi", error.data.message, [
+            {
+              text: "OK",
+            },
+          ]);
+        } else {
+          console.log("CheckError",error);
+
+          Alert.alert("Tạo chuyến thăm lỗi", "Tạo lịch ghé thăm không thành công!", [
+            {
+              text: "OK",
+            },
+          ]);
+        }
+        console.log(error);
       }
       SetError(false);
     }
@@ -118,7 +177,7 @@ const createVisitDailyLayout = () => {
         <ProgressStep
           label="Thêm khách"
           scrollable={false}
-          finishBtnText="Chấp nhận"
+          finishBtnText="Tạo chuyến thăm"
           previousBtnText="Quay về"
           nextBtnTextStyle={buttonTextStyle}
           onSubmit={onNextStep2}
@@ -129,6 +188,7 @@ const createVisitDailyLayout = () => {
           </View>
         </ProgressStep>
       </ProgressSteps>
+
     </SafeAreaView>
   );
 };
