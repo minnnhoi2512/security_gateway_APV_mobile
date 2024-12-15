@@ -159,7 +159,7 @@ export default function TabLayout() {
           }}
         /> */}
       <Tabs.Screen 
-        name="createCustomer"
+        name="CreateCustomer"
         options={{
           href: role === "Staff" || role === "Security" ? null : "/(tabs)/CreateCustomer",
           title: "Tạo mới",

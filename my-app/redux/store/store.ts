@@ -51,6 +51,7 @@ export const store = configureStore({
       visitorSessionApi.middleware, 
       visitorApi.middleware, 
       userApi.middleware,
+      pythonAPI.middleware,
       notificationAPI.middleware
     ),
 });

@@ -15,7 +15,7 @@ import { doc, onSnapshot, updateDoc, arrayUnion } from "firebase/firestore";
 import { chatDB, uploadImageChat, uploadToFirebase } from "@/firebase-config";
 import { launchImageLibrary } from "react-native-image-picker";
 import { useGetUserProfileQuery } from "@/redux/services/user.service";
-import { Icon, Import } from "lucide-react-native";
+
 import * as ImagePicker from "expo-image-picker";
 const ChatDetail = ({
   chatId,
@@ -78,7 +78,7 @@ const ChatDetail = ({
         aspect: [1, 1],
         quality: 1,
       });
-    //   console.log(result.assets);
+      //   console.log(result.assets);
 
       if (!result.canceled) {
         uploadImageChat(result.assets[0]).then((url) => {
@@ -96,7 +96,7 @@ const ChatDetail = ({
         aspect: [1, 1],
         quality: 1,
       });
-    //   console.log(result.assets);
+      //   console.log(result.assets);
 
       if (!result.canceled) {
         uploadImageChat(result.assets[0]).then((url) => {
@@ -125,39 +125,169 @@ const ChatDetail = ({
     }
   };
 
+  const formatTime = (seconds: number) => {
+    const date = new Date(seconds * 1000);
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+
+  const formatDate = (seconds: number) => {
+    const date = new Date(seconds * 1000);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return "Hôm nay";
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return "Hôm qua";
+    } else {
+      return date.toLocaleDateString("vi-VN");
+    }
+  };
+
   const renderMessage = ({ item }: any) => {
     const isSender = item.senderId === senderId;
     const senderName = isSender ? senderUser?.fullName : receiverUser?.fullName;
     return (
+      // <View
+      //   style={{
+      //     alignSelf: isSender ? "flex-end" : "flex-start",
+      //     backgroundColor: isSender ? "#007bff" : "#e5e5ea",
+      //     borderRadius: 10,
+      //     marginVertical: 5,
+      //     padding: 10,
+      //     maxWidth: "80%",
+      //   }}
+      // >
+      //   <Text style={{ color: isSender ? "#fff" : "#000" }}>{senderName}</Text>
+
+      //   <Text style={{ color: isSender ? "#fff" : "#000", fontSize: 16 }}>
+      //     {item.text}
+      //   </Text>
+      //   <Text style={{ color: isSender ? "#fff" : "#000" }}>
+      //     {new Date(item.createdAt.seconds * 1000).toLocaleString()}
+      //   </Text>
+      //   {item.images && item.images.length > 0 && (
+      //     <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+      //       {item.images.map((image: string, index: number) => (
+      //         <Image
+      //           key={index}
+      //           source={{ uri: image }}
+      //           style={{ width: 200, height: 200, margin: 5 }}
+      //           onError={(e) =>
+      //             console.log("Error loading image:", e.nativeEvent.error)
+      //           }
+      //         />
+      //       ))}
+      //     </View>
+      //   )}
+      // </View>
       <View
         style={{
           alignSelf: isSender ? "flex-end" : "flex-start",
-          backgroundColor: isSender ? "#007bff" : "#e5e5ea",
-          borderRadius: 10,
           marginVertical: 5,
-          padding: 10,
           maxWidth: "80%",
         }}
       >
-        <Text style={{ color: isSender ? "#fff" : "#000" }}>{senderName}</Text>
-        <Text style={{ color: isSender ? "#fff" : "#000" }}>
-          {new Date(item.createdAt.seconds * 1000).toLocaleString()}
+        {/* Tên người gửi */}
+        <Text
+          style={{
+            color: isSender ? "#007bff" : "#666",
+            fontWeight: "600",
+            fontSize: 13,
+            marginBottom: 2,
+            marginLeft: isSender ? 0 : 12,
+          }}
+        >
+          {senderName}
         </Text>
-        <Text style={{ color: isSender ? "#fff" : "#000", fontSize: 16 }}>
-          {item.text}
-        </Text>
-        {item.images && item.images.length > 0 && (
-          <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-            {item.images.map((image: string, index: number) => (
-              <Image
-                key={index}
-                source={{ uri: image }}
-                style={{ width: 200, height: 200, margin: 5 }}
-                onError={(e) =>
-                  console.log("Error loading image:", e.nativeEvent.error)
-                }
-              />
-            ))}
+
+        {/* Message container */}
+        <View
+          style={{
+            backgroundColor: isSender ? "#007bff" : "#e5e5ea",
+            borderRadius: 16,
+            padding: 12,
+            borderTopRightRadius: isSender ? 4 : 16,
+            borderTopLeftRadius: isSender ? 16 : 4,
+          }}
+        >
+          {/* Message text */}
+          <Text
+            style={{
+              color: isSender ? "#fff" : "#000",
+              fontSize: 15,
+              lineHeight: 20,
+              marginBottom: item.images?.length > 0 ? 8 : 0,
+            }}
+          >
+            {item.text}
+          </Text>
+
+          {/* Images grid */}
+          {item.images && item.images.length > 0 && (
+            <View
+              style={{
+                flexDirection: "row",
+                flexWrap: "wrap",
+                gap: 4,
+                marginTop: 4,
+              }}
+            >
+              {item.images.map((image: string, index: number) => (
+                <Image
+                  key={index}
+                  source={{ uri: image }}
+                  style={{
+                    width: item.images.length === 1 ? 200 : 100,
+                    height: item.images.length === 1 ? 200 : 100,
+                    borderRadius: 8,
+                  }}
+                  onError={(e) =>
+                    console.log("Error loading image:", e.nativeEvent.error)
+                  }
+                />
+              ))}
+            </View>
+          )}
+
+          {/* Timestamp */}
+          <Text
+            style={{
+              color: isSender ? "rgba(255,255,255,0.7)" : "#666",
+              fontSize: 11,
+              marginTop: 4,
+              alignSelf: "flex-end",
+            }}
+          >
+            {formatTime(item.createdAt.seconds)}
+          </Text>
+        </View>
+
+        {/* Date separator if needed */}
+        {item.showDate && (
+          <View
+            style={{
+              alignItems: "center",
+              marginVertical: 16,
+            }}
+          >
+            <Text
+              style={{
+                backgroundColor: "#f0f0f0",
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 12,
+                color: "#666",
+                fontSize: 12,
+              }}
+            >
+              {formatDate(item.createdAt.seconds)}
+            </Text>
           </View>
         )}
       </View>
@@ -194,9 +324,10 @@ const ChatDetail = ({
             borderRadius: 8,
           }}
         />
-        <TouchableOpacity onPress={handleSelectImage} style={{ marginLeft: 8 }}>
-          <Import size={30} color="#007bff" />
-        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={handleSelectImage}
+          style={{ marginLeft: 8 }}
+        ></TouchableOpacity>
         <Button title="Gửi" onPress={handleSendMessage} />
       </View>
       {selectedImages.length > 0 && (

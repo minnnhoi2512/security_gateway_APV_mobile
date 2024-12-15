@@ -407,251 +407,433 @@ const ValidCheckInScreen = () => {
     );
   };
 
-  const ImageSlider: React.FC<ImageSliderProps> = ({
-    response,
-    checkInData,
-  }) => {
-    const [isImageViewVisible, setIsImageViewVisible] =
-      useState<boolean>(false);
-    const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+  // const ImageSlider: React.FC<ImageSliderProps> = ({
+  //   response,
+  //   checkInData,
+  // }) => {
+  //   const [isImageViewVisible, setIsImageViewVisible] =
+  //     useState<boolean>(false);
+  //   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
 
-    const images = useMemo<IImageInfo[]>(() => {
-      const allImages: IImageInfo[] = [];
+  //   const images = useMemo<IImageInfo[]>(() => {
+  //     const allImages: IImageInfo[] = [];
+  //     const tempLabels: string[] = [];
+  //     if (response?.visitor.visitorCredentialFrontImage) {
+  //       allImages.push({
+  //         url: `data:image/png;base64,${response.visitor.visitorCredentialFrontImage}`,
+  //       });
+  //       tempLabels.push('Ảnh CCCD');
+  //     }
 
-      if (response?.visitor.visitorCredentialFrontImage) {
-        allImages.push({
-          url: `data:image/png;base64,${response.visitor.visitorCredentialFrontImage}`,
-        });
-      }
+  //     // checkInData?.Images?.forEach((img) => {
+  //     //   if (img.Image) {
+  //     //     allImages.push({
+  //     //       url: img.Image,
+  //     //     });
+  //     //   }
+  //     // });
+  //     checkInData?.Images?.forEach((img) => {
+  //       if (img.Image) {
+  //         allImages.push({
+  //           url: img.Image,
+  //         });
+          
+  //         let label = '';
+  //         switch(img.ImageType) {
+  //           case 'CheckIn_Shoe':
+  //             label = 'Ảnh giày';
+  //             break;
+  //           case 'CheckIn_Body':
+  //             label = 'Ảnh toàn thân';
+  //             break;
+  //           default:
+  //             label = 'Ảnh khác';
+  //         }
+  //         tempLabels.push(label);
+  //       }
+  //     });
 
-      checkInData?.Images?.forEach((img) => {
-        if (img.Image) {
-          allImages.push({
-            url: img.Image,
-          });
-        }
+  //     if (checkInData?.VehicleSession?.vehicleImages?.[0]?.Image) {
+  //       allImages.push({
+  //         url: checkInData.VehicleSession.vehicleImages[0].Image,
+  //       });
+  //       tempLabels.push('Ảnh xe');
+  //     }
+  
+
+  //     return allImages;
+  //   }, [response, checkInData]);
+
+  //   return (
+  //     <View className="mt-4 w-full">
+  //       <ScrollView
+  //         horizontal={true}
+  //         showsHorizontalScrollIndicator={false}
+  //         contentContainerStyle={{
+  //           paddingHorizontal: 16,
+  //         }}
+  //       >
+  //         {images.map((image, index) => (
+  //           <TouchableOpacity
+  //             key={index}
+  //             onPress={() => {
+  //               setCurrentImageIndex(index);
+  //               setIsImageViewVisible(true);
+  //             }}
+  //             className="mr-1"
+  //             style={{
+  //               width: 200,
+  //               aspectRatio: 4 / 3,
+  //             }}
+  //           >
+  //             <Image
+  //               source={{ uri: image.url }}
+  //               style={{
+  //                 width: "100%",
+  //                 height: "90%",
+  //                 borderRadius: 8,
+  //               }}
+  //               resizeMode="cover"
+  //             />
+  //           </TouchableOpacity>
+  //         ))}
+  //       </ScrollView>
+
+  //       <Modal
+  //         visible={isImageViewVisible}
+  //         transparent={true}
+  //         onRequestClose={() => setIsImageViewVisible(false)}
+  //       >
+  //         <ImageViewer
+  //           imageUrls={images}
+  //           enableSwipeDown={true}
+  //           onSwipeDown={() => setIsImageViewVisible(false)}
+  //           onCancel={() => setIsImageViewVisible(false)}
+  //           index={currentImageIndex}
+  //           backgroundColor="rgba(0, 0, 0, 0.9)"
+  //           renderHeader={() => (
+  //             <TouchableOpacity
+  //               onPress={() => setIsImageViewVisible(false)}
+  //               style={{
+  //                 position: "absolute",
+  //                 top: 40,
+  //                 right: 20,
+  //                 zIndex: 100,
+  //                 padding: 10,
+  //               }}
+  //             >
+  //               <Text style={{ color: "white", fontSize: 16 }}>✕</Text>
+  //             </TouchableOpacity>
+  //           )}
+  //           renderIndicator={(currentIndex?: number, allSize?: number) => {
+  //             if (
+  //               typeof currentIndex === "number" &&
+  //               typeof allSize === "number"
+  //             ) {
+  //               return (
+  //                 <View
+  //                   style={{
+  //                     position: "absolute",
+  //                     top: 40,
+  //                     left: 20,
+  //                     zIndex: 100,
+  //                   }}
+  //                 >
+  //                   <Text style={{ color: "white" }}>
+  //                     {`${currentIndex + 1}/${allSize}`}
+  //                   </Text>
+  //                 </View>
+  //               );
+  //             }
+  //             return <View />;
+  //           }}
+  //         />
+  //       </Modal>
+  //     </View>
+  //   );
+  // };
+
+
+const ImageSlider: React.FC<ImageSliderProps> = ({
+  response,
+  checkInData,
+}) => {
+  const [isImageViewVisible, setIsImageViewVisible] = useState<boolean>(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+
+  const { images, labels } = useMemo(() => {
+    const tempImages: IImageInfo[] = [];
+    const tempLabels: string[] = [];
+
+    if (response?.visitor.visitorCredentialFrontImage) {
+      tempImages.push({
+        url: `data:image/png;base64,${response.visitor.visitorCredentialFrontImage}`,
       });
+      tempLabels.push('Ảnh CCCD');
+    }
 
-      if (checkInData?.VehicleSession?.vehicleImages?.[0]?.Image) {
-        allImages.push({
-          url: checkInData.VehicleSession.vehicleImages[0].Image,
+    checkInData?.Images?.forEach((img) => {
+      if (img.Image) {
+        tempImages.push({
+          url: img.Image,
         });
+        
+        let label = '';
+        switch(img.ImageType) {
+          case 'CheckIn_Shoe':
+            label = 'Ảnh giày';
+            break;
+          case 'CheckIn_Body':
+            label = 'Ảnh toàn thân';
+            break;
+          default:
+            label = 'Ảnh khác';
+        }
+        tempLabels.push(label);
       }
+    });
 
-      return allImages;
-    }, [response, checkInData]);
+    if (checkInData?.VehicleSession?.vehicleImages?.[0]?.Image) {
+      tempImages.push({
+        url: checkInData.VehicleSession.vehicleImages[0].Image,
+      });
+      tempLabels.push('Ảnh xe');
+    }
 
-    return (
-      <View className="mt-4 w-full">
-        <ScrollView
-          horizontal={true}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingHorizontal: 16,
-          }}
-        >
-          {images.map((image, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => {
-                setCurrentImageIndex(index);
-                setIsImageViewVisible(true);
-              }}
-              className="mr-1"
-              style={{
-                width: 200,
-                aspectRatio: 4 / 3,
-              }}
-            >
+    return { 
+      images: tempImages,
+      labels: tempLabels 
+    };
+  }, [response, checkInData]);
+
+  return (
+    <View className="mt-4 w-full">
+      <ScrollView
+        horizontal={true}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+        }}
+      >
+        {images.map((image, index) => (
+          <TouchableOpacity
+            key={index}
+            onPress={() => {
+              setCurrentImageIndex(index);
+              setIsImageViewVisible(true);
+            }}
+            className="mr-1"
+            style={{
+              width: 200,
+              aspectRatio: 4 / 3,
+            }}
+          >
+            <View style={{ position: 'relative', width: '100%', height: '90%' }}>
               <Image
                 source={{ uri: image.url }}
                 style={{
-                  width: "100%",
-                  height: "90%",
+                  width: '100%',
+                  height: '100%',
                   borderRadius: 8,
                 }}
                 resizeMode="cover"
               />
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+              <View
+                style={{
+                  position: 'absolute',
+                  bottom: 8,
+                  right: 8,
+                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                  paddingVertical: 4,
+                  paddingHorizontal: 8,
+                  borderRadius: 4,
+                }}
+              >
+                <Text style={{ color: 'white', fontSize: 12 }}>{labels[index]}</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
 
-        <Modal
-          visible={isImageViewVisible}
-          transparent={true}
-          onRequestClose={() => setIsImageViewVisible(false)}
-        >
-          <ImageViewer
-            imageUrls={images}
-            enableSwipeDown={true}
-            onSwipeDown={() => setIsImageViewVisible(false)}
-            onCancel={() => setIsImageViewVisible(false)}
-            index={currentImageIndex}
-            backgroundColor="rgba(0, 0, 0, 0.9)"
-            renderHeader={() => (
+      <Modal
+        visible={isImageViewVisible}
+        transparent={true}
+        onRequestClose={() => setIsImageViewVisible(false)}
+      >
+        <ImageViewer
+          imageUrls={images}
+          enableSwipeDown={true}
+          onSwipeDown={() => setIsImageViewVisible(false)}
+          onCancel={() => setIsImageViewVisible(false)}
+          index={currentImageIndex}
+          backgroundColor="rgba(0, 0, 0, 0.9)"
+          renderHeader={() => (
+            <View style={{
+              position: 'absolute',
+              top: 40,
+              left: 0,
+              right: 0,
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              paddingHorizontal: 20,
+              zIndex: 100,
+            }}>
+              <Text style={{ color: "white" }}>
+                {`${currentImageIndex + 1}/${images.length} - ${labels[currentImageIndex]}`}
+              </Text>
               <TouchableOpacity
                 onPress={() => setIsImageViewVisible(false)}
                 style={{
-                  position: "absolute",
-                  top: 40,
-                  right: 20,
-                  zIndex: 100,
                   padding: 10,
                 }}
               >
                 <Text style={{ color: "white", fontSize: 16 }}>✕</Text>
               </TouchableOpacity>
-            )}
-            renderIndicator={(currentIndex?: number, allSize?: number) => {
-              if (
-                typeof currentIndex === "number" &&
-                typeof allSize === "number"
-              ) {
-                return (
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: 40,
-                      left: 20,
-                      zIndex: 100,
-                    }}
-                  >
-                    <Text style={{ color: "white" }}>
-                      {`${currentIndex + 1}/${allSize}`}
-                    </Text>
-                  </View>
-                );
-              }
-              return <View />;
-            }}
-          />
-        </Modal>
-      </View>
-    );
-  };
+            </View>
+          )}
+          renderIndicator={(currentIndex?: number, allSize?: number) => (
+            <View />
+          )}
+        />
+      </Modal>
+    </View>
+  );
+};
 
-  const ImageSliderForBodyShoe: React.FC<ImageSliderProps> = ({
-    response,
-    checkInData,
-  }) => {
-    const [isImageViewVisible, setIsImageViewVisible] =
-      useState<boolean>(false);
-    const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+const ImageSliderForBodyShoe: React.FC<ImageSliderProps> = ({
 
-    const images = useMemo<IImageInfo[]>(() => {
-      const allImages: IImageInfo[] = [];
+  checkInData,
+}) => {
+  const [isImageViewVisible, setIsImageViewVisible] = useState<boolean>(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
 
-      // if (response?.visitor.visitorCredentialFrontImage) {
-      //   allImages.push({
-      //     url: `data:image/png;base64,${response.visitor.visitorCredentialFrontImage}`,
-      //   });
-      // }
-
-      checkInData?.Images?.forEach((img) => {
-        if (img.Image) {
-          allImages.push({
-            url: img.Image,
-          });
+  const { images, labels } = useMemo(() => {
+    const tempImages: IImageInfo[] = [];
+    const tempLabels: string[] = [];
+ 
+    checkInData?.Images?.forEach((img) => {
+      if (img.Image) {
+        tempImages.push({
+          url: img.Image,
+        });
+        
+        let label = '';
+        switch(img.ImageType) {
+          case 'CheckIn_Shoe':
+            label = 'Ảnh giày';
+            break;
+          case 'CheckIn_Body':
+            label = 'Ảnh toàn thân';
+            break;
+          default:
+            label = 'Ảnh khác';
         }
-      });
+        tempLabels.push(label);
+      }
+    });
 
-      // if (checkInData?.VehicleSession?.vehicleImages?.[0]?.Image) {
-      //   allImages.push({
-      //     url: checkInData.VehicleSession.vehicleImages[0].Image,
-      //   });
-      // }
+ 
+    return { 
+      images: tempImages,
+      labels: tempLabels 
+    };
+  }, [ checkInData]);
 
-      return allImages;
-    }, [response, checkInData]);
-
-    return (
-      <View className="mt-4 w-full">
-        <ScrollView
-          horizontal={true}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingHorizontal: 16,
-          }}
-        >
-          {images.map((image, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => {
-                setCurrentImageIndex(index);
-                setIsImageViewVisible(true);
-              }}
-              className="mr-1"
-              style={{
-                width: 200,
-                aspectRatio: 4 / 3,
-              }}
-            >
+  return (
+    <View className="mt-4 w-full">
+      <ScrollView
+        horizontal={true}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+        }}
+      >
+        {images.map((image, index) => (
+          <TouchableOpacity
+            key={index}
+            onPress={() => {
+              setCurrentImageIndex(index);
+              setIsImageViewVisible(true);
+            }}
+            className="mr-1"
+            style={{
+              width: 200,
+              aspectRatio: 4 / 3,
+            }}
+          >
+            <View style={{ position: 'relative', width: '100%', height: '90%' }}>
               <Image
                 source={{ uri: image.url }}
                 style={{
-                  width: "100%",
-                  height: "90%",
+                  width: '100%',
+                  height: '100%',
                   borderRadius: 8,
                 }}
                 resizeMode="cover"
               />
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+              <View
+                style={{
+                  position: 'absolute',
+                  bottom: 8,
+                  right: 8,
+                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                  paddingVertical: 4,
+                  paddingHorizontal: 8,
+                  borderRadius: 4,
+                }}
+              >
+                <Text style={{ color: 'white', fontSize: 12 }}>{labels[index]}</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
 
-        <Modal
-          visible={isImageViewVisible}
-          transparent={true}
-          onRequestClose={() => setIsImageViewVisible(false)}
-        >
-          <ImageViewer
-            imageUrls={images}
-            enableSwipeDown={true}
-            onSwipeDown={() => setIsImageViewVisible(false)}
-            onCancel={() => setIsImageViewVisible(false)}
-            index={currentImageIndex}
-            backgroundColor="rgba(0, 0, 0, 0.9)"
-            renderHeader={() => (
+      <Modal
+        visible={isImageViewVisible}
+        transparent={true}
+        onRequestClose={() => setIsImageViewVisible(false)}
+      >
+        <ImageViewer
+          imageUrls={images}
+          enableSwipeDown={true}
+          onSwipeDown={() => setIsImageViewVisible(false)}
+          onCancel={() => setIsImageViewVisible(false)}
+          index={currentImageIndex}
+          backgroundColor="rgba(0, 0, 0, 0.9)"
+          renderHeader={() => (
+            <View style={{
+              position: 'absolute',
+              top: 40,
+              left: 0,
+              right: 0,
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              paddingHorizontal: 20,
+              zIndex: 100,
+            }}>
+              <Text style={{ color: "white" }}>
+                {`${currentImageIndex + 1}/${images.length} - ${labels[currentImageIndex]}`}
+              </Text>
               <TouchableOpacity
                 onPress={() => setIsImageViewVisible(false)}
                 style={{
-                  position: "absolute",
-                  top: 40,
-                  right: 20,
-                  zIndex: 100,
                   padding: 10,
                 }}
               >
                 <Text style={{ color: "white", fontSize: 16 }}>✕</Text>
               </TouchableOpacity>
-            )}
-            renderIndicator={(currentIndex?: number, allSize?: number) => {
-              if (
-                typeof currentIndex === "number" &&
-                typeof allSize === "number"
-              ) {
-                return (
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: 40,
-                      left: 20,
-                      zIndex: 100,
-                    }}
-                  >
-                    <Text style={{ color: "white" }}>
-                      {`${currentIndex + 1}/${allSize}`}
-                    </Text>
-                  </View>
-                );
-              }
-              return <View />;
-            }}
-          />
-        </Modal>
-      </View>
-    );
-  };
+            </View>
+          )}
+          renderIndicator={(currentIndex?: number, allSize?: number) => (
+            <View />
+          )}
+        />
+      </Modal>
+    </View>
+  );
+};
 
   if (isLoadingValidRes) {
     return (

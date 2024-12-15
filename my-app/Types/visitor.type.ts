@@ -7,4 +7,5 @@ interface Visitor {
   credentialCardTypeId: number;
   visitorCredentialFrontImageFromRequest?: string | null; 
   visitorCredentialBackImageFromRequest?: string | null;  
+  visitorCredentialBlurImageFromRequest?: string | null;  
 }

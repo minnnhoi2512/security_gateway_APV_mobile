@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { CameraView } from "expo-camera";
+import { Camera, CameraView } from "expo-camera";
 import { Stack, useRouter } from "expo-router";
 import {
   ActivityIndicator,
@@ -73,13 +73,37 @@ const scanQr = () => {
   const [activeCamera, setActiveCamera] = useState<"QR" | "LICENSE">("QR");
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [hasScanned, setHasScanned] = useState(false);
+  const [isCameraInitialized, setIsCameraInitialized] = useState(false);
+
   useEffect(() => {
-    // Đợi một chút để đảm bảo view đã render xong
+    const initCamera = async () => {
+      setIsCameraInitialized(false);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      setIsCameraInitialized(true);
+    };
+
+    if (activeCamera) {
+      initCamera();
+    }
+
+    return () => {
+      setIsCameraInitialized(false);
+    };
+  }, [activeCamera]);
+  useEffect(() => {
     const timer = setTimeout(() => {
       setIsCameraReady(true);
-    }, 100);
+    }, 1000);
 
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      // Cleanup camera resources
+      setIsCameraReady(false);
+      resetState();
+    };
   }, []);
 
   const { showToast } = useToast();
@@ -126,6 +150,18 @@ const scanQr = () => {
       skip: !gateId,
     }
   );
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission required",
+          "Camera permission is required to use this feature"
+        );
+      }
+    })();
+  }, []);
 
   const fetchCaptureImage = async (
     url: string,
@@ -567,97 +603,11 @@ const scanQr = () => {
       qrLock.current = true;
       setScannedData(data);
       setIsProcessing(true);
-      setScanType('license'); 
+      setScanType("license");
       console.log("License Plate Scanned Data:", data);
     }
   };
 
-  // useEffect(() => {
-  //   const handleNavigation = async () => {
-  //     if (isLoadingVisit || isFetchingVisit) return;
-  //     await new Promise((resolve) => setTimeout(resolve, 200));
-  //     const hasRequiredData =
-  //       checkInData.QrCardVerification && checkInData.Images.length > 0;
-  //     if (cardVerification && !redirected.current) {
-  //       qrLock.current = true;
-  //       if (
-  //         qrCardData &&
-  //         !isLoadingQr &&
-  //         !isFetchingQr &&
-  //         !isErrorQr &&
-  //         hasRequiredData
-  //       ) {
-  //         redirected.current = true;
-  //         await new Promise((resolve) => setTimeout(resolve, 500));
-  //         router.push({
-  //           pathname: "/check-in/ValidCheckInScreen",
-  //           params: {
-  //             dataCheckIn: JSON.stringify(checkInData),
-  //             dataValid: JSON.stringify({
-  //               CredentialCard: checkInData.CredentialCard,
-  //               QRCardVerification: checkInData.QrCardVerification,
-  //               ImageShoe:
-  //                 checkInData.Images.find(
-  //                   (img) => img.ImageType === "CheckIn_Shoe"
-  //                 )?.Image || null,
-  //             }),
-  //           },
-  //         });
-
-  //         resetState();
-  //         alertShown.current = false;
-  //       } else if (
-  //         !isLoadingQr &&
-  //         !isFetchingQr &&
-  //         (isErrorQr || !qrCardData)
-  //       ) {
-  //         if (!alertShown.current) {
-  //           showToast("Mã xác thực không hợp lệ", "error");
-  //           Alert.alert("Lỗi", "Mã xác thực không hợp lệ", [
-  //             {
-  //               text: "OK",
-  //               onPress: () => {
-  //                 resetState();
-  //                 alertShown.current = false;
-  //               },
-  //             },
-  //           ]);
-  //           alertShown.current = true;
-  //         }
-  //       }
-  //     } else if (credentialCardId && !redirected.current) {
-  //       qrLock.current = true;
-  //       if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
-  //         redirected.current = true;
-  //         await new Promise((resolve) => setTimeout(resolve, 500));
-  //         router.push({
-  //           pathname: "/check-in/ListVisit",
-  //           params: { credentialCardId: credentialCardId },
-  //         });
-  //         resetState();
-  //       } else if (
-  //         !isLoadingVisit &&
-  //         !isFetchingVisit &&
-  //         !visitNotFoundShown.current
-  //       ) {
-  //         visitNotFoundShown.current = true;
-  //         showToast("Không tìm thấy thông tin chuyến thăm", "error");
-  //         handleVisitNotFound();
-  //       }
-  //     }
-  //   };
-  //   handleNavigation();
-  // }, [
-  //   visitOfUser,
-  //   isLoadingVisit,
-  //   isFetchingVisit,
-  //   credentialCardId,
-  //   qrCardData,
-  //   isLoadingQr,
-  //   isFetchingQr,
-  //   cardVerification,
-  //   checkInData,
-  // ]);
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (data && !qrLock.current) {
       qrLock.current = true;
@@ -679,26 +629,32 @@ const scanQr = () => {
 
   return (
     <View className="flex-1 bg-black justify-center items-center">
-      {(() => {
-        switch (activeCamera) {
-          case "QR":
-            return (
-              <CameraView
-                className="flex-1 w-full h-full"
-                onBarcodeScanned={handleBarCodeScanned}
-              />
-            );
-          case "LICENSE":
-            return (
-              <CameraView
-                className="flex-1 w-full h-full"
-                onBarcodeScanned={handleLicensePlateScanned}
-              />
-            );
-          default:
-            return null;
-        }
-      })()}
+      {isCameraReady && isCameraInitialized && (
+        <>
+          {/* {activeCamera === "QR" && (
+            <CameraView
+              style={styles.camera}
+              onBarcodeScanned={handleBarCodeScanned}
+            />
+          )}
+          {activeCamera === "LICENSE" && (
+            <CameraView
+              style={styles.camera}
+              onBarcodeScanned={handleLicensePlateScanned}
+            />
+          )} */}
+          <View style={{ flex: 1, width: "100%", height: "100%" }}>
+            <CameraView
+              style={styles.camera}
+              onBarcodeScanned={
+                activeCamera === "QR"
+                  ? handleBarCodeScanned
+                  : handleLicensePlateScanned
+              }
+            />
+          </View>
+        </>
+      )}
       <Overlay />
 
       <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
@@ -713,7 +669,7 @@ const scanQr = () => {
 
       <TouchableOpacity
         className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
-        onPress={() => setIsCameraActive(false)}
+        onPress={handleGoBack}
       >
         <Text className="text-white">Thoát Camera</Text>
       </TouchableOpacity>
@@ -780,11 +736,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "black",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   camera: {
-    flex: 1,
-    width: "100%",
-    height: "100%",
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: Dimensions.get("window").width,
+    height: Dimensions.get("window").height,
   },
   headerContent: {
     position: "absolute",

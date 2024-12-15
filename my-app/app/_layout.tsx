@@ -132,7 +132,7 @@ export default function RootLayout() {
               options={{ headerShown: false }}
             />
              <Stack.Screen
-              name="chat/chatDetail"
+              name="chatdetail"
               options={{ headerShown: false }}
             />
             <Stack.Screen
@@ -151,10 +151,10 @@ export default function RootLayout() {
               name="createVisit/FormCreate"
               options={{ headerShown: false }}
             />
-             <Stack.Screen
-              name="tabs/createCustomer"
+             {/* <Stack.Screen
+              name="tabs/CreateCustomer"
               options={{ headerShown: false }}
-            />
+            /> */}
             <Stack.Screen
               name="createVisitor/CreateVisitor"
               options={{ headerShown: false }}

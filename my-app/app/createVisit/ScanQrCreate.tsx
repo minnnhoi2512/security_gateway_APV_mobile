@@ -41,6 +41,23 @@ export default function ScanQrCreate() {
       qrData.split("|");
     return { id, nationalId, name, dateOfBirth, gender, address, issueDate };
   };
+
+  const [isCameraReady, setIsCameraReady] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsCameraReady(true);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      // Cleanup camera resources
+      setIsCameraReady(false);
+      resetStates();
+    };
+  }, []);
   const parseQRLicensePlateData = (qrData: string): ScanData | null => {
     const parts = qrData.split("\n");
     if (parts.length === 5) {
@@ -65,21 +82,18 @@ export default function ScanQrCreate() {
     error,
     isLoading,
     isFetching,
-    refetch
+    refetch,
   } = useGetVisitorByCreadentialCardQuery(credentialCardId || "", {
     skip: !credentialCardId,
-    refetchOnFocus: true
+    refetchOnFocus: true,
   });
-  
+
   // Add this useEffect to trigger refetch when credentialCardId changes
   useEffect(() => {
     if (credentialCardId) {
       refetch();
     }
   }, [credentialCardId, refetch]);
-  
- 
- 
 
   const resetStates = () => {
     setScannedData("");
@@ -95,8 +109,6 @@ export default function ScanQrCreate() {
       return () => {};
     }, [])
   );
-
- 
 
   useEffect(() => {
     if (scannedData.includes("|")) {
@@ -173,7 +185,7 @@ export default function ScanQrCreate() {
   useEffect(() => {
     if (!credentialCardId || processingRef.current || redirected.current)
       return;
-  
+
     if (credentialCardId && !isLoading && !isFetching) {
       processingRef.current = true;
       qrLock.current = true;
@@ -191,9 +203,6 @@ export default function ScanQrCreate() {
       }
     }
   }, [visitData, isLoading, isFetching, credentialCardId]);
-  
-
-  
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     // console.log(data);
@@ -218,11 +227,14 @@ export default function ScanQrCreate() {
         }}
       />
       {Platform.OS === "android" ? <StatusBar hidden /> : null}
-      <CameraView
-        style={StyleSheet.absoluteFillObject}
-        facing="back"
-        onBarcodeScanned={handleBarCodeScanned}
-      />
+      {isCameraReady && (
+        <CameraView
+          style={StyleSheet.absoluteFillObject}
+          facing="back"
+          onBarcodeScanned={handleBarCodeScanned}
+        />
+      )}
+
       <Overlay />
 
       <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
