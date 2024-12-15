@@ -15,7 +15,7 @@ import { doc, onSnapshot, updateDoc, arrayUnion } from "firebase/firestore";
 import { chatDB, uploadImageChat, uploadToFirebase } from "@/firebase-config";
 import { launchImageLibrary } from "react-native-image-picker";
 import { useGetUserProfileQuery } from "@/redux/services/user.service";
-import { Icon, Import } from "lucide-react-native";
+ 
 import * as ImagePicker from "expo-image-picker";
 const ChatDetail = ({
   chatId,
@@ -195,7 +195,7 @@ const ChatDetail = ({
           }}
         />
         <TouchableOpacity onPress={handleSelectImage} style={{ marginLeft: 8 }}>
-          <Import size={30} color="#007bff" />
+          
         </TouchableOpacity>
         <Button title="Gửi" onPress={handleSendMessage} />
       </View>
