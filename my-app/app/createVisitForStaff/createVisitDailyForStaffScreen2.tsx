@@ -98,17 +98,18 @@ const CreateVisitDailyForStaffScreen2 = () => {
           visible={modalStatus}
           animationType="slide"
           presentationStyle="pageSheet"
+          onRequestClose={closeAddVisitorHandler}
         >
-          <View className="flex-1 bg-gray-50 p-4">
+          <View style={{ flex: 1, backgroundColor: '#f8f8f8', padding: 16 }}>
             <TouchableOpacity
-              className="self-end mb-4 bg-red-500 px-4 py-2 rounded-lg"
+              style={{ alignSelf: 'flex-end', marginBottom: 16, backgroundColor: '#e74c3c', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10 }}
               onPress={closeAddVisitorHandler}
             >
-              <Text className="text-white font-semibold">Đóng</Text>
+              <Text style={{ color: 'white', fontWeight: 'bold' }}>Đóng</Text>
             </TouchableOpacity>
 
             {action === "ADD" && <CreateVisitorForStaff />}
-            {action === "FIND" && <VistorInforModal visitor={visitData} />}
+            {action === "FIND" && visitData && <VistorInforModal visitor={visitData} onClose={closeAddVisitorHandler} />}
           </View>
         </Modal>
 

@@ -1,15 +1,21 @@
-import React from 'react';
-import { View, Text, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, Modal, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import ImageViewer from 'react-native-image-zoom-viewer';
 
 const VisitorItem: React.FC<{ visitor: any }> = ({ visitor }) => {
+  // console.log("check visitorvisitor", visitor.visitorImage);
+  const [isImageViewerVisible, setImageViewerVisible] = useState(false);
+
   return (
     <View className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
       <View className="p-4 flex-row items-center">
-        <Image
-          source={{ uri: 'https://icons.veryicon.com/png/o/miscellaneous/two-color-icon-library/user-286.png' }}
-          className="w-16 h-16 rounded-full border-2 border-blue-100 mr-4"
-        />
+        <TouchableOpacity onPress={() => setImageViewerVisible(true)}>
+          <Image
+            source={{ uri: `data:image/png;base64,${visitor.visitorImage}` }}
+            className="w-16 h-16 rounded-full border-2 border-blue-100 mr-4"
+          />
+        </TouchableOpacity>
         <View className="flex-1">
           <Text className="text-lg font-bold  text-[#d35400]">{visitor.visitorName}</Text>
           <Text className="text-sm text-gray-600">công ty {visitor.visitorCompany}</Text>
@@ -39,6 +45,13 @@ const VisitorItem: React.FC<{ visitor: any }> = ({ visitor }) => {
           </View>
         </View>
       </View>
+      <Modal visible={isImageViewerVisible} transparent={true}>
+        <ImageViewer
+          imageUrls={[{ url: `data:image/png;base64,${visitor.visitorImage}` }]}
+          onCancel={() => setImageViewerVisible(false)}
+          enableSwipeDown={true}
+        />
+      </Modal>
     </View>
   );
 };

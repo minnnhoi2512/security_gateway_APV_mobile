@@ -4,5 +4,6 @@ type VisitDetailType ={
     visitorId: number,
     visitorName: string,
     visitorCompany: string
+    visitorImage: string
 }
 export default VisitDetailType

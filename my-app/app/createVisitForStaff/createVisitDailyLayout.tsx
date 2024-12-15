@@ -1,7 +1,6 @@
-import { View, Text, SafeAreaView, Pressable, Alert } from "react-native";
+import { View, Text, SafeAreaView, Pressable, Alert, ActivityIndicator } from "react-native";
 import React, { useState } from "react";
 import { ProgressSteps, ProgressStep } from "react-native-progress-steps";
-
 import { MaterialIcons } from "@expo/vector-icons";
 import CreateVisitDailyForStaffScreen1 from "./createVisitDailyForStaffScreen1";
 import CreateVisitDailyForStaffScreen2 from "./createVisitDailyForStaffScreen2";
@@ -12,6 +11,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { isApiError } from "@/redux/Types/ApiError";
 import { initialState, setVisitStaffCreate } from "@/redux/slices/visitStaffCreate.slice";
+import { useFocusEffect } from '@react-navigation/native';
 
 const createVisitDailyLayout = () => {
   const dispatch = useDispatch();
@@ -33,7 +33,7 @@ const createVisitDailyLayout = () => {
   ) as VisitStaffCreate;
   const router = useRouter();
   const [error, SetError] = useState(true);
-  console.log("CheckLayout")
+
   const onNextStep = () => {
     const currentDateTime = new Date();
     const startHourParts = visitCreateData.visitDetail[0].expectedStartHour.split(":");
@@ -84,8 +84,8 @@ const createVisitDailyLayout = () => {
     }
     SetError(false);
   };
+
   const onNextStep2 = async () => {
-    
     if (visitCreateData.visitDetail.length === 1) {
       SetError(true);
       Alert.alert("Không có khách nào được chọn");
@@ -105,23 +105,21 @@ const createVisitDailyLayout = () => {
           submitData.visitDetail.length
         );
 
-        console.log("Submit Data:", submitData);
         const result = await createVisit(submitData)
           .unwrap()
           .then((res) => {
-            // console.log(res)
             Alert.alert("Thành công", "Tạo lịch ghé thăm thành công!", [
               {
                 text: "OK",
                 onPress: () => {
                   dispatch(setVisitStaffCreate(initialState));
-                  router.back();               },
+                  router.back();
+                },
               },
             ]);
           });
       } catch (error) {
-        // console.log(error);
-        console.log("Check",isApiError(error))
+        console.log("Check", isApiError(error))
         if (isApiError(error)) {
           Alert.alert("Tạo chuyến thăm lỗi", error.data.message, [
             {
@@ -129,7 +127,7 @@ const createVisitDailyLayout = () => {
             },
           ]);
         } else {
-          console.log("CheckError",error);
+          console.log("CheckError", error);
 
           Alert.alert("Tạo chuyến thăm lỗi", "Tạo lịch ghé thăm không thành công!", [
             {
@@ -142,6 +140,14 @@ const createVisitDailyLayout = () => {
       SetError(false);
     }
   };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      return () => {
+        dispatch(setVisitStaffCreate(initialState));
+      };
+    }, [dispatch])
+  );
 
   const handleGoBack = () => {
     router.back();
@@ -182,13 +188,16 @@ const createVisitDailyLayout = () => {
           nextBtnTextStyle={buttonTextStyle}
           onSubmit={onNextStep2}
           errors={error}
+          nextBtnDisabled={isLoading} // Disable button when loading
         >
           <View style={{ height: "90%" }}>
             <CreateVisitDailyForStaffScreen2 />
+            {isLoading && (
+              <ActivityIndicator size="large" color="#0000ff" />
+            )}
           </View>
         </ProgressStep>
       </ProgressSteps>
-
     </SafeAreaView>
   );
 };
