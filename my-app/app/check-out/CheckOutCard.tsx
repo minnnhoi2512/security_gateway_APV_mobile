@@ -25,6 +25,7 @@ import { useShoeDetectMutation } from "@/redux/services/qrcode.service";
 import { uploadToFirebase } from "@/firebase-config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+import { formatDateTime } from "@/hooks/util";
 
 const fetchCaptureImage = async (
   url: string,
@@ -486,6 +487,10 @@ const CheckOutCard = () => {
                       label="Thời gian vào công ty"
                       value={formatDate(checkInData.checkinTime)}
                     />
+                    <InfoRow
+                      label="Thời gian ra công ty"
+                      value={formatDateTime(new Date())}
+                    />
                     {checkInData.gateIn && (
                       <InfoRow
                         label="Cổng vào"
@@ -515,10 +520,7 @@ const CheckOutCard = () => {
                       }
                     />
 
-                    <InfoRow
-                      label="Trạng thái chuyến thăm"
-                      value={checkInData.visitDetail.visit.visitStatus}
-                    />
+                    
                   </Section>
 
                   <SectionDropDown
@@ -566,12 +568,8 @@ const CheckOutCard = () => {
                     title="Thời gian hiệu lực"
                   >
                     <InfoRow
-                      label="Ngày phát hành"
+                      label="Ngày phát hành thẻ"
                       value={formatDate(checkInData.visitCard.issueDate)}
-                    />
-                    <InfoRow
-                      label="Ngày hết hạn"
-                      value={formatDate(checkInData.visitCard.expiryDate)}
                     />
                     <InfoRow
                       label="Giờ bắt đầu"

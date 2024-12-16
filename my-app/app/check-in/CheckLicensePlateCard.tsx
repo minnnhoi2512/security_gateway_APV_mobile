@@ -11,22 +11,18 @@ import {
   Pressable,
   StyleSheet,
 } from "react-native";
-import {
-  GestureHandlerRootView,
-} from "react-native-gesture-handler";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import * as FileSystem from "expo-file-system";
 import { MaterialIcons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  CheckInVerWithLP,
-  ValidCheckIn,
-} from "@/Types/checkIn.type";
+import { CheckInVerWithLP, ValidCheckIn } from "@/Types/checkIn.type";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
+import { fetchWithTimeout } from "@/hooks/util";
 
 interface ImageData {
   ImageType: "Shoe";
@@ -234,9 +230,9 @@ const CheckLicensePlateCard = () => {
           const bodyImageUrl = `${bodyCamera.cameraURL}capture-image`;
           // console.log("Attempting to capture body image from:", bodyImageUrl);
 
-          const bodyImageData = await fetchCaptureImage(
-            bodyImageUrl,
-            "CheckIn_Body"
+          const bodyImageData = await fetchWithTimeout(
+            fetchCaptureImage(bodyImageUrl, "CheckIn_Body"),
+            10000
           );
 
           if (bodyImageData.ImageFile) {
@@ -253,10 +249,9 @@ const CheckLicensePlateCard = () => {
         if (shoeCamera?.cameraURL) {
           const shoeImageUrl = `${shoeCamera.cameraURL}capture-image`;
           // console.log("Attempting to capture shoe image from:", shoeImageUrl);
-
-          const shoeImageData = await fetchCaptureImage(
-            shoeImageUrl,
-            "CheckIn_Shoe"
+          const shoeImageData = await fetchWithTimeout(
+            fetchCaptureImage(shoeImageUrl, "CheckIn_Shoe"),
+            10000
           );
 
           if (shoeImageData.ImageFile) {
@@ -297,10 +292,12 @@ const CheckLicensePlateCard = () => {
         }
       } catch (error) {
         // console.error("Error in capture process:", error);
+        router.navigate("/(tabs)/checkin");
         Alert.alert(
-          "Error",
+          "Lỗi",
           "Lỗi khi chụp ảnh. Vui lòng kiểm tra cấu hình camera và thử lại."
         );
+        return;
       }
     };
 
@@ -468,8 +465,7 @@ const CheckLicensePlateCard = () => {
       </View>
 
       <ScrollView>
-        <GestureHandlerRootView className="flex-1 p-5">
-        </GestureHandlerRootView>
+        <GestureHandlerRootView className="flex-1 p-5"></GestureHandlerRootView>
       </ScrollView>
     </SafeAreaView>
   );

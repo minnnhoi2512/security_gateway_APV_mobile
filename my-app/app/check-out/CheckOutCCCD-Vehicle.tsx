@@ -27,6 +27,7 @@ import * as FileSystem from "expo-file-system";
 import { useShoeDetectMutation } from "@/redux/services/qrcode.service";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { formatDateTime } from "@/hooks/util";
 
 interface CheckoutResponse {
   checkinTime: string;
@@ -636,6 +637,10 @@ const CheckOutCCCD_Vehicle = () => {
                       label="Thời gian vào công ty"
                       value={formatDate(checkInData.checkinTime)}
                     />
+                     <InfoRow
+                      label="Thời gian ra công ty"
+                      value={formatDateTime(new Date())}
+                    />
                     {checkInData.gateIn && (
                       <InfoRow
                         label="Cổng vào"
@@ -665,10 +670,7 @@ const CheckOutCCCD_Vehicle = () => {
                       }
                     />
 
-                    <InfoRow
-                      label="Trạng thái chuyến thăm"
-                      value={checkInData.visitDetail.visit.visitStatus}
-                    />
+                  
                   </Section>
 
                   <SectionDropDown
@@ -716,13 +718,10 @@ const CheckOutCCCD_Vehicle = () => {
                     title="Thời gian hiệu lực"
                   >
                     <InfoRow
-                      label="Ngày phát hành"
+                      label="Ngày phát hành thẻ"
                       value={formatDate(checkInData.visitCard.issueDate)}
                     />
-                    <InfoRow
-                      label="Ngày hết hạn"
-                      value={formatDate(checkInData.visitCard.expiryDate)}
-                    />
+                   
                     <InfoRow
                       label="Giờ bắt đầu"
                       value={checkInData.visitDetail.expectedStartHour}

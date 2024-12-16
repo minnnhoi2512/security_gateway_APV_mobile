@@ -233,7 +233,7 @@ const CheckInOverall = () => {
           }
         }
 
-        console.log("Form data being sent:", formData);
+        // console.log("Form data being sent:", formData);
 
         const response = await checkIn(formData).unwrap();
         
