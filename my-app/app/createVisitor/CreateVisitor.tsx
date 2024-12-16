@@ -173,9 +173,13 @@ const CreateVisitor = () => {
         setPhotoUri(uri);
 
         try {
+          // setVisitor((prev) => ({
+          //   ...prev,
+          //   credentialCardTypeId: 1,
+          // }));
           const result = await detectGPLX(formData).unwrap();
           // console.log("Response from API:", result);
-          // console.log(result)
+
           if (result && result.imgblur) {
             const blurImageUri = await base64ToFile(result.imgblur);
 
@@ -296,6 +300,7 @@ const CreateVisitor = () => {
       const frontFileName =
         visitor.visitorCredentialFrontImageFromRequest.split("/").pop() ||
         "front.jpg";
+      console.log(visitor.visitorCredentialFrontImageFromRequest);
       formData.append("visitorCredentialFrontImageFromRequest", {
         uri: visitor.visitorCredentialFrontImageFromRequest,
         type: "image/jpeg",
@@ -326,16 +331,17 @@ const CreateVisitor = () => {
     }
 
     try {
-      // console.log("FormData being sent:", formData);
+     
+
       const response = await createVisitor(formData).unwrap();
-      Alert.alert("Thành công", "Tạo khách vãng lai thành công", [
-        {
-          text: "OK",
-          onPress: () => {
-            router.push("/(tabs)");
-          },
-        },
-      ]);
+      // Alert.alert("Thành công", "Tạo khách vãng lai thành công", [
+      //   {
+      //     text: "OK",
+      //     onPress: () => {
+      //       router.push("/(tabs)");
+      //     },r
+      //   },
+      // ]);
     } catch (error: any) {
       // console.log("Create visitor error details:", error?.data?.errors);
 
@@ -405,7 +411,6 @@ const CreateVisitor = () => {
                 className="rounded-lg mb-4"
               />
               <View className="flex-row space-x-4">
-                
                 <TouchableOpacity
                   onPress={handleConfirmInitialPhoto}
                   disabled={isProcessing}
@@ -469,7 +474,6 @@ const CreateVisitor = () => {
               onChangeText={(text) => handleInputChange("phoneNumber", text)}
               placeholder="Nhập số điện thoại"
             />
-            
           </View>
           <View className="mb-4">
             <Text className="text-sm font-semibold text-white mb-2">Email</Text>
