@@ -30,6 +30,7 @@ import ImageViewer from "react-native-image-zoom-viewer";
 interface ImageViewerImage {
   url: string;
 }
+import { formatDateTime } from "@/hooks/util";
 
 const fetchCaptureImage = async (
   url: string,
@@ -539,6 +540,10 @@ const CheckOutNormal = () => {
                     <InfoRow
                       label="Thời gian vào công ty"
                       value={formatDate(checkInData.checkinTime)}
+                    />
+                    <InfoRow
+                      label="Thời gian ra công ty"
+                      value={formatDateTime(new Date())}
                     />
                     {checkInData.gateIn && (
                       <InfoRow

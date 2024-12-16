@@ -20,7 +20,7 @@ import {
 import * as FileSystem from "expo-file-system";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { CameraView } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -36,6 +36,7 @@ import { RootState } from "@/redux/store/store";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
 import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
+import { fetchWithTimeout } from "@/hooks/util";
 
 interface ImageData {
   ImageType: "Shoe";
@@ -248,9 +249,9 @@ const CheckLicensePlate = () => {
         const bodyImageUrl = `${bodyCamera.cameraURL}capture-image`;
         // console.log("Attempting to capture body image from:", bodyImageUrl);
 
-        const bodyImageData = await fetchCaptureImage(
-          bodyImageUrl,
-          "CheckIn_Body"
+        const bodyImageData = await fetchWithTimeout(
+          fetchCaptureImage(bodyImageUrl, "CheckIn_Body"),
+          10000
         );
 
         if (bodyImageData.ImageFile) {
@@ -268,9 +269,9 @@ const CheckLicensePlate = () => {
         const shoeImageUrl = `${shoeCamera.cameraURL}capture-image`;
         console.log("Attempting to capture shoe image from:", shoeImageUrl);
 
-        const shoeImageData = await fetchCaptureImage(
-          shoeImageUrl,
-          "CheckIn_Shoe"
+        const shoeImageData = await fetchWithTimeout(
+          fetchCaptureImage(shoeImageUrl, "CheckIn_Shoe"),
+          10000
         );
 
         if (shoeImageData.ImageFile) {
@@ -311,10 +312,12 @@ const CheckLicensePlate = () => {
       }
     } catch (error) {
       console.error("Error in capture process:", error);
+      router.navigate("/(tabs)/checkin");
       Alert.alert(
-        "Error",
+        "Lỗi",
         "Lỗi khi chụp ảnh. Vui lòng kiểm tra cấu hình camera và thử lại."
       );
+      return;
     }
   };
   const directData = async () => {

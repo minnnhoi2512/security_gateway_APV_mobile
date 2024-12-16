@@ -28,6 +28,7 @@ import { useShoeDetectMutation } from "@/redux/services/qrcode.service";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ImageViewer from "react-native-image-zoom-viewer";
+import { formatDateTime } from "@/hooks/util";
 
 interface CheckoutResponse {
   checkinTime: string;

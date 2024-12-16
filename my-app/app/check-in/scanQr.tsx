@@ -29,6 +29,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useToast } from "@/components/Toast/ToastContext";
 import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { fetchWithTimeout } from "@/hooks/util";
 interface ScanData {
   id: string;
   nationalId?: string;
@@ -247,9 +248,9 @@ const scanQr = () => {
         if (bodyCamera?.cameraURL) {
           const bodyImageUrl = `${bodyCamera.cameraURL}capture-image`;
           // console.log("Attempting to capture body image from:", bodyImageUrl);
-          const bodyImageData = await fetchCaptureImage(
-            bodyImageUrl,
-            "CheckIn_Body"
+          const bodyImageData = await fetchWithTimeout(
+            fetchCaptureImage(bodyImageUrl, "CheckIn_Body"),
+            10000
           );
 
           if (bodyImageData.ImageFile) {
@@ -266,9 +267,9 @@ const scanQr = () => {
           const shoeImageUrl = `${shoeCamera.cameraURL}capture-image`;
           // console.log("Attempting to capture shoe image from:", shoeImageUrl);
 
-          const shoeImageData = await fetchCaptureImage(
-            shoeImageUrl,
-            "CheckIn_Shoe"
+          const shoeImageData = await fetchWithTimeout(
+            fetchCaptureImage(shoeImageUrl, "CheckIn_Shoe"),
+            10000
           );
 
           if (shoeImageData.ImageFile) {
@@ -306,10 +307,12 @@ const scanQr = () => {
         }
       } catch (error) {
         console.error("Error in capture process:", error);
+        router.navigate("/(tabs)/checkin");
         Alert.alert(
-          "Error",
+          "Lỗi",
           "Lỗi khi chụp ảnh. Vui lòng kiểm tra cấu hình camera và thử lại."
         );
+        return;
       }
     };
 

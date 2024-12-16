@@ -36,7 +36,7 @@ const Login: React.FC = () => {
     const fetchRole = async () => {
       const storedRole = await AsyncStorage.getItem("userRole");
       setRole(storedRole);
-      console.log("ROLE FROM ASYNC STORAGE: ", storedRole);
+      // console.log("ROLE FROM ASYNC STORAGE: ", storedRole);
     };
     fetchRole();
   }, []);
@@ -63,11 +63,11 @@ const Login: React.FC = () => {
   const handleLogin = async () => {
     try {
       const result = await loginUser({ username, password }).unwrap();
-      console.log("Login successful, response:", result);
+      // console.log("Login successful, response:", result);
       if (result && result.jwtToken) {
         await AsyncStorage.setItem("userToken", result.jwtToken);
         await AsyncStorage.setItem("userId", result.userId.toString());
-        console.log("Token saved to AsyncStorage");
+        // console.log("Token saved to AsyncStorage");
 
         const decodedToken = jwtDecode<{ role: string }>(result.jwtToken);
         const role = decodedToken.role;
