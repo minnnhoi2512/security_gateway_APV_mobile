@@ -388,6 +388,8 @@ const scanQr = () => {
 
   useEffect(() => {
     if (scannedData) {
+      console.log("scannedData", scannedData);
+      
       if (isCredentialCard(scannedData)) {
         const parsedData = parseQRData(scannedData);
 

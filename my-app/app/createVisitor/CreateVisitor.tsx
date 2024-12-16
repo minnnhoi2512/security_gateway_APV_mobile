@@ -71,7 +71,7 @@ const CreateVisitor = () => {
 
       return fileUri;
     } catch (error) {
-      console.error("Error converting base64 to file:", error);
+      console.error("Lỗi khi chuyển đổi base64 sang file:", error);
       throw error;
     }
   };
@@ -102,7 +102,7 @@ const CreateVisitor = () => {
 
         try {
           const result = await detectIdentityCard(formData).unwrap();
-          console.log("Response from API:", result);
+          // console.log("Response from API:", result);
 
           if (result && result.imgblur) {
             const blurImageUri = await base64ToFile(result.imgblur);
@@ -115,14 +115,14 @@ const CreateVisitor = () => {
               visitorCredentialBlurImageFromRequest: blurImageUri,
             }));
           } else {
-            throw new Error("Invalid response data");
+            throw new Error("Dữ liệu phản hồi không hợp lệ");
           }
 
           setIsProcessing(false);
         } catch (error: any) {
           console.error("API Error:", JSON.stringify(error, null, 2));
           let errorMessage =
-            "Failed to process identity card. Please try again.";
+            "Không xử lý được thẻ căn cước. Vui lòng thử lại.";
 
           if (error.data) {
             errorMessage = error.data;
@@ -134,8 +134,8 @@ const CreateVisitor = () => {
         }
       }
     } catch (error) {
-      console.error("Error taking photo:", JSON.stringify(error, null, 2));
-      Alert.alert("Error", "Failed to take photo. Please try again.");
+      console.error("Lỗi khi chụp ảnh:", JSON.stringify(error, null, 2));
+      Alert.alert("Lỗi", "Không chụp được ảnh. Vui lòng thử lại.");
       setIsProcessing(false);
       setInitialPhoto(null);
     }
@@ -161,8 +161,8 @@ const CreateVisitor = () => {
         }));
       }
     } catch (error) {
-      console.error("Error taking photo:", error);
-      Alert.alert("Error", "Failed to take photo. Please try again.");
+      console.error("Lỗi khi chụp ảnh:", error);
+      Alert.alert("Lỗi", "Không chụp được ảnh. Vui lòng thử lại.");
     }
   };
 
@@ -176,29 +176,29 @@ const CreateVisitor = () => {
       visitorCredentialBackImageFromRequest,
     } = visitor;
     if (!visitorName) {
-      Alert.alert("Validation Error", "Please provide the visitor's name.");
+      Alert.alert("Lỗi xác thực", "Vui lòng cung cấp tên của khách truy cập.");
       return false;
     }
     if (!phoneNumber) {
-      Alert.alert("Validation Error", "Please provide a phone number.");
+      Alert.alert("Lỗi xác thực", "Vui lòng cung cấp số điện thoại.");
       return false;
     }
     if (!email) {
-      Alert.alert("Validation Error", "Please provide a email.");
+      Alert.alert("Lỗi xác thực", "Vui lòng cung cấp email.");
       return false;
     }
     if (!companyName) {
-      Alert.alert("Validation Error", "Please provide a company name.");
+      Alert.alert("Lỗi xác thực", "Vui lòng cung cấp tên công ty.");
       return false;
     }
     if (!visitorCredentialFrontImageFromRequest) {
-      Alert.alert("Validation Error", "Please take a photo of the ID card.");
+      Alert.alert("Lỗi xác thực", "Vui lòng chụp ảnh CMND.");
       return false;
     }
     if (!visitorCredentialBackImageFromRequest) {
       Alert.alert(
-        "Validation Error",
-        "Please take a photo of the back of the ID card."
+        "Lỗi xác thực",
+        "Vui lòng chụp ảnh mặt sau của thẻ căn cước."
       );
       return false;
     }
@@ -265,7 +265,7 @@ const CreateVisitor = () => {
         },
       ]);
     } catch (error: any) {
-      console.log("Create visitor error details:", error?.data?.errors);
+      console.log("Tạo chi tiết lỗi của khách truy cập:", error?.data?.errors);
 
       const errors = error?.data?.errors;
       if (errors && typeof errors === "object") {
@@ -277,9 +277,9 @@ const CreateVisitor = () => {
             errorMessage += `${field}: ${messages}\n`;
           }
         });
-        Alert.alert("Error", errorMessage);
+        Alert.alert("Lỗi", errorMessage);
       } else {
-        Alert.alert("Error", "Failed to create visitor. Please try again.");
+        Alert.alert("Lỗi", "Không tạo được khách truy cập. Vui lòng thử lại.");
       }
     }
   };

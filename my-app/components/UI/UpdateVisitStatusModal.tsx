@@ -59,7 +59,7 @@ export const UpdateVisitStatusModal: React.FC<UpdateVisitStatusModalProps> = ({
               className="bg-gray-100 px-6 py-2.5 rounded-lg border border-gray-200"
               disabled={isLoading}
             >
-              <Text className="text-gray-700 font-medium">Hủy</Text>
+              <Text className="text-gray-700 font-medium">Từ chối</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               onPress={handleUpdateStatus}
