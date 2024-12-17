@@ -131,7 +131,7 @@ export default function RootLayout() {
               name="check-in/UserDetail"
               options={{ headerShown: false }}
             />
-             <Stack.Screen
+            <Stack.Screen
               name="chatdetail"
               options={{ headerShown: false }}
             />
@@ -151,7 +151,7 @@ export default function RootLayout() {
               name="createVisit/FormCreate"
               options={{ headerShown: false }}
             />
-             {/* <Stack.Screen
+            {/* <Stack.Screen
               name="tabs/CreateCustomer"
               options={{ headerShown: false }}
             /> */}
@@ -171,9 +171,9 @@ export default function RootLayout() {
               name="check-out/CheckOutLicensePlate"
               options={{ animation: "fade", headerShown: false }}
             />
-             <Stack.Screen
+            <Stack.Screen
               name="check-out/CheckOutNormal"
-              options={{  headerShown: false }}
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="profile/ProfileDetail"
@@ -183,7 +183,7 @@ export default function RootLayout() {
               name="check-in/CheckInOverall"
               options={{ headerShown: false }}
             />
-             <Stack.Screen
+            <Stack.Screen
               name="check-in/streaming"
               options={{ headerShown: false }}
             />

@@ -46,12 +46,10 @@ export const visitApi = createApi({
       query: (visitId: string) => `Visit/VisitDetail/${visitId}`,
     }),
     getVisitByCredentialCard: builder.query({
-      query: (credentialCard: string) => {
+      query: ({ VerifiedId, verifiedType }) => {
         const currentDate = new Date().toISOString().split('T')[0];
-        // return `Visit/CurrentDate/CredentialCard/${credentialCard}?date=${currentDate}`;
-        return `Visit/CurrentDate/CredentialCard/${credentialCard}`;
+        return `Visit/Day/VerifiedId/${VerifiedId}?verifiedType=${verifiedType}`;
       },
-
     }),
     createVisit: builder.mutation({
       query: (visit: CreateVisit) => ({

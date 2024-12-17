@@ -101,7 +101,7 @@ const CheckLicensePlateCard = () => {
   }, [isPermissionGranted, isCameraLaunched]);
 
   const [checkInData, setCheckInData] = useState<CheckInVerWithLP>({
-    CredentialCard: null,
+    VisitDetailId: null,
     SecurityInId: 0,
     GateInId: Number(selectedGateId) || 0,
     QrCardVerification: "",
@@ -113,7 +113,7 @@ const CheckLicensePlateCard = () => {
   });
 
   const [validCheckInData, setValidCheckInData] = useState<ValidCheckIn>({
-    CredentialCard: null,
+    VisitDetailId: null,
     QRCardVerification: "",
     ImageShoe: [],
   });
@@ -409,7 +409,7 @@ const CheckLicensePlateCard = () => {
             params: {
               dataCheckIn: JSON.stringify(dataToSend),
               dataValid: JSON.stringify({
-                CredentialCard: checkInData.CredentialCard,
+                CredentialCard: checkInData.VisitDetailId,
                 QRCardVerification: checkInData.QrCardVerification,
                 ImageShoe:
                   checkInData.Images.find(

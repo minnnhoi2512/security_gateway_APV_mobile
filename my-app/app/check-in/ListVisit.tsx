@@ -11,6 +11,10 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { isApiError } from "@/redux/Types/ApiError";
+import { useDispatch, useSelector } from "react-redux";
+import { setValidCheckIn, setVisitDetailId, ValidCheckInState } from "@/redux/slices/checkIn.slice";
+import { RootState } from "@/redux/store/store";
 
 interface Visit {
   visitDetailId: number;
@@ -36,22 +40,42 @@ interface Visit {
 }
 
 const ListVisit: React.FC = () => {
-  const { credentialCardId } = useLocalSearchParams<{
-    credentialCardId: string;
-  }>();
-  
+  // const { VerifiedId } = useLocalSearchParams<{
+  //   VerifiedId: string;
+  // }>();
+  // const { type: verifiedType } = useLocalSearchParams<{
+  //   type: string;
+  // }>();
+  // const { isVehicle: isVehicleParam } = useLocalSearchParams<{
+  //   isVehicle: string;
+  // }>();
+  const dispatch = useDispatch();
+  const checkInDataSlice = useSelector<any>((state) => state.validCheckIn) as ValidCheckInState;
+  // console.log("checkInDataSlice", checkInDataSlice);
+  const [checkInData, setCheckInData] = useState<ValidCheckInState>(checkInDataSlice);
+
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
+
   const {
     data: visitOfUser,
     isLoading: isLoadingVisit,
     error: isError,
     isFetching: isFetchingVisit,
     refetch
-  } = useGetVisitByCredentialCardQuery(credentialCardId || "", {
-    skip: !credentialCardId,
-  });
+  } = useGetVisitByCredentialCardQuery(
+    {
+      VerifiedId: checkInDataSlice.type === "CredentialCard" ? checkInDataSlice.CredentialCard : checkInDataSlice.QrCardVerification,
+      verifiedType: checkInDataSlice.type
+    },
+    {
+      skip: checkInDataSlice.CredentialCard === null && checkInDataSlice.QrCardVerification === null,
+    }
+  );
 
+  useEffect(() => {
+    // console.log("checkInData-listVisit", checkInData);
+  }, [checkInData, checkInDataSlice]);
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
@@ -71,11 +95,51 @@ const ListVisit: React.FC = () => {
     return now >= expectedTime;
   };
 
-  const handlePress = (visitId: number) => {
-    router.push({
-      pathname: "/check-in/UserDetail",
-      params: { visitId },
-    });
+  const handlePress = (visitDetailId: number) => {
+    if (checkInDataSlice.type == "QRCardVerified" && checkInDataSlice.isVehicle == true) {
+      dispatch(setVisitDetailId(visitDetailId));
+      console.log("11", checkInDataSlice)
+      router.push({
+        pathname: "/check-in/CheckLicensePlate",
+        // params: {  visitDetailId, VerifiedId, 
+
+        //  },
+      });
+      // router.push({
+      //   pathname: "/check-in/CheckLicensePlateCard",
+      //   // params: {  visitDetailId, VerifiedId, verifiedType },
+      // });
+
+    }
+    if (checkInDataSlice.type == "CredentialCard" && checkInDataSlice.isVehicle == true) {
+      dispatch(setVisitDetailId(visitDetailId));
+      router.push({
+        pathname: "/check-in/CheckLicensePlate",
+        // params: {  visitDetailId, VerifiedId, 
+
+        //  },
+      });
+      console.log("22")
+    }
+    if (checkInDataSlice.type == "QRCardVerified" && checkInDataSlice.isVehicle == false) {
+      console.log("33", checkInDataSlice)
+      dispatch(setVisitDetailId(visitDetailId));
+      router.push({
+        pathname: "/check-in/UserDetail",
+        // params: { visitDetailId, VerifiedId, verifiedType },
+      });
+
+    }
+    if (checkInDataSlice.type == "CredentialCard" && checkInDataSlice.isVehicle == false) {
+
+      console.log("44", checkInDataSlice);
+      dispatch(setVisitDetailId(visitDetailId));
+      router.push({
+        pathname: "/check-in/UserDetail",
+        // params: { visitDetailId, VerifiedId, verifiedType },
+      });
+
+    }
   };
 
   useEffect(() => {
@@ -94,13 +158,12 @@ const ListVisit: React.FC = () => {
 
     return (
       <TouchableOpacity
-        onPress={() => handlePress(item.visit.visitId)}
+        onPress={() => handlePress(item.visitDetailId)}
         disabled={!canStart}
         className={`bg-white dark:bg-gray-800 p-5 my-2 rounded-xl shadow-lg border 
-          ${
-            canStart
-              ? "border-gray-100 dark:border-gray-700"
-              : "border-gray-200 dark:border-gray-600 opacity-75"
+          ${canStart
+            ? "border-gray-100 dark:border-gray-700"
+            : "border-gray-200 dark:border-gray-600 opacity-75"
           }`}
       >
         <View className="border-b border-gray-100 dark:border-gray-700 pb-3 mb-3">
@@ -160,11 +223,10 @@ const ListVisit: React.FC = () => {
                   Bắt đầu
                 </Text>
                 <Text
-                  className={`font-medium ${
-                    canStart
-                      ? "text-gray-700 dark:text-gray-300"
-                      : "text-yellow-600 dark:text-yellow-400"
-                  }`}
+                  className={`font-medium ${canStart
+                    ? "text-gray-700 dark:text-gray-300"
+                    : "text-yellow-600 dark:text-yellow-400"
+                    }`}
                 >
                   {item.expectedStartHour}
                 </Text>
@@ -214,7 +276,7 @@ const ListVisit: React.FC = () => {
           <View className="flex-1 justify-center items-center">
             <MaterialIcons name="error-outline" size={48} color="#EF4444" />
             <Text className="mt-2 text-red-600 text-center">
-              Đã có lỗi xảy ra. Vui lòng thử lại sau.
+              {isApiError(isError) ? isError.data.message : "Đã có lỗi xảy ra. Vui lòng thử lại sau."}
             </Text>
           </View>
         ) : (
@@ -234,7 +296,7 @@ const ListVisit: React.FC = () => {
                 <Text className="text-center mt-4 text-lg text-gray-500 dark:text-gray-400">
                   Không có chuyến thăm nào.
                 </Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={handleRefresh}
                   className="mt-4 bg-blue-500 px-6 py-2 rounded-full"
                 >
@@ -243,7 +305,7 @@ const ListVisit: React.FC = () => {
               </View>
             }
             showsVerticalScrollIndicator={false}
- 
+
             removeClippedSubviews={true}
             maxToRenderPerBatch={10}
             updateCellsBatchingPeriod={50}

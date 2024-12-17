@@ -16,7 +16,7 @@ import { ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { CheckInVerWithLP } from "@/Types/checkIn.type";
 import {
@@ -27,6 +27,7 @@ import { uploadToFirebase } from "@/firebase-config";
 import { useToast } from "@/components/Toast/ToastContext";
 import ImageViewer from "react-native-image-zoom-viewer";
 import { IImageInfo } from "react-native-image-zoom-viewer/built/image-viewer.type";
+import { resetValidCheckIn, ValidCheckInState } from "@/redux/slices/checkIn.slice";
 
 interface Visitor {
   visitorId: number;
@@ -80,7 +81,10 @@ interface ImageSliderProps {
 }
 
 const CheckInOverall = () => {
-  const { dataCheckIn } = useLocalSearchParams();
+  const dispatch = useDispatch();
+  const checkInDataSlice = useSelector<any>((state) => state.validCheckIn) as ValidCheckInState;
+
+  // const { dataCheckIn } = useLocalSearchParams();
   const [checkInStatus, setCheckInStatus] = useState<
     "pending" | "success" | "error"
   >("pending");
@@ -94,50 +98,50 @@ const CheckInOverall = () => {
     (state: RootState) => state.gate.selectedGateId
   );
 
-  const parsedDataCheckIn = useMemo(() => {
-    try {
-      if (typeof dataCheckIn === "string") {
-        const parsed = JSON.parse(dataCheckIn);
-        if (parsed.__type === "CheckInVerWithLP") {
-          delete parsed.__type;
-          return {
-            ...parsed,
-            VehicleSession: parsed.VehicleSession || {
-              LicensePlate: "",
-              vehicleImages: [],
-            },
-          };
-        }
-        return parsed;
-      }
-      return dataCheckIn;
-    } catch (error) {
-      console.error("Error parsing dataCheckIn:", error);
-      return null;
-    }
-  }, [dataCheckIn]);
-
-  const [checkInData, setCheckInData] = useState<CheckInVerWithLP>({
-    CredentialCard: parsedDataCheckIn?.CredentialCard || null,
-    SecurityInId: parsedDataCheckIn?.SecurityInId || 0,
-    GateInId: parsedDataCheckIn?.GateInId || Number(selectedGateId) || 0,
-    QrCardVerification: parsedDataCheckIn?.QrCardVerification || "",
-    Images: parsedDataCheckIn?.Images || [],
-    VehicleSession: parsedDataCheckIn?.VehicleSession || {
-      LicensePlate: "",
-      vehicleImages: [],
-    },
-  });
+  //   const parsedDataCheckIn = useMemo(() => {
+  //     try {
+  //       if (typeof dataCheckIn === "string") {
+  //         const parsed = JSON.parse(dataCheckIn);
+  //         if (parsed.__type === "CheckInVerWithLP") {
+  //           delete parsed.__type;
+  //           return {
+  //             ...parsed,
+  //             VehicleSession: parsed.VehicleSession || {
+  //               LicensePlate: "",
+  //               vehicleImages: [],
+  //             },
+  //           };
+  //         }
+  //         return parsed;
+  //       }
+  //       return dataCheckIn;
+  //     } catch (error) {
+  //       console.error("Error parsing dataCheckIn:", error);
+  //       return null;
+  //     }
+  //   }, [dataCheckIn]);
+  // console.log(parsedDataCheckIn);
+  //   const [checkInData, setCheckInData] = useState<CheckInVerWithLP>({
+  //     VisitDetailId: parsedDataCheckIn?.VisitDetailId || null,
+  //     SecurityInId: parsedDataCheckIn?.SecurityInId || 0,
+  //     GateInId: parsedDataCheckIn?.GateInId || Number(selectedGateId) || 0,
+  //     QrCardVerification: parsedDataCheckIn?.QrCardVerification || "",
+  //     Images: parsedDataCheckIn?.Images || [],
+  //     VehicleSession: parsedDataCheckIn?.VehicleSession || {
+  //       LicensePlate: "",
+  //       vehicleImages: [],
+  //     },
+  //   });
 
   useEffect(() => {
     const fetchUserId = async () => {
       try {
         const storedUserId = await AsyncStorage.getItem("userId");
         if (storedUserId) {
-          setCheckInData((prevState) => ({
-            ...prevState,
-            SecurityInId: Number(storedUserId) || 0,
-          }));
+          // setCheckInData((prevState) => ({
+          //   ...prevState,
+          //   SecurityInId: Number(storedUserId) || 0,
+          // }));
         }
       } catch (error) {
         console.error("Error fetching userId from AsyncStorage:", error);
@@ -154,9 +158,9 @@ const CheckInOverall = () => {
 
       try {
         if (
-          !checkInData ||
-          !checkInData.Images ||
-          checkInData.Images.length < 1
+          !checkInDataSlice ||
+          checkInDataSlice.Images === null ||
+          checkInDataSlice.Images.length < 1
           // ||
           // !checkInData.Images[0] ||
           // !checkInData.Images[1]
@@ -165,18 +169,18 @@ const CheckInOverall = () => {
         }
 
         const formData = new FormData();
-
+        // console.log("checkInData.VisitDetailId", checkInData.VisitDetailId)
         formData.append(
-          "CredentialCard",
-          checkInData.CredentialCard
-            ? checkInData.CredentialCard.toString()
+          "VisitDetailId",
+          checkInDataSlice.VisitDetailId
+            ? checkInDataSlice.VisitDetailId.toString()
             : ""
         );
-        formData.append("SecurityInId", checkInData.SecurityInId.toString());
-        formData.append("GateInId", checkInData.GateInId.toString());
-        formData.append("QrCardVerification", checkInData.QrCardVerification);
+        formData.append("SecurityInId", checkInDataSlice.SecurityInId.toString());
+        formData.append("GateInId", checkInDataSlice.GateInId.toString());
+        formData.append("QrCardVerification", checkInDataSlice.QrCardVerification.toString());
 
-        const shoeImage = checkInData.Images[1];
+        const shoeImage = checkInDataSlice.Images[1];
         const { downloadUrl: shoeImageUrl } = await uploadToFirebase(
           shoeImage.Image,
           `shoe_${Date.now()}.jpg`
@@ -185,11 +189,11 @@ const CheckInOverall = () => {
         formData.append("Images[1].ImageURL", shoeImageUrl.replace(/"/g, ""));
         formData.append("Images[1].Image", {
           uri: shoeImage.Image,
-          name: shoeImage.Image.split("/").pop() || "default.jpg",
+          name: shoeImage.Image?.split("/").pop() || "default.jpg",
           type: "image/jpeg",
         } as any);
 
-        const bodyImage = checkInData.Images[0];
+        const bodyImage = checkInDataSlice.Images[0];
         const { downloadUrl: bodyImageUrl } = await uploadToFirebase(
           bodyImage.Image,
           `body_${Date.now()}.jpg`
@@ -198,22 +202,22 @@ const CheckInOverall = () => {
         formData.append("Images[0].ImageURL", bodyImageUrl.replace(/"/g, ""));
         formData.append("Images[0].Image", {
           uri: bodyImage.Image,
-          name: bodyImage.Image.split("/").pop() || "default.jpg",
+          name: bodyImage.Image?.split("/").pop() || "default.jpg",
           type: "image/jpeg",
         } as any);
 
         if (
-          checkInData.VehicleSession &&
-          checkInData.VehicleSession.LicensePlate &&
-          checkInData.VehicleSession.vehicleImages &&
-          checkInData.VehicleSession.vehicleImages.length > 0
+          checkInDataSlice.VehicleSession &&
+          checkInDataSlice.VehicleSession.LicensePlate &&
+          checkInDataSlice.VehicleSession.vehicleImages &&
+          checkInDataSlice.VehicleSession.vehicleImages.length > 0
         ) {
           formData.append(
             "VehicleSession.LicensePlate",
-            checkInData.VehicleSession.LicensePlate
+            checkInDataSlice.VehicleSession.LicensePlate
           );
 
-          const vehicleImage = checkInData.VehicleSession.vehicleImages[0];
+          const vehicleImage = checkInDataSlice.VehicleSession.vehicleImages[0];
 
           if (vehicleImage && vehicleImage.Image) {
             const { downloadUrl: licensePlateImageUrl } =
@@ -234,11 +238,11 @@ const CheckInOverall = () => {
         }
 
         console.log("Form data being sent:", formData);
-
         const response = await checkIn(formData).unwrap();
-        
+
         setResultData(response);
         setCheckInStatus("success");
+        dispatch(resetValidCheckIn());
         setCheckInMessage("Bạn vừa check in thành công!");
         showToast("Bạn vừa check in thành công!", "success");
       } catch (error: any) {
@@ -253,7 +257,7 @@ const CheckInOverall = () => {
             onPress: () => {
               router.navigate({
                 pathname: "/check-in/ListVisit",
-                params: { credentialCardId: parsedDataCheckIn?.CredentialCard },
+                params: { credentialCardId: checkInDataSlice?.CredentialCard },
               });
             },
           },
@@ -765,20 +769,20 @@ const CheckInOverall = () => {
               >
                 <ImageSliderForBodyShoe
                   response={resultData}
-                  checkInData={checkInData}
+                  checkInData={checkInDataSlice}
                 />
               </SectionDropDown>
 
-              {checkInData?.VehicleSession?.vehicleImages?.[0]?.Image && (
+              {checkInDataSlice?.VehicleSession?.vehicleImages?.[0]?.Image && (
                 <SectionDropDown
                   title="Hình ảnh biển số xe"
                   icon={<View className="w-6 h-6 bg-pink-500 rounded-full" />}
                 >
                   <View>
-                    {checkInData.VehicleSession?.LicensePlate && (
+                    {checkInDataSlice.VehicleSession?.LicensePlate && (
                       <View className="mb-4 p-3 bg-gray-100 rounded-lg">
                         <Text className="text-gray-800 text-center text-lg font-semibold">
-                          Biển số: {checkInData.VehicleSession.LicensePlate}
+                          Biển số: {checkInDataSlice.VehicleSession.LicensePlate}
                         </Text>
                       </View>
                     )}
@@ -786,7 +790,7 @@ const CheckInOverall = () => {
                     <View className="relative">
                       <Image
                         source={{
-                          uri: checkInData.VehicleSession.vehicleImages[0]
+                          uri: checkInDataSlice.VehicleSession.vehicleImages[0]
                             .Image,
                         }}
                         className="w-full h-48 rounded-lg"

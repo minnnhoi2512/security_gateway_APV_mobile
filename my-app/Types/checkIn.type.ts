@@ -16,7 +16,7 @@ export interface Images {
 
 
 export interface CheckInVer02 {
-  CredentialCard: number | null;
+  VisitDetailId: number | null;
   SecurityInId: number; 
   GateInId: number;
   QrCardVerification: string;
@@ -28,7 +28,7 @@ export interface CheckInVer02 {
 }
 
 export interface CheckInVerWithLP {
-  CredentialCard: number | null;
+  VisitDetailId: number | null;
   SecurityInId: number; 
   GateInId: number;
   QrCardVerification: string;
@@ -47,7 +47,7 @@ export interface CheckInVerWithLP {
 }
 
 export interface ValidCheckIn {
-  CredentialCard: string | null;
+  VisitDetailId: string | null;
   QRCardVerification: string;
   ImageShoe: any
 }
