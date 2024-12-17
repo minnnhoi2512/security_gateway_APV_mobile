@@ -26,10 +26,10 @@ export const checkinApi = createApi({
         } else {
           formData = new FormData();
           if (
-            data.CredentialCard !== null &&
-            data.CredentialCard !== undefined
+            data.VisitDetailId !== null &&
+            data.VisitDetailId !== undefined
           ) {
-            formData.append("CredentialCard", data.CredentialCard.toString());
+            formData.append("VisitDetailId", data.VisitDetailId.toString());
           } else {
             console.error("CredentialCard is null or undefined.");
             throw new Error("CredentialCard cannot be null or undefined.");
@@ -65,7 +65,7 @@ export const checkinApi = createApi({
           formData = new FormData();
     
      
-          formData.append("CredentialCard", data.CredentialCard?.toString() || "");
+          formData.append("VisitDetailId", data.VisitDetailId?.toString() || "");
     
            
           formData.append("QrCardVerification", data.QRCardVerification || "");

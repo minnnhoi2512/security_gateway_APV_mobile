@@ -31,15 +31,15 @@ import {
   CheckInVerWithLP,
   ValidCheckIn,
 } from "@/Types/checkIn.type";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
 import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
-import { fetchWithTimeout } from "@/hooks/util";
+import { setVehicleSession, ValidCheckInState } from "@/redux/slices/checkIn.slice";
 
 interface ImageData {
-  ImageType: "Shoe";
+  ImageType: string;
   ImageURL: string | null;
   ImageFile: string | null;
 }
@@ -50,6 +50,8 @@ interface CapturedImage {
 }
 
 const CheckLicensePlate = () => {
+  const dispatch = useDispatch();
+  const checkInDataSlice = useSelector<any>((state) => state.validCheckIn) as ValidCheckInState;
   const { visitId } = useLocalSearchParams<{ visitId: string }>();
   const router = useRouter();
   const qrLock = useRef(false);
@@ -59,7 +61,7 @@ const CheckLicensePlate = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [qrImage, setQrImage] = useState<string | null>(null);
-  const [capturedImage, setCapturedImage] = useState<ImageData[]>([]);
+  const [capturedImages, setCapturedImages] = useState<ImageData[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasNavigated, setHasNavigated] = useState(false);
   const [hasScannedQR, setHasScannedQR] = useState(false);
@@ -94,7 +96,7 @@ const CheckLicensePlate = () => {
   );
 
   const [checkInData, setCheckInData] = useState<CheckInVerWithLP>({
-    CredentialCard: null,
+    VisitDetailId: null,
     SecurityInId: 0,
     GateInId: Number(selectedGateId) || 0,
     QrCardVerification: "",
@@ -106,7 +108,7 @@ const CheckLicensePlate = () => {
   });
 
   const [validCheckInData, setValidCheckInData] = useState<ValidCheckIn>({
-    CredentialCard: null,
+    VisitDetailId: null,
     QRCardVerification: "",
     ImageShoe: [],
   });
@@ -118,13 +120,13 @@ const CheckLicensePlate = () => {
     isError,
   } = useGetVisitDetailByIdQuery(visitId);
 
-  const {
-    data: qrCardData,
-    isError: isErrorQr,
-    refetch,
-  } = useGetDataByCardVerificationQuery(checkInData.QrCardVerification, {
-    skip: checkInData.QrCardVerification == "",
-  });
+  // const {
+  //   data: qrCardData,
+  //   isError: isErrorQr,
+  //   refetch,
+  // } = useGetDataByCardVerificationQuery(checkInData.QrCardVerification, {
+  //   skip: checkInData.QrCardVerification == "",
+  // });
 
   // Check camera permissions
   useEffect(() => {
@@ -287,22 +289,22 @@ const CheckLicensePlate = () => {
         console.log("Setting state with captured images:", images.length);
 
         // Cập nhật checkInData
-        setCheckInData((prevData) => ({
-          ...prevData,
-          QrCardVerification: qrCardData?.cardVerification || "",
-          Images: images,
-        }));
+        // setCheckInData((prevData) => ({
+        //   ...prevData,
+        //   QrCardVerification: qrCardData?.cardVerification || "",
+        //   Images: images,
+        // }));
 
         // Cập nhật validCheckInData
         const shoeImage = images.find(
           (img) => img.ImageType === "CheckIn_Shoe"
         );
         if (shoeImage?.Image) {
-          setValidCheckInData((prevData) => ({
-            ...prevData,
-            QRCardVerification: qrCardData?.cardVerification || "",
-            ImageShoe: shoeImage.Image,
-          }));
+          // setValidCheckInData((prevData) => ({
+          //   ...prevData,
+          //   QRCardVerification: qrCardData?.cardVerification || "",
+          //   ImageShoe: shoeImage.Image,
+          // }));
           console.log("ValidCheckInData updated with shoe image");
         }
         return images;
@@ -320,21 +322,21 @@ const CheckLicensePlate = () => {
       return;
     }
   };
-  const directData = async () => {
-    if (qrCardData) {
-      setIsProcessing(true);
-      if (qrCardData.cardImage) {
-        setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
-      }
-      if (qrCardData?.cardVerification) {
-        setHasScannedQR(true);
-      }
-      setIsProcessing(false);
-    }
-  };
-  useEffect(() => {
-    directData();
-  }, [qrCardData]);
+  // const directData = async () => {
+  //   if (qrCardData) {
+  //     setIsProcessing(true);
+  //     if (qrCardData.cardImage) {
+  //       setQrImage(`data:image/png;base64,${qrCardData.cardImage}`);
+  //     }
+  //     if (qrCardData?.cardVerification) {
+  //       setHasScannedQR(true);
+  //     }
+  //     setIsProcessing(false);
+  //   }
+  // };
+  // useEffect(() => {
+  //   directData();
+  // }, [qrCardData]);
 
   // console.log("check in data: ", checkInData);
 
@@ -405,17 +407,27 @@ const CheckLicensePlate = () => {
   };
 
   const takePhoto = async () => {
+
     try {
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: "images",
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.8,
         allowsEditing: false,
         base64: false,
         exif: false,
       });
-
+      console.log("Check", result);
       if (!result.canceled && result.assets[0]) {
         await uploadImageToAPI(result.assets[0].uri);
+        setCapturedImages((prev) => [
+          ...prev,
+          {
+            ImageType: "LicensePlate_In",
+            ImageURL: "",
+            ImageFile: result.assets[0].uri,
+          },
+        ]);
+        console.log(capturedImages);
       }
     } catch (error) {
       console.error("Failed to take picture:", error);
@@ -423,47 +435,80 @@ const CheckLicensePlate = () => {
     }
   };
 
-  const validateAndNavigate = async (checkInData: CheckInVerWithLP) => {
+  // const validateAndNavigate = async (checkInData: CheckInVerWithLP) => {
+  //   console.log(checkInData);
+  //   const isDataComplete =
+  //     checkInData.VisitDetailId !== null &&
+  //     checkInData.SecurityInId !== 0 &&
+  //     checkInData.GateInId !== 0 &&
+  //     checkInData.QrCardVerification !== "" &&
+  //     checkInData.Images.length > 0 &&
+  //     checkInData.VehicleSession.LicensePlate !== "" &&
+  //     checkInData.VehicleSession.vehicleImages.length > 0;
+  //   if (!isDataComplete) {
+  //     return;
+  //   }
+
+  //   try {
+  //     const dataToSend = {
+  //       ...checkInData,
+  //       __type: "CheckInVerWithLP",
+  //     };
+
+  //     router.push({
+  //       pathname: "/check-in/ValidCheckInScreen",
+  //       params: {
+  //         dataCheckIn: JSON.stringify(dataToSend),
+  //         dataValid: JSON.stringify({
+  //           CredentialCard: checkInData.VisitDetailId,
+  //           QRCardVerification: checkInData.QrCardVerification,
+  //           ImageShoe:
+  //             checkInData.Images.find((img) => img.ImageType === "CheckIn_Shoe")
+  //               ?.Image || null,
+  //         }),
+  //       },
+  //     });
+  //   } catch (error: any) {
+  //     console.log("ERR", error);
+  //     const errorMessage =
+  //       error.data?.message || "Vui lòng đảm bảo đã có đầy đủ thông tin";
+  //     Alert.alert("Đã xảy ra lỗi", errorMessage);
+  //   }
+  // };
+  const handleNext = () => {
+    // const validCapturedImages = capturedImages.map(image => ({
+    //   ...image,
+    //   ImageURL: image.ImageURL || '', // Ensure ImageURL is a string
+    // }));
+    const vehicleSession = {
+      LicensePlate: checkInData.VehicleSession?.LicensePlate || '',
+      vehicleImages: capturedImages.map(image => ({
+        ImageType: image.ImageType,
+        ImageURL: image.ImageURL || '',
+        Image: image.ImageFile || '',
+      })),
+    };
+    dispatch(setVehicleSession(vehicleSession));
     console.log(checkInData);
-    const isDataComplete =
-      checkInData.CredentialCard !== null &&
-      checkInData.SecurityInId !== 0 &&
-      checkInData.GateInId !== 0 &&
-      checkInData.QrCardVerification !== "" &&
-      checkInData.Images.length > 0 &&
-      checkInData.VehicleSession.LicensePlate !== "" &&
-      checkInData.VehicleSession.vehicleImages.length > 0;
-    if (!isDataComplete) {
-      return;
-    }
-
-    try {
-      const dataToSend = {
-        ...checkInData,
-        __type: "CheckInVerWithLP",
-      };
-
-      router.push({
-        pathname: "/check-in/ValidCheckInScreen",
-        params: {
-          dataCheckIn: JSON.stringify(dataToSend),
-          dataValid: JSON.stringify({
-            CredentialCard: checkInData.CredentialCard,
-            QRCardVerification: checkInData.QrCardVerification,
-            ImageShoe:
-              checkInData.Images.find((img) => img.ImageType === "CheckIn_Shoe")
-                ?.Image || null,
-          }),
-        },
-      });
-    } catch (error: any) {
-      console.log("ERR", error);
-      const errorMessage =
-        error.data?.message || "Vui lòng đảm bảo đã có đầy đủ thông tin";
-      Alert.alert("Đã xảy ra lỗi", errorMessage);
-    }
+    console.log("checkInDataSlice", checkInDataSlice);
+    router.push({
+      pathname: "/check-in/UserDetail",
+      params: {
+        dataCheckIn: JSON.stringify(checkInDataSlice),
+        dataValid: JSON.stringify({
+          VisitDetailId: checkInDataSlice.VisitDetailId,
+          QRCardVerification: checkInDataSlice.QrCardVerification,
+          ImageShoe:
+            checkInDataSlice.Images?.find((img) => img.ImageType === "CheckIn_Shoe")
+              ?.Image || null,
+        }),
+      },
+    });
+    // router.push({
+    //   pathname: "/check-in/UserDetail",
+    //   // params: { visitDetailId, VerifiedId, verifiedType },
+    // });
   };
-
   // useEffect(() => {
   //   if (isErrorQr && !hasShownError) {
   //     setHasShownError(true);
@@ -531,11 +576,11 @@ const CheckLicensePlate = () => {
           setHasScannedQR(true);
           const captureImage: CapturedImage[] | undefined =
             await handleQrDataAndCapture();
-          await validateAndNavigate({
-            ...checkInData,
-            Images: captureImage || [],
-            QrCardVerification: data,
-          });
+          // await validateAndNavigate({
+          //   ...checkInData,
+          //   Images: captureImage || [],
+          //   QrCardVerification: data,
+          // });
         } catch (error) {
           console.error("Error handling QR Code:", error);
           Alert.alert("Error", "Failed to process QR code. Please try again.");
@@ -628,28 +673,28 @@ const CheckLicensePlate = () => {
 
       <ScrollView>
         <GestureHandlerRootView className="flex-1 p-5">
+          <TouchableOpacity
+            className="flex-row items-center justify-center space-x-2 bg-blue-500 p-4 rounded-lg"
+            onPress={takePhoto}
+          >
+            <Ionicons name="camera" size={24} color="white" />
+            <Text className="text-white font-medium">
+              Chụp lại ảnh nhận dạng xe
+            </Text>
+          </TouchableOpacity>
           {/* Camera Capture Button */}
           <View className="mb-4">
-            <TouchableOpacity
-              className="flex-row items-center justify-center space-x-2 bg-blue-500 p-4 rounded-lg"
-              onPress={takePhoto}
-            >
-              <Ionicons name="camera" size={24} color="white" />
-              <Text className="text-white font-medium">
-                Chụp lại ảnh nhận dạng xe
-              </Text>
-            </TouchableOpacity>
 
-            {capturedImage.length > 0 && (
+            {capturedImages.length > 0 && (
               <View className="mt-4">
                 <Text className="text-gray-700 mb-2">Ảnh đã chụp:</Text>
                 <TouchableOpacity
                   onPress={() =>
-                    setSelectedImage(capturedImage[0].ImageFile || null)
+                    setSelectedImage(capturedImages[0].ImageFile || null)
                   }
                 >
                   <Image
-                    source={{ uri: capturedImage[0].ImageFile || "" }}
+                    source={{ uri: capturedImages[0].ImageFile || "" }}
                     className="w-full h-40 rounded-lg"
                     resizeMode="cover"
                   />
@@ -658,7 +703,7 @@ const CheckLicensePlate = () => {
             )}
           </View>
 
-          {/* QR Scanner */}
+          {/* QR Scanner
           {
             <View className="aspect-[2/4] relative mb-4">
               <CameraView
@@ -674,16 +719,15 @@ const CheckLicensePlate = () => {
                 </Text>
               </View>
             </View>
-          }
+          } */}
 
           {/* Status Indicators */}
           <View className="mt-4 p-4 bg-white rounded-lg">
             <Text className="text-lg font-semibold mb-2">Trạng thái:</Text>
             <View className="flex-row items-center space-x-2">
               <View
-                className={`w-3 h-3 rounded-full ${
-                  hasPhotoTaken ? "bg-green-500" : "bg-red-500"
-                }`}
+                className={`w-3 h-3 rounded-full ${hasPhotoTaken ? "bg-green-500" : "bg-red-500"
+                  }`}
               />
               <Text className="text-gray-700">
                 Chụp ảnh: {hasPhotoTaken ? "Đã hoàn thành" : "Chưa hoàn thành"}
@@ -691,16 +735,25 @@ const CheckLicensePlate = () => {
             </View>
             <View className="flex-row items-center space-x-2 mt-2">
               <View
-                className={`w-3 h-3 rounded-full ${
-                  hasScannedQR ? "bg-green-500" : "bg-red-500"
-                }`}
+                className={`w-3 h-3 rounded-full ${hasScannedQR ? "bg-green-500" : "bg-red-500"
+                  }`}
               />
               <Text className="text-gray-700">
                 Quét QR: {hasScannedQR ? "Đã hoàn thành" : "Chưa hoàn thành"}
               </Text>
             </View>
           </View>
-
+          <View className="absolute bottom-0 left-0 right-0 bg-white shadow-t-lg">
+            <TouchableOpacity
+              onPress={handleNext}
+              className="m-4 bg-teal-600 rounded-xl flex-row items-center justify-center py-4"
+            >
+              <Text className="text-lg font-medium text-white mr-2">
+                Tiến hành quét thẻ QR
+              </Text>
+              <MaterialIcons name="arrow-forward" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
           {/* Modal for viewing images */}
           <Modal
             visible={!!selectedImage}

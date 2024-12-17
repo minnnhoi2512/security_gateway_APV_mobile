@@ -25,6 +25,8 @@ import ImageViewer from "react-native-image-zoom-viewer";
 import { MapPinIcon } from "lucide-react-native";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { IImageInfo } from "react-native-image-zoom-viewer/built/image-viewer.type";
+import { resetValidCheckIn, setGateInId, ValidCheckInState } from "@/redux/slices/checkIn.slice";
+import { useDispatch, useSelector } from "react-redux";
 
 interface Visitor {
   visitorId: number;
@@ -72,13 +74,13 @@ interface ImageSectionProps {
 }
 
 interface ValidCheckInData {
-  CredentialCard: string | null;
+  VisitDetailId: string | null;
   QRCardVerification: string;
   ImageShoe: Array<{ imageFile: string }>;
 }
 
 interface ParsedValidData {
-  CredentialCard: string | null;
+  VisitDetailId: string | null;
   QRCardVerification: string;
 
   ImageShoe: string | string[];
@@ -90,22 +92,25 @@ interface Response {
 
 interface ImageSliderProps {
   response?: Response;
-  checkInData?: CheckInVerWithLP;
+  checkInData?: ValidCheckInState;
 }
 
 const ValidCheckInScreen = () => {
+  const checkInDataSlice = useSelector<any>((state) => state.validCheckIn) as ValidCheckInState;
+  const dispatch = useDispatch();
   const params = useLocalSearchParams();
   const router = useRouter();
   const checkInString = params.dataCheckIn as string;
-  const checkInData: CheckInVerWithLP = checkInString
-    ? JSON.parse(checkInString)
-    : null;
+  // const checkInData: CheckInVerWithLP = checkInString
+  //   ? JSON.parse(checkInString)
+  //   : null;
+  // console.log("checkInData", checkInData);
   const [
     validCheckIn,
     { data: response, error, isLoading: isLoadingValidRes },
   ] = useValidCheckInMutation();
 
-  // console.log("Check in da: ", params.dataValid);
+  console.log("Check in da: ", params.dataValid);
   // console.log("Check in da res: ", response);
 
   useEffect(() => {
@@ -116,40 +121,47 @@ const ValidCheckInScreen = () => {
           ? params.dataValid[0]
           : params.dataValid;
 
-        const parsedValidData = JSON.parse(dataValid) as ParsedValidData;
-        let imageShoeData: Array<{ imageFile: string }> = [];
+        // const parsedValidData = JSON.parse(dataValid) as ParsedValidData;
+        // const parsedValidData = {
+        //   ImageShoe: checkInDataSlice.Images?.find((img) => img.ImageType === "CheckIn_Shoe")?.Image || null,
+        // };
+      
+        // let imageShoeData: { imageFile: string }[] = [];
+      
+        // if (typeof parsedValidData.ImageShoe === "string") {
+        //   imageShoeData = [{ imageFile: parsedValidData.ImageShoe }];
+        // } else if (Array.isArray(parsedValidData.ImageShoe)) {
+        //   imageShoeData = parsedValidData.ImageShoe?.filter(
+        //     (path : any): path is string => typeof path === "string" && path !== ""
+        //   ).map((path : any) => ({ imageFile: path }));
+        // } else if (
+        //   parsedValidData.ImageShoe &&
+        //   typeof parsedValidData.ImageShoe === "object"
+        // ) {
+        //   const imgFile = (parsedValidData.ImageShoe as any).imageFile;
+        //   if (imgFile) {
+        //     imageShoeData = [{ imageFile: imgFile }];
+        //   }
+        // }
 
-        if (typeof parsedValidData.ImageShoe === "string") {
-          imageShoeData = [{ imageFile: parsedValidData.ImageShoe }];
-        } else if (Array.isArray(parsedValidData.ImageShoe)) {
-          imageShoeData = parsedValidData.ImageShoe.filter(
-            (path): path is string => typeof path === "string" && path !== ""
-          ).map((path) => ({ imageFile: path }));
-        } else if (
-          parsedValidData.ImageShoe &&
-          typeof parsedValidData.ImageShoe === "object"
-        ) {
-          const imgFile = (parsedValidData.ImageShoe as any).imageFile;
-          if (imgFile) {
-            imageShoeData = [{ imageFile: imgFile }];
-          }
-        }
-
-        if (imageShoeData.length === 0) {
-          console.error(
-            "No valid image data to send. Original data:",
-            parsedValidData.ImageShoe
-          );
-          return;
-        }
+        // if (imageShoeData.length === 0) {
+        //   console.error(
+        //     "No valid image data to send. Original data:",
+        //     parsedValidData.ImageShoe
+        //   );
+        //   return;
+        // }
 
         const validCheckInData: ValidCheckInData = {
-          CredentialCard: parsedValidData.CredentialCard || null,
-          QRCardVerification: parsedValidData.QRCardVerification,
-          ImageShoe: imageShoeData,
+          VisitDetailId: checkInDataSlice.VisitDetailId ? checkInDataSlice.VisitDetailId.toString() : null,
+          QRCardVerification: checkInDataSlice.QrCardVerification,
+          ImageShoe: checkInDataSlice.Images?.filter((img) => img.ImageType === "CheckIn_Shoe").map((img) => ({
+            imageFile: img.Image || '',
+          })) || [],
         };
-
+        
         // Gọi API
+        console.log("validCheckInData", validCheckInData);
         const result = await validCheckIn(validCheckInData);
         // console.log("API Response:", result);
 
@@ -163,12 +175,13 @@ const ValidCheckInScreen = () => {
             "message" in error.data
           ) {
             const message = (error.data as { message: string }).message;
-            router.navigate("/(tabs)/checkin");
+            dispatch(resetValidCheckIn());
             Alert.alert("Lỗi", message, [
               {
                 text: "OK",
               },
             ]);
+            router.navigate("/(tabs)/checkin");
             return;
           } else {
             Alert.alert("Lỗi", "Đã xảy ra lỗi không xác định từ API.");
@@ -197,11 +210,12 @@ const ValidCheckInScreen = () => {
   }, [params.dataValid]);
 
   const handleNext = () => {
+    console.log(checkInDataSlice);
     router.push({
       pathname: "/check-in/CheckInOverall",
-      params: {
-        dataCheckIn: JSON.stringify(checkInData),
-      },
+      // params: {
+      //   dataCheckIn: JSON.stringify(checkInDataSlice),
+      // },
     });
   };
 
@@ -437,7 +451,7 @@ const ValidCheckInScreen = () => {
   //         allImages.push({
   //           url: img.Image,
   //         });
-          
+
   //         let label = '';
   //         switch(img.ImageType) {
   //           case 'CheckIn_Shoe':
@@ -459,7 +473,7 @@ const ValidCheckInScreen = () => {
   //       });
   //       tempLabels.push('Ảnh xe');
   //     }
-  
+
 
   //     return allImages;
   //   }, [response, checkInData]);
@@ -554,286 +568,286 @@ const ValidCheckInScreen = () => {
   // };
 
 
-const ImageSlider: React.FC<ImageSliderProps> = ({
-  response,
-  checkInData,
-}) => {
-  const [isImageViewVisible, setIsImageViewVisible] = useState<boolean>(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+  const ImageSlider: React.FC<ImageSliderProps> = ({
+    response,
+    checkInData,
+  }) => {
+    const [isImageViewVisible, setIsImageViewVisible] = useState<boolean>(false);
+    const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
 
-  const { images, labels } = useMemo(() => {
-    const tempImages: IImageInfo[] = [];
-    const tempLabels: string[] = [];
+    const { images, labels } = useMemo(() => {
+      const tempImages: IImageInfo[] = [];
+      const tempLabels: string[] = [];
 
-    if (response?.visitor.visitorCredentialFrontImage) {
-      tempImages.push({
-        url: `data:image/png;base64,${response.visitor.visitorCredentialFrontImage}`,
-      });
-      tempLabels.push('Ảnh CCCD');
-    }
-
-    checkInData?.Images?.forEach((img) => {
-      if (img.Image) {
+      if (response?.visitor.visitorCredentialFrontImage) {
         tempImages.push({
-          url: img.Image,
+          url: `data:image/png;base64,${response.visitor.visitorCredentialFrontImage}`,
         });
-        
-        let label = '';
-        switch(img.ImageType) {
-          case 'CheckIn_Shoe':
-            label = 'Ảnh giày';
-            break;
-          case 'CheckIn_Body':
-            label = 'Ảnh toàn thân';
-            break;
-          default:
-            label = 'Ảnh khác';
-        }
-        tempLabels.push(label);
+        tempLabels.push('Ảnh CCCD');
       }
-    });
 
-    if (checkInData?.VehicleSession?.vehicleImages?.[0]?.Image) {
-      tempImages.push({
-        url: checkInData.VehicleSession.vehicleImages[0].Image,
+      checkInData?.Images?.forEach((img) => {
+        if (img.Image) {
+          tempImages.push({
+            url: img.Image,
+          });
+
+          let label = '';
+          switch (img.ImageType) {
+            case 'CheckIn_Shoe':
+              label = 'Ảnh giày';
+              break;
+            case 'CheckIn_Body':
+              label = 'Ảnh toàn thân';
+              break;
+            default:
+              label = 'Ảnh khác';
+          }
+          tempLabels.push(label);
+        }
       });
-      tempLabels.push('Ảnh xe');
-    }
 
-    return { 
-      images: tempImages,
-      labels: tempLabels 
-    };
-  }, [response, checkInData]);
-
-  return (
-    <View className="mt-4 w-full">
-      <ScrollView
-        horizontal={true}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-        }}
-      >
-        {images.map((image, index) => (
-          <TouchableOpacity
-            key={index}
-            onPress={() => {
-              setCurrentImageIndex(index);
-              setIsImageViewVisible(true);
-            }}
-            className="mr-1"
-            style={{
-              width: 200,
-              aspectRatio: 4 / 3,
-            }}
-          >
-            <View style={{ position: 'relative', width: '100%', height: '90%' }}>
-              <Image
-                source={{ uri: image.url }}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: 8,
-                }}
-                resizeMode="cover"
-              />
-              <View
-                style={{
-                  position: 'absolute',
-                  bottom: 8,
-                  right: 8,
-                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                  paddingVertical: 4,
-                  paddingHorizontal: 8,
-                  borderRadius: 4,
-                }}
-              >
-                <Text style={{ color: 'white', fontSize: 12 }}>{labels[index]}</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <Modal
-        visible={isImageViewVisible}
-        transparent={true}
-        onRequestClose={() => setIsImageViewVisible(false)}
-      >
-        <ImageViewer
-          imageUrls={images}
-          enableSwipeDown={true}
-          onSwipeDown={() => setIsImageViewVisible(false)}
-          onCancel={() => setIsImageViewVisible(false)}
-          index={currentImageIndex}
-          backgroundColor="rgba(0, 0, 0, 0.9)"
-          renderHeader={() => (
-            <View style={{
-              position: 'absolute',
-              top: 40,
-              left: 0,
-              right: 0,
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              paddingHorizontal: 20,
-              zIndex: 100,
-            }}>
-              <Text style={{ color: "white" }}>
-                {`${currentImageIndex + 1}/${images.length} - ${labels[currentImageIndex]}`}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setIsImageViewVisible(false)}
-                style={{
-                  padding: 10,
-                }}
-              >
-                <Text style={{ color: "white", fontSize: 16 }}>✕</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-          renderIndicator={(currentIndex?: number, allSize?: number) => (
-            <View />
-          )}
-        />
-      </Modal>
-    </View>
-  );
-};
-
-const ImageSliderForBodyShoe: React.FC<ImageSliderProps> = ({
-
-  checkInData,
-}) => {
-  const [isImageViewVisible, setIsImageViewVisible] = useState<boolean>(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
-
-  const { images, labels } = useMemo(() => {
-    const tempImages: IImageInfo[] = [];
-    const tempLabels: string[] = [];
- 
-    checkInData?.Images?.forEach((img) => {
-      if (img.Image) {
+      if (checkInData?.VehicleSession?.vehicleImages?.[0]?.Image) {
         tempImages.push({
-          url: img.Image,
+          url: checkInData.VehicleSession.vehicleImages[0].Image,
         });
-        
-        let label = '';
-        switch(img.ImageType) {
-          case 'CheckIn_Shoe':
-            label = 'Ảnh giày';
-            break;
-          case 'CheckIn_Body':
-            label = 'Ảnh toàn thân';
-            break;
-          default:
-            label = 'Ảnh khác';
-        }
-        tempLabels.push(label);
+        tempLabels.push('Ảnh xe');
       }
-    });
 
- 
-    return { 
-      images: tempImages,
-      labels: tempLabels 
-    };
-  }, [ checkInData]);
+      return {
+        images: tempImages,
+        labels: tempLabels
+      };
+    }, [response, checkInData]);
 
-  return (
-    <View className="mt-4 w-full">
-      <ScrollView
-        horizontal={true}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-        }}
-      >
-        {images.map((image, index) => (
-          <TouchableOpacity
-            key={index}
-            onPress={() => {
-              setCurrentImageIndex(index);
-              setIsImageViewVisible(true);
-            }}
-            className="mr-1"
-            style={{
-              width: 200,
-              aspectRatio: 4 / 3,
-            }}
-          >
-            <View style={{ position: 'relative', width: '100%', height: '90%' }}>
-              <Image
-                source={{ uri: image.url }}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: 8,
-                }}
-                resizeMode="cover"
-              />
-              <View
-                style={{
-                  position: 'absolute',
-                  bottom: 8,
-                  right: 8,
-                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                  paddingVertical: 4,
-                  paddingHorizontal: 8,
-                  borderRadius: 4,
-                }}
-              >
-                <Text style={{ color: 'white', fontSize: 12 }}>{labels[index]}</Text>
+    return (
+      <View className="mt-4 w-full">
+        <ScrollView
+          horizontal={true}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+          }}
+        >
+          {images.map((image, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => {
+                setCurrentImageIndex(index);
+                setIsImageViewVisible(true);
+              }}
+              className="mr-1"
+              style={{
+                width: 200,
+                aspectRatio: 4 / 3,
+              }}
+            >
+              <View style={{ position: 'relative', width: '100%', height: '90%' }}>
+                <Image
+                  source={{ uri: image.url }}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 8,
+                  }}
+                  resizeMode="cover"
+                />
+                <View
+                  style={{
+                    position: 'absolute',
+                    bottom: 8,
+                    right: 8,
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    paddingVertical: 4,
+                    paddingHorizontal: 8,
+                    borderRadius: 4,
+                  }}
+                >
+                  <Text style={{ color: 'white', fontSize: 12 }}>{labels[index]}</Text>
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
-      <Modal
-        visible={isImageViewVisible}
-        transparent={true}
-        onRequestClose={() => setIsImageViewVisible(false)}
-      >
-        <ImageViewer
-          imageUrls={images}
-          enableSwipeDown={true}
-          onSwipeDown={() => setIsImageViewVisible(false)}
-          onCancel={() => setIsImageViewVisible(false)}
-          index={currentImageIndex}
-          backgroundColor="rgba(0, 0, 0, 0.9)"
-          renderHeader={() => (
-            <View style={{
-              position: 'absolute',
-              top: 40,
-              left: 0,
-              right: 0,
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              paddingHorizontal: 20,
-              zIndex: 100,
-            }}>
-              <Text style={{ color: "white" }}>
-                {`${currentImageIndex + 1}/${images.length} - ${labels[currentImageIndex]}`}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setIsImageViewVisible(false)}
-                style={{
-                  padding: 10,
-                }}
-              >
-                <Text style={{ color: "white", fontSize: 16 }}>✕</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-          renderIndicator={(currentIndex?: number, allSize?: number) => (
-            <View />
-          )}
-        />
-      </Modal>
-    </View>
-  );
-};
+        <Modal
+          visible={isImageViewVisible}
+          transparent={true}
+          onRequestClose={() => setIsImageViewVisible(false)}
+        >
+          <ImageViewer
+            imageUrls={images}
+            enableSwipeDown={true}
+            onSwipeDown={() => setIsImageViewVisible(false)}
+            onCancel={() => setIsImageViewVisible(false)}
+            index={currentImageIndex}
+            backgroundColor="rgba(0, 0, 0, 0.9)"
+            renderHeader={() => (
+              <View style={{
+                position: 'absolute',
+                top: 40,
+                left: 0,
+                right: 0,
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                paddingHorizontal: 20,
+                zIndex: 100,
+              }}>
+                <Text style={{ color: "white" }}>
+                  {`${currentImageIndex + 1}/${images.length} - ${labels[currentImageIndex]}`}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setIsImageViewVisible(false)}
+                  style={{
+                    padding: 10,
+                  }}
+                >
+                  <Text style={{ color: "white", fontSize: 16 }}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            renderIndicator={(currentIndex?: number, allSize?: number) => (
+              <View />
+            )}
+          />
+        </Modal>
+      </View>
+    );
+  };
+
+  const ImageSliderForBodyShoe: React.FC<ImageSliderProps> = ({
+
+    checkInData,
+  }) => {
+    const [isImageViewVisible, setIsImageViewVisible] = useState<boolean>(false);
+    const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+
+    const { images, labels } = useMemo(() => {
+      const tempImages: IImageInfo[] = [];
+      const tempLabels: string[] = [];
+
+      checkInData?.Images?.forEach((img) => {
+        if (img.Image) {
+          tempImages.push({
+            url: img.Image,
+          });
+
+          let label = '';
+          switch (img.ImageType) {
+            case 'CheckIn_Shoe':
+              label = 'Ảnh giày';
+              break;
+            case 'CheckIn_Body':
+              label = 'Ảnh toàn thân';
+              break;
+            default:
+              label = 'Ảnh khác';
+          }
+          tempLabels.push(label);
+        }
+      });
+
+
+      return {
+        images: tempImages,
+        labels: tempLabels
+      };
+    }, [checkInData]);
+
+    return (
+      <View className="mt-4 w-full">
+        <ScrollView
+          horizontal={true}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+          }}
+        >
+          {images.map((image, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => {
+                setCurrentImageIndex(index);
+                setIsImageViewVisible(true);
+              }}
+              className="mr-1"
+              style={{
+                width: 200,
+                aspectRatio: 4 / 3,
+              }}
+            >
+              <View style={{ position: 'relative', width: '100%', height: '90%' }}>
+                <Image
+                  source={{ uri: image.url }}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 8,
+                  }}
+                  resizeMode="cover"
+                />
+                <View
+                  style={{
+                    position: 'absolute',
+                    bottom: 8,
+                    right: 8,
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    paddingVertical: 4,
+                    paddingHorizontal: 8,
+                    borderRadius: 4,
+                  }}
+                >
+                  <Text style={{ color: 'white', fontSize: 12 }}>{labels[index]}</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <Modal
+          visible={isImageViewVisible}
+          transparent={true}
+          onRequestClose={() => setIsImageViewVisible(false)}
+        >
+          <ImageViewer
+            imageUrls={images}
+            enableSwipeDown={true}
+            onSwipeDown={() => setIsImageViewVisible(false)}
+            onCancel={() => setIsImageViewVisible(false)}
+            index={currentImageIndex}
+            backgroundColor="rgba(0, 0, 0, 0.9)"
+            renderHeader={() => (
+              <View style={{
+                position: 'absolute',
+                top: 40,
+                left: 0,
+                right: 0,
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                paddingHorizontal: 20,
+                zIndex: 100,
+              }}>
+                <Text style={{ color: "white" }}>
+                  {`${currentImageIndex + 1}/${images.length} - ${labels[currentImageIndex]}`}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setIsImageViewVisible(false)}
+                  style={{
+                    padding: 10,
+                  }}
+                >
+                  <Text style={{ color: "white", fontSize: 16 }}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            renderIndicator={(currentIndex?: number, allSize?: number) => (
+              <View />
+            )}
+          />
+        </Modal>
+      </View>
+    );
+  };
 
   if (isLoadingValidRes) {
     return (
@@ -882,7 +896,7 @@ const ImageSliderForBodyShoe: React.FC<ImageSliderProps> = ({
                   <Text className="text-sm">Hìnhn ảnh</Text>
                 </View>
                 <View className="flex-row justify-around mt-4">
-                  <ImageSlider response={response} checkInData={checkInData} />
+                  <ImageSlider response={response} checkInData={checkInDataSlice} />
                 </View>
               </Section>
             </View>
@@ -959,20 +973,20 @@ const ImageSliderForBodyShoe: React.FC<ImageSliderProps> = ({
               >
                 <ImageSliderForBodyShoe
                   response={response}
-                  checkInData={checkInData}
+                  checkInData={checkInDataSlice}
                 />
               </SectionDropDown>
 
-              {checkInData?.VehicleSession?.vehicleImages?.[0]?.Image && (
+              {checkInDataSlice?.VehicleSession?.vehicleImages?.[0]?.Image && (
                 <SectionDropDown
                   title="Hình ảnh biển số xe"
                   icon={<View className="w-6 h-6 bg-pink-500 rounded-full" />}
                 >
                   <View>
-                    {checkInData.VehicleSession?.LicensePlate && (
+                    {checkInDataSlice.VehicleSession?.LicensePlate && (
                       <View className="mb-4 p-3 bg-gray-100 rounded-lg">
                         <Text className="text-gray-800 text-center text-lg font-semibold">
-                          Biển số: {checkInData.VehicleSession.LicensePlate}
+                          Biển số: {checkInDataSlice.VehicleSession.LicensePlate}
                         </Text>
                       </View>
                     )}
@@ -980,7 +994,7 @@ const ImageSliderForBodyShoe: React.FC<ImageSliderProps> = ({
                     <View className="relative">
                       <Image
                         source={{
-                          uri: checkInData.VehicleSession.vehicleImages[0]
+                          uri: checkInDataSlice.VehicleSession.vehicleImages[0]
                             .Image,
                         }}
                         className="w-full h-48 rounded-lg"

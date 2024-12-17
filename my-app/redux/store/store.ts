@@ -17,7 +17,7 @@ import { checkOutApi } from "../services/checkout.service";
 import hubConnectionReducer from "../slices/hubConnection.slice";
 import notificationReducer from "../slices/notification.slice";
 import { notificationAPI } from "../services/notificationApi.service";
-
+import validCheckInReducer from "../slices/checkIn.slice";
 export const store = configureStore({
   reducer: {
     [authApi.reducerPath]: authApi.reducer,
@@ -35,7 +35,8 @@ export const store = configureStore({
     hubConnection : hubConnectionReducer,
     notification : notificationReducer,
     auth: authSlice,
-    visitStaff : visitStaffCreateSlice
+    visitStaff : visitStaffCreateSlice,
+    validCheckIn: validCheckInReducer,
   },
 
   middleware: (getDefaultMiddleware) =>
