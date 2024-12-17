@@ -1,3 +1,4 @@
+
 export interface Staff {
   userId: number;
   userName: string;
@@ -53,6 +54,6 @@ export interface UserProfile {
   updatedDate: string;  
   status: string;
   role: UserRole; 
-  department: string | null;  
+  department: Department;  
 }
 

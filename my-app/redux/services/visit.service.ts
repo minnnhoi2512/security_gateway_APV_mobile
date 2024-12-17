@@ -17,12 +17,14 @@ export const visitApi = createApi({
       return headers;
     },
   }),
+  tagTypes: ['Visit', 'VisitDetail'],
   endpoints: (builder) => ({
     getAllVisitsByCurrentDate: builder.query({
       query: () => {
         const currentDate = new Date().toISOString().split('T')[0];
         return `Visit/Day?pageSize=-1&pageNumber=1&date=${currentDate}`;
       },
+      providesTags: ['Visit']
     }),
     getVisitsByCurrentDate: builder.query({
       query: ({ pageSize, pageNumber }) => {
@@ -36,22 +38,25 @@ export const visitApi = createApi({
           }
         };
       },
+      providesTags: ['Visit']
     }),
     getAllVisitsByCurrentDateByID: builder.query({
       query: (visitId: string) => {
         return `Visit/Day/${visitId}?pageSize=10&pageNumber=1`;
       },
+      providesTags: ['Visit']
     }),
     getVisitDetailById: builder.query({
       query: (visitId: string) => `Visit/VisitDetail/${visitId}`,
+      providesTags: (result, error, visitId) => [
+        { type: 'VisitDetail', id: visitId }
+      ]
     }),
     getVisitByCredentialCard: builder.query({
       query: (credentialCard: string) => {
-        const currentDate = new Date().toISOString().split('T')[0];
-        // return `Visit/CurrentDate/CredentialCard/${credentialCard}?date=${currentDate}`;
         return `Visit/CurrentDate/CredentialCard/${credentialCard}`;
       },
-
+      providesTags: ['Visit']
     }),
     createVisit: builder.mutation({
       query: (visit: CreateVisit) => ({
@@ -59,13 +64,43 @@ export const visitApi = createApi({
         method: 'POST',
         body: visit,
       }),
+      invalidatesTags: ['Visit']
     }),
     updateVisitStatus: builder.mutation({
       query: ({ visitId, newStatus }) => ({
         url: `Visit/Status/${visitId}?action=${newStatus}`,
         method: 'PUT',
+      }),
+      // Optimistic update for immediate UI feedback
+      async onQueryStarted({ visitId, newStatus }, { dispatch, queryFulfilled }) {
+        // Optimistically update the getVisitDetailById cache
+        const patchResult = dispatch(
+          visitApi.util.updateQueryData('getVisitDetailById', visitId.toString(), (draft) => {
+            if (draft) {
+              draft.visitStatus = newStatus;
+            }
+          })
+        );
 
-      })
+        try {
+          await queryFulfilled;
+          // Invalidate both Visit and VisitDetail caches after successful update
+          dispatch(
+            visitApi.util.invalidateTags([
+              { type: 'VisitDetail', id: visitId.toString() },
+              'Visit'
+            ])
+          );
+        } catch {
+          // If the mutation fails, revert the optimistic update
+          patchResult.undo();
+        }
+      },
+      // Also invalidate these tags after the mutation
+      invalidatesTags: (result, error, { visitId }) => [
+        { type: 'VisitDetail', id: visitId.toString() },
+        'Visit'
+      ]
     })
   }),
 });

@@ -15,7 +15,10 @@ import { useRouter } from "expo-router";
 import { useCreateVisitorMutation } from "@/redux/services/visitor.service";
 import * as FileSystem from "expo-file-system";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useDetectIdentityCardMutation } from "@/redux/services/pythonApi.service";
+import {
+  useDetectDrivingLicenseMutation,
+  useDetectIdentityCardMutation,
+} from "@/redux/services/pythonApi.service";
 
 const CreateVisitor = () => {
   const [permission, requestPermission] = useCameraPermissions();
@@ -25,6 +28,7 @@ const CreateVisitor = () => {
   const [createVisitor, { isLoading }] = useCreateVisitorMutation();
   const [isProcessing, setIsProcessing] = useState(false);
   const [detectIdentityCard] = useDetectIdentityCardMutation();
+  const [detectGPLX] = useDetectDrivingLicenseMutation();
 
   const [showForm, setShowForm] = useState(false);
   const [initialPhoto, setInitialPhoto] = useState<string | null>(null);
@@ -71,7 +75,7 @@ const CreateVisitor = () => {
 
       return fileUri;
     } catch (error) {
-      console.error("Error converting base64 to file:", error);
+      console.error("Lỗi khi chuyển đổi base64 sang file:", error);
       throw error;
     }
   };
@@ -101,8 +105,12 @@ const CreateVisitor = () => {
         setPhotoUri(uri);
 
         try {
+          // setVisitor((prev) => ({
+          //   ...prev,
+          //   credentialCardTypeId: 1,
+          // }));
           const result = await detectIdentityCard(formData).unwrap();
-          console.log("Response from API:", result);
+          // console.log("Response from API:", result);
 
           if (result && result.imgblur) {
             const blurImageUri = await base64ToFile(result.imgblur);
@@ -111,31 +119,100 @@ const CreateVisitor = () => {
               ...prev,
               credentialsCard: result.id || "",
               visitorName: result.name || "",
+              credentialCardTypeId: 1,
               visitorCredentialFrontImageFromRequest: uri,
               visitorCredentialBlurImageFromRequest: blurImageUri,
             }));
           } else {
-            throw new Error("Invalid response data");
+            throw new Error("Dữ liệu phản hồi không hợp lệ");
           }
 
           setIsProcessing(false);
         } catch (error: any) {
-          console.error("API Error:", JSON.stringify(error, null, 2));
+          // console.error("API Error:", JSON.stringify(error, null, 2));
           let errorMessage =
-            "Failed to process identity card. Please try again.";
+            "Không xử lý được thẻ căn cước. Vui lòng thử lại.";
 
-          if (error.data) {
-            errorMessage = error.data;
-          }
+          // if (error.data) {
+          //   errorMessage = error.data;
+          // }
 
-          Alert.alert("Error", errorMessage);
+          Alert.alert("Lỗi", errorMessage);
           setIsProcessing(false);
           setInitialPhoto(null);
         }
       }
     } catch (error) {
-      console.error("Error taking photo:", JSON.stringify(error, null, 2));
-      Alert.alert("Error", "Failed to take photo. Please try again.");
+      // console.error("Error taking photo:", JSON.stringify(error, null, 2));
+      Alert.alert("Lỗi", "Không thể nhận diện ảnh. Vui lòng thử lại.");
+      setIsProcessing(false);
+      setInitialPhoto(null);
+    }
+  };
+  const takeInitialPhotoGPLX = async () => {
+    try {
+      const cameraResp = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+      });
+
+      if (!cameraResp.canceled && cameraResp.assets[0]) {
+        const { uri } = cameraResp.assets[0];
+        const fileName = uri.split("/").pop();
+        setIsProcessing(true);
+
+        const formData = new FormData();
+        const fileToUpload = {
+          uri,
+          type: "image/jpeg",
+          name: fileName ?? "image.jpg",
+        };
+        formData.append("file", fileToUpload as any);
+
+        setInitialPhoto(uri);
+        setPhotoUri(uri);
+
+        try {
+          // setVisitor((prev) => ({
+          //   ...prev,
+          //   credentialCardTypeId: 1,
+          // }));
+          const result = await detectGPLX(formData).unwrap();
+          // console.log("Response from API:", result);
+
+          if (result && result.imgblur) {
+            const blurImageUri = await base64ToFile(result.imgblur);
+
+            setVisitor((prev) => ({
+              ...prev,
+              credentialsCard: result.id || "",
+              visitorName: result.name || "",
+              credentialCardTypeId: 2,
+              visitorCredentialFrontImageFromRequest: uri,
+              visitorCredentialBlurImageFromRequest: blurImageUri,
+            }));
+          } else {
+            // throw new Error("Invalid response data");
+          }
+
+          setIsProcessing(false);
+        } catch (error: any) {
+          // console.error("API Error:", JSON.stringify(error, null, 2));
+          let errorMessage = "Không thể nhận diện ảnh. Vui lòng thử lại";
+
+          // if (error.data) {
+          //   errorMessage = error.data;
+          // }
+
+          Alert.alert("Lỗi", errorMessage);
+          setIsProcessing(false);
+          setInitialPhoto(null);
+        }
+      }
+    } catch (error) {
+      // console.error("Error taking photo:", JSON.stringify(error, null, 2));
+      Alert.alert("Lỗi", "Không thể nhận diện ảnh. Vui lòng thử lại.");
       setIsProcessing(false);
       setInitialPhoto(null);
     }
@@ -161,8 +238,8 @@ const CreateVisitor = () => {
         }));
       }
     } catch (error) {
-      console.error("Error taking photo:", error);
-      Alert.alert("Error", "Failed to take photo. Please try again.");
+      console.error("Lỗi khi chụp ảnh:", error);
+      Alert.alert("Lỗi", "Không chụp được ảnh. Vui lòng thử lại.");
     }
   };
 
@@ -176,29 +253,29 @@ const CreateVisitor = () => {
       visitorCredentialBackImageFromRequest,
     } = visitor;
     if (!visitorName) {
-      Alert.alert("Validation Error", "Please provide the visitor's name.");
+      Alert.alert("Lỗi xác thực", "Vui lòng cung cấp tên của khách truy cập.");
       return false;
     }
     if (!phoneNumber) {
-      Alert.alert("Validation Error", "Please provide a phone number.");
+      Alert.alert("Lỗi xác thực", "Vui lòng cung cấp số điện thoại.");
       return false;
     }
     if (!email) {
-      Alert.alert("Validation Error", "Please provide a email.");
+      Alert.alert("Lỗi xác thực", "Vui lòng cung cấp email.");
       return false;
     }
     if (!companyName) {
-      Alert.alert("Validation Error", "Please provide a company name.");
+      Alert.alert("Lỗi xác thực", "Vui lòng cung cấp tên công ty.");
       return false;
     }
     if (!visitorCredentialFrontImageFromRequest) {
-      Alert.alert("Validation Error", "Please take a photo of the ID card.");
+      Alert.alert("Lỗi xác thực", "Vui lòng chụp ảnh CMND.");
       return false;
     }
     if (!visitorCredentialBackImageFromRequest) {
       Alert.alert(
-        "Validation Error",
-        "Please take a photo of the back of the ID card."
+        "Lỗi xác thực",
+        "Vui lòng chụp ảnh mặt sau của thẻ căn cước."
       );
       return false;
     }
@@ -224,6 +301,7 @@ const CreateVisitor = () => {
       const frontFileName =
         visitor.visitorCredentialFrontImageFromRequest.split("/").pop() ||
         "front.jpg";
+      console.log(visitor.visitorCredentialFrontImageFromRequest);
       formData.append("visitorCredentialFrontImageFromRequest", {
         uri: visitor.visitorCredentialFrontImageFromRequest,
         type: "image/jpeg",
@@ -254,18 +332,19 @@ const CreateVisitor = () => {
     }
 
     try {
-      console.log("FormData being sent:", formData);
+     
+
       const response = await createVisitor(formData).unwrap();
-      Alert.alert("Thành công", "Tạo khách vãng lai thành công", [
-        {
-          text: "OK",
-          onPress: () => {
-            router.push("/(tabs)");
-          },
-        },
-      ]);
+      // Alert.alert("Thành công", "Tạo khách vãng lai thành công", [
+      //   {
+      //     text: "OK",
+      //     onPress: () => {
+      //       router.push("/(tabs)");
+      //     },r
+      //   },
+      // ]);
     } catch (error: any) {
-      console.log("Create visitor error details:", error?.data?.errors);
+      console.log("Tạo chi tiết lỗi của khách truy cập:", error?.data?.errors);
 
       const errors = error?.data?.errors;
       if (errors && typeof errors === "object") {
@@ -277,9 +356,9 @@ const CreateVisitor = () => {
             errorMessage += `${field}: ${messages}\n`;
           }
         });
-        Alert.alert("Error", errorMessage);
+        Alert.alert("Lỗi", errorMessage);
       } else {
-        Alert.alert("Error", "Failed to create visitor. Please try again.");
+        Alert.alert("Lỗi", "Không tạo được khách truy cập. Vui lòng thử lại.");
       }
     }
   };
@@ -305,15 +384,26 @@ const CreateVisitor = () => {
 
         <View className="flex-1 justify-center items-center">
           {!initialPhoto ? (
-            <TouchableOpacity
-              onPress={takeInitialPhoto}
-              className="bg-buttonGreen p-6 rounded-lg shadow-lg"
-            >
-              <MaterialIcons name="camera-alt" size={48} color="white" />
-              <Text className="text-white text-center mt-2 font-bold">
-                Chụp ảnh CCCD
-              </Text>
-            </TouchableOpacity>
+            <View>
+              <TouchableOpacity
+                onPress={takeInitialPhoto}
+                className="bg-buttonGreen p-6 rounded-lg shadow-lg"
+              >
+                <MaterialIcons name="camera-alt" size={48} color="white" />
+                <Text className="text-white text-center mt-2 font-bold">
+                  Chụp ảnh CCCD
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={takeInitialPhotoGPLX}
+                className="bg-buttonGreen p-6 rounded-lg shadow-lg"
+              >
+                <MaterialIcons name="camera-alt" size={48} color="white" />
+                <Text className="text-white text-center mt-2 font-bold">
+                  Chụp ảnh GPLX
+                </Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <View className="w-full items-center">
               <Image
@@ -322,12 +412,6 @@ const CreateVisitor = () => {
                 className="rounded-lg mb-4"
               />
               <View className="flex-row space-x-4">
-                <TouchableOpacity
-                  onPress={takeInitialPhoto}
-                  className="bg-gray-500 p-3 rounded-lg flex-1"
-                >
-                  <Text className="text-white text-center">Chụp lại</Text>
-                </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleConfirmInitialPhoto}
                   disabled={isProcessing}
@@ -362,7 +446,9 @@ const CreateVisitor = () => {
         </Text>
         <View className="bg-backgroundApp rounded-xl shadow-lg p-6 mb-6">
           <View className="mb-4">
-            <Text className="text-sm font-semibold text-white mb-2">CCCD</Text>
+            <Text className="text-sm font-semibold text-white mb-2">
+              Số CCCD/GPLX
+            </Text>
             <View className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
               <Text className="text-backgroundApp">
                 {visitor?.credentialsCard || ""}
@@ -414,7 +500,7 @@ const CreateVisitor = () => {
           {photoUri && (
             <View className="mb-4">
               <Text className="text-sm font-semibold text-white mb-2">
-                Ảnh mặt trước CCCD
+                Ảnh mặt trước
               </Text>
               <Image
                 source={{ uri: photoUri }}
@@ -429,16 +515,14 @@ const CreateVisitor = () => {
               onPress={takePhotoBack}
               className="bg-buttonGreen p-3 rounded-lg"
             >
-              <Text className="text-white text-center">
-                Chụp ảnh mặt sau CCCD
-              </Text>
+              <Text className="text-white text-center">Chụp ảnh mặt sau</Text>
             </TouchableOpacity>
           </View>
 
           {photoUriBack && (
             <View className="mb-4">
               <Text className="text-sm font-semibold text-white mb-2">
-                Ảnh mặt sau CCCD
+                Ảnh mặt sau
               </Text>
               <Image
                 source={{ uri: photoUriBack }}

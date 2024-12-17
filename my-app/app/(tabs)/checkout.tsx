@@ -6,6 +6,8 @@ import {
   Alert,
   Modal,
   StyleSheet,
+  Platform,
+  BackHandler,
 } from "react-native";
 import { useRouter } from "expo-router";
 import Header from "@/components/UI/Header";
@@ -35,6 +37,15 @@ const Checkout = () => {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isCameraCCCDActive, setIsCameraCCCDActive] = useState(false);
   const isQrCardSet = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      // Cleanup surface resources
+      if (Platform.OS === 'android') {
+        BackHandler.removeEventListener('hardwareBackPress', () => true);
+      }
+    };
+  }, []);
   const handleOptionSelect = () => {
     Alert.alert("Vui lòng chọn một trong các tùy chọn bên dưới", "", [
       // {

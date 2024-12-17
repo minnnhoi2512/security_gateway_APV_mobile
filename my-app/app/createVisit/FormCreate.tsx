@@ -8,6 +8,8 @@ import {
   ScrollView,
   Alert,
   Pressable,
+  Platform,
+  BackHandler,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -72,6 +74,17 @@ const FormCreate = () => {
   });
 
   useEffect(() => {
+    const cleanup = () => {
+      // Cleanup any active camera or surface resources
+      if (Platform.OS === "android") {
+        BackHandler.removeEventListener("hardwareBackPress", () => true);
+      }
+    };
+
+    return cleanup;
+  }, []);
+
+  useEffect(() => {
     const fetchUserId = async () => {
       try {
         const storedUserId = await AsyncStorage.getItem("userId");
@@ -114,34 +127,142 @@ const FormCreate = () => {
     }));
   };
 
+  // const handleTimeChange = (
+  //   event: any,
+  //   selectedDate: Date | undefined,
+  //   isStartTime: boolean
+  // ) => {
+  //   const currentDate = selectedDate || new Date();
+  //   const timeString = currentDate
+  //     .toLocaleTimeString("en-US", { hour12: false })
+  //     .slice(0, 8);
+
+  //   if (isStartTime) {
+  //     setShowStartPicker(false);
+  //     handleDetailChange("expectedStartHour", timeString);
+  //   } else {
+  //     setShowEndPicker(false);
+  //     handleDetailChange("expectedEndHour", timeString);
+  //   }
+  // };
   const handleTimeChange = (
     event: any,
     selectedDate: Date | undefined,
     isStartTime: boolean
   ) => {
     const currentDate = selectedDate || new Date();
+    const now = new Date();
     const timeString = currentDate
       .toLocaleTimeString("en-US", { hour12: false })
       .slice(0, 8);
-
+  
     if (isStartTime) {
+      // Kiểm tra thời gian bắt đầu phải lớn hơn thời gian hiện tại
+      if (currentDate < now) {
+        alert("Thời gian bắt đầu phải lớn hơn thời gian hiện tại.");
+        setShowStartPicker(false);
+        return;
+      }
+  
       setShowStartPicker(false);
       handleDetailChange("expectedStartHour", timeString);
     } else {
+      const startHour = visitData.visitDetail[0].expectedStartHour;
+      const startTime = new Date(`2000-01-01T${startHour}`).getTime(); // Convert to timestamp
+      const endTime = new Date(`2000-01-01T${timeString}`).getTime(); // Convert to timestamp
+  
+      // Kiểm tra thời gian kết thúc phải lớn hơn thời gian bắt đầu
+      if (endTime <= startTime) {
+        alert("Thời gian kết thúc phải lớn hơn thời gian bắt đầu.");
+        setShowEndPicker(false);
+        return;
+      }
+  
+      // Kiểm tra thời gian kết thúc phải cách thời gian bắt đầu ít nhất 30 phút
+      const diffMinutes = (endTime - startTime) / (1000 * 60); // Convert to minutes
+      if (diffMinutes < 30) {
+        alert("Thời gian kết thúc phải cách thời gian bắt đầu ít nhất 30 phút.");
+        setShowEndPicker(false);
+        return;
+      }
+  
       setShowEndPicker(false);
       handleDetailChange("expectedEndHour", timeString);
     }
   };
+  
 
+  // const handleSubmit = async () => {
+  //   try {
+  //     const submitData = {
+  //       ...visitData,
+  //       visitQuantity: Number(visitData.visitQuantity),
+  //       expectedStartTime: `${visitData.expectedStartTime}T${visitData.visitDetail[0].expectedStartHour}`,
+  //       expectedEndTime: `${visitData.expectedEndTime}T${visitData.visitDetail[0].expectedEndHour}`,
+  //     };
+
+  //     const result = await createVisit(submitData).unwrap();
+  //     showToast("Bạn vừa tạo lịch ghé thăm thành công!", "success");
+  //     Alert.alert("Thành công", "Tạo lịch ghé thăm thành công!", [
+  //       {
+  //         text: "OK",
+  //         onPress: () => {
+  //           router.push("/(tabs)");
+  //         },
+  //       },
+  //     ]);
+  //   } catch (error: any) {
+  //     const errorMessage =
+  //       error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
+
+  //     showToast("Đã có lỗi xảy ra", "error");
+  //     Alert.alert("Đã có lỗi xảy ra", errorMessage);
+  //   }
+  // };
   const handleSubmit = async () => {
     try {
+      const startHour = visitData.visitDetail[0].expectedStartHour;
+      const endHour = visitData.visitDetail[0].expectedEndHour;
+      const startTime = new Date(`2000-01-01T${startHour}`).getTime();
+      const endTime = new Date(`2000-01-01T${endHour}`).getTime();
+      const now = new Date().getTime();
+  
+      // Kiểm tra thời gian bắt đầu phải lớn hơn thời gian hiện tại
+      if (startTime < now) {
+        Alert.alert(
+          "Lỗi",
+          "Thời gian bắt đầu phải lớn hơn thời gian hiện tại."
+        );
+        return;
+      }
+  
+      // Kiểm tra thời gian kết thúc phải lớn hơn thời gian bắt đầu
+      if (endTime <= startTime) {
+        Alert.alert(
+          "Lỗi",
+          "Thời gian kết thúc phải lớn hơn thời gian bắt đầu."
+        );
+        return;
+      }
+  
+      // Kiểm tra thời gian kết thúc phải cách thời gian bắt đầu ít nhất 30 phút
+      const diffMinutes = (endTime - startTime) / (1000 * 60); // Convert to minutes
+      if (diffMinutes < 30) {
+        Alert.alert(
+          "Lỗi",
+          "Thời gian kết thúc phải cách thời gian bắt đầu ít nhất 30 phút."
+        );
+        return;
+      }
+  
+      // Nếu tất cả điều kiện hợp lệ, tiến hành tạo lịch
       const submitData = {
         ...visitData,
         visitQuantity: Number(visitData.visitQuantity),
-        expectedStartTime: `${visitData.expectedStartTime}T${visitData.visitDetail[0].expectedStartHour}`,
-        expectedEndTime: `${visitData.expectedEndTime}T${visitData.visitDetail[0].expectedEndHour}`,
+        expectedStartTime: `${visitData.expectedStartTime}T${startHour}`,
+        expectedEndTime: `${visitData.expectedEndTime}T${endHour}`,
       };
-
+  
       const result = await createVisit(submitData).unwrap();
       showToast("Bạn vừa tạo lịch ghé thăm thành công!", "success");
       Alert.alert("Thành công", "Tạo lịch ghé thăm thành công!", [
@@ -155,12 +276,12 @@ const FormCreate = () => {
     } catch (error: any) {
       const errorMessage =
         error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
-
+  
       showToast("Đã có lỗi xảy ra", "error");
       Alert.alert("Đã có lỗi xảy ra", errorMessage);
     }
   };
-
+  
   const clearValidationError = (field: string) => {
     setValidationErrors((prev) => {
       const newErrors = { ...prev };
@@ -169,14 +290,12 @@ const FormCreate = () => {
     });
   };
   useEffect(() => {
-     
     if (staffByPhone) {
       setSearchPhoneNumber(`${staffByPhone.fullName}`);
     }
   }, [staffByPhone]);
-  
+
   useEffect(() => {
- 
     if (!searchPhoneNumber.trim()) {
       setVisitData((prevState) => ({
         ...prevState,
@@ -184,9 +303,8 @@ const FormCreate = () => {
       }));
     }
   }, [searchPhoneNumber]);
-  
+
   useEffect(() => {
- 
     if (staffByPhone && staffByPhone.userId) {
       setVisitData((prevState) => ({
         ...prevState,
@@ -209,7 +327,6 @@ const FormCreate = () => {
   };
 
   console.log("Crea5 da: ", visitData);
-  
 
   return (
     <ScrollView className="flex-1 bg-gradient-to-br from-blue-50 to-white">
@@ -244,9 +361,11 @@ const FormCreate = () => {
 
           <View className="mb-4">
             <View className="flex-row items-center mb-2 ml-1">
-     
               <FontAwesome5 name="sticky-note" size={18} color="#4A5568" />
-              <Text className="text-sm font-semibold text-gray-700"> Mô tả</Text>
+              <Text className="text-sm font-semibold text-gray-700">
+                {" "}
+                Mô tả
+              </Text>
             </View>
             <TextInput
               className="bg-gray-100 border border-gray-200 rounded-lg px-4 py-3 text-gray-800 min-h-[100px]"
@@ -282,58 +401,6 @@ const FormCreate = () => {
             )}
           </View>
 
-          {/* {isLoadingStaffByPhone && (
-            <Text className="text-white mt-2">Đang tra cứu...</Text>
-          )}
-          {isErrorStaffByPhone && (
-            <Text className="text-red-500">Không tìm thấy nhân viên</Text>
-          )} */}
-          {/* {staffByPhone && (
-            <View className="bg-gray-100 rounded-lg p-4 mt-4 mb-4">
-              <Text className="text-backgroundApp">
-                Nhân viên: {staffByPhone.fullName}
-              </Text>
-            </View>
-          )} */}
-          {/* <View className="mb-4">
-            <Text className="text-sm font-semibold text-white mb-2">
-              Chọn nhân viên theo số điện thoại
-            </Text>
-            <TextInput
-              className={`bg-gray-50 border ${
-                hasError("searchPhoneNumber")
-                  ? "border-red-500"
-                  : "border-gray-200"
-              } rounded-lg px-4 py-3 text-backgroundApp`}
-              value={searchPhoneNumber}
-              onChangeText={(text) => {
-                setSearchPhoneNumber(text);
-                clearValidationError("searchPhoneNumber");
-              }}
-              placeholder="Nhập số điện thoại"
-            />
-            {hasError("searchPhoneNumber") && (
-              <Text className="text-red-500 text-sm mt-1">
-                {getErrorMessage("searchPhoneNumber")}
-              </Text>
-            )}
-          </View>
-
-          {isLoadingStaffByPhone && (
-            <Text className="text-white mt-2">Đang tra cứu...</Text>
-          )}
-          {isErrorStaffByPhone && (
-            <Text className="text-red-500">Không tìm thấy nhân viên</Text>
-          )}
-          {staffByPhone && (
-            <View className="bg-gray-100 rounded-lg p-4 mt-4 mb-4">
-              <Text className="text-backgroundApp">
-                Nhân viên: {staffByPhone.fullName}
-              </Text>
-             
-            </View>
-          )} */}
-
           <View className="flex-row gap-2">
             <View className="mb-4">
               <View className="flex-row items-center mb-2">
@@ -354,21 +421,21 @@ const FormCreate = () => {
                   )}
                 </Text>
               </TouchableOpacity>
-              {/* {showStartPicker && (
-              <DateTimePicker
-                value={
-                  new Date(
-                    `2000-01-01T${visitData.visitDetail[0].expectedStartHour}`
-                  )
-                }
-                mode="time"
-                is24Hour={true}
-                display="default"
-                onChange={(event, selectedDate) =>
-                  handleTimeChange(event, selectedDate, true)
-                }
-              />
-            )} */}
+              {showStartPicker && (
+                <DateTimePicker
+                  value={
+                    new Date(
+                      `2000-01-01T${visitData.visitDetail[0].expectedStartHour}`
+                    )
+                  }
+                  mode="time"
+                  is24Hour={true}
+                  display="default"
+                  onChange={(event, selectedDate) =>
+                    handleTimeChange(event, selectedDate, true)
+                  }
+                />
+              )}
             </View>
 
             <View className="mb-6">

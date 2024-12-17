@@ -10,6 +10,8 @@ import {
   Modal,
   Pressable,
   StyleSheet,
+  Platform,
+  BackHandler,
 } from "react-native";
 import {
   GestureHandlerRootView,
@@ -29,6 +31,7 @@ import { RootState } from "@/redux/store/store";
 import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
 import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
+import { fetchWithTimeout } from "@/hooks/util";
 
 interface ImageData {
   ImageType: "Shoe";
@@ -58,6 +61,15 @@ const UserDetail = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [hasNavigated, setHasNavigated] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      // Cleanup surface resources
+      if (Platform.OS === 'android') {
+        BackHandler.removeEventListener('hardwareBackPress', () => true);
+      }
+    };
+  }, []);
 
   // RTK QUERY
 
@@ -202,27 +214,20 @@ const UserDetail = () => {
     }
   };
 
-
- 
-
   useEffect(() => {
     if (isErrorQr && !hasShownError) {
       setHasShownError(true);
-      Alert.alert(
-        "Lỗi",
-        "Không tìm thấy dữ liệu QR. Vui lòng thử lại.",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              qrLock.current = false;
-              setIsProcessing(false);
-              setCheckInData(prev => ({...prev, QrCardVerification: ""}));
-              router.back();
-            }
-          }
-        ]
-      );
+      Alert.alert("Lỗi", "Không tìm thấy dữ liệu QR. Vui lòng thử lại.", [
+        {
+          text: "OK",
+          onPress: () => {
+            qrLock.current = false;
+            setIsProcessing(false);
+            setCheckInData((prev) => ({ ...prev, QrCardVerification: "" }));
+            router.back();
+          },
+        },
+      ]);
     }
   }, [isErrorQr]);
 
@@ -256,11 +261,10 @@ const UserDetail = () => {
         if (bodyCamera?.cameraURL) {
           const bodyImageUrl = `${bodyCamera.cameraURL}capture-image`;
 
-          const bodyImageData = await fetchCaptureImage(
-            bodyImageUrl,
-            "CheckIn_Body"
+          const bodyImageData = await fetchWithTimeout(
+            fetchCaptureImage(bodyImageUrl, "CheckIn_Body"),
+            10000
           );
-
           if (bodyImageData.ImageFile) {
             images.push({
               ImageType: "CheckIn_Body",
@@ -274,9 +278,9 @@ const UserDetail = () => {
         if (shoeCamera?.cameraURL) {
           const shoeImageUrl = `${shoeCamera.cameraURL}capture-image`;
 
-          const shoeImageData = await fetchCaptureImage(
-            shoeImageUrl,
-            "CheckIn_Shoe"
+          const shoeImageData = await fetchWithTimeout(
+            fetchCaptureImage(shoeImageUrl, "CheckIn_Shoe"),
+            10000
           );
 
           if (shoeImageData.ImageFile) {
@@ -314,10 +318,12 @@ const UserDetail = () => {
         }
       } catch (error) {
         console.error("Error in capture process:", error);
+        router.navigate("/(tabs)/checkin");
         Alert.alert(
-          "Error",
+          "Lỗi",
           "Lỗi khi chụp ảnh. Vui lòng kiểm tra cấu hình camera và thử lại."
         );
+        return;
       }
     };
 

@@ -37,7 +37,7 @@ export const pythonAPI = createApi({
     }),
   });
   
-  export const { useDetectIdentityCardMutation } = pythonAPI;
+  export const { useDetectIdentityCardMutation,useDetectDrivingLicenseMutation } = pythonAPI;
 
 // export const pythonAPI = createApi({
 //     reducerPath: 'pythonApi',

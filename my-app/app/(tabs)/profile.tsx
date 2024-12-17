@@ -28,12 +28,15 @@ const Profile: React.FC = () => {
   } = useGetUserProfileQuery(userId ? { userId } : { userId: "" }, {
     skip: !userId,
   });
+  const [userRole, setUserRole] = useState<string | null>(null);
   useEffect(() => {
     const fetchUserId = async () => {
       try {
+        const userRole = await AsyncStorage.getItem("userRole");
         const storedUserId = await AsyncStorage.getItem("userId");
         if (storedUserId) {
           setUserId(storedUserId);
+          setUserRole(userRole);
         }
       } catch (error) {
         console.error("Error fetching userId from AsyncStorage:", error);
@@ -116,19 +119,24 @@ const Profile: React.FC = () => {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={async () => {
-            router.push("/PickGate");
-          }}
-          className="flex-row items-center bg-[#34495e] p-4 rounded-lg mb-5"
-        >
-          <View className="bg-gray-200 p-2 rounded-full mr-4">
-            <MaterialIcons name="change-circle" size={24} color="#4B5563" />
-          </View>
-          <View className="flex-1">
-            <Text className="text-lg text-white font-semibold">Thay đổi cổng</Text>
-          </View>
-        </TouchableOpacity>
+        {userRole === "Security" && (
+          <TouchableOpacity
+            onPress={async () => {
+              router.push("/PickGate");
+            }}
+            className="flex-row items-center bg-[#34495e] p-4 rounded-lg mb-5"
+          >
+            <View className="bg-gray-200 p-2 rounded-full mr-4">
+              <MaterialIcons name="change-circle" size={24} color="#4B5563" />
+            </View>
+
+            <View className="flex-1">
+              <Text className="text-lg text-white font-semibold">
+                Thay đổi cổng
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
           onPress={async () => {
