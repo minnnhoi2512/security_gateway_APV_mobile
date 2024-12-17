@@ -129,7 +129,7 @@ const CreateVisitor = () => {
 
           setIsProcessing(false);
         } catch (error: any) {
-          console.error("API Error:", JSON.stringify(error, null, 2));
+          // console.error("API Error:", JSON.stringify(error, null, 2));
           let errorMessage =
             "Không xử lý được thẻ căn cước. Vui lòng thử lại.";
 
@@ -199,7 +199,7 @@ const CreateVisitor = () => {
           setIsProcessing(false);
         } catch (error: any) {
           // console.error("API Error:", JSON.stringify(error, null, 2));
-          let errorMessage = "Nhận diện thẻ thất bại. Vui lòng thử lại";
+          let errorMessage = "Không thể nhận diện ảnh. Vui lòng thử lại";
 
           // if (error.data) {
           //   errorMessage = error.data;
