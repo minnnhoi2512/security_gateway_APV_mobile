@@ -154,6 +154,7 @@ const CheckOutLicensePlate = () => {
       skip: !gateId,
     }
   );
+  const [checkOutImages, setCheckOutImages] = useState<string[]>([]);
   const [handleValidShoe, setHandleValidShoe] = useState(false);
   const [handleValidCar, setHandleValidCar] = useState(false);
   const router = useRouter();
@@ -423,6 +424,7 @@ const CheckOutLicensePlate = () => {
 
       if (!result.canceled && result.assets[0]) {
         await uploadImageToAPI(result.assets[0].uri);
+        setCheckOutImages((prev) => [...prev, result.assets[0].uri]);
         setHandleValidCar(false);
       }
     } catch (error) {
@@ -1046,7 +1048,7 @@ const CheckOutLicensePlate = () => {
                       </View>
 
                       {/* Vehicle Images if they exist */}
-                      {checkInData?.vehicleSession?.images &&
+                      {/* {checkInData?.vehicleSession?.images &&
                         checkInData.vehicleSession.images.length > 0 && (
                           <View className="mb-6">
                             <Text className="text-xl font-bold mb-2">
@@ -1097,6 +1099,60 @@ const CheckOutLicensePlate = () => {
                                     />
                                   </TouchableOpacity>
                                 ))}
+                            </View>
+                          </View>
+                        )} */}
+                      {checkInData?.vehicleSession?.images &&
+                        checkInData.vehicleSession.images.length > 0 && (
+                          <View className="mb-6">
+                            <Text className="text-xl font-bold mb-2">
+                              Ảnh phương tiện
+                            </Text>
+                            <View className="flex-row flex-wrap">
+                              {checkInData.vehicleSession.images
+                                .filter(
+                                  (image: any) =>
+                                    image.imageType !== "CheckIn_vehicle"
+                                )
+                                .map((image: any, index: number) => (
+                                  <TouchableOpacity
+                                    key={index}
+                                    className="w-1/2 p-1"
+                                    onPress={(e) => {
+                                      e.stopPropagation();
+                                      handleImagePress([image.imageURL]);
+                                    }}
+                                  >
+                                    <Image
+                                      source={{ uri: image.imageURL }}
+                                      className="w-full h-48 rounded-lg"
+                                      resizeMode="contain"
+                                    />
+                                  </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            {/* Thêm phần hiển thị ảnh vừa chụp */}
+                            <Text className="text-xl font-bold mb-2 mt-4">
+                              Ảnh xe lúc ra
+                            </Text>
+                            <View className="flex-row flex-wrap">
+                              {checkOutImages.map((imageUri, index) => (
+                                <TouchableOpacity
+                                  key={index}
+                                  className="w-1/2 p-1"
+                                  onPress={(e) => {
+                                    e.stopPropagation();
+                                    handleImagePress([imageUri]);
+                                  }}
+                                >
+                                  <Image
+                                    source={{ uri: imageUri }}
+                                    className="w-full h-48 rounded-lg"
+                                    resizeMode="contain"
+                                  />
+                                </TouchableOpacity>
+                              ))}
                             </View>
                           </View>
                         )}

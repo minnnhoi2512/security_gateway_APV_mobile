@@ -110,13 +110,13 @@ export default function RootLayout() {
               name="createVisit/ScanQrCreate"
               options={{ headerShown: false }}
             />
-            <Stack.Screen
+            {/* <Stack.Screen
               name="check-in/scanQr2"
               options={{
                 animation: "fade", // Hoặc "slide_from_right"
                 headerShown: false,
               }}
-            />
+            /> */}
 
             <Stack.Screen
               name="check-in/ListVisit"

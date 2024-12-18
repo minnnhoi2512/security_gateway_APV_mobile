@@ -41,8 +41,8 @@ const Checkout = () => {
   useEffect(() => {
     return () => {
       // Cleanup surface resources
-      if (Platform.OS === 'android') {
-        BackHandler.removeEventListener('hardwareBackPress', () => true);
+      if (Platform.OS === "android") {
+        BackHandler.removeEventListener("hardwareBackPress", () => true);
       }
     };
   }, []);
@@ -175,6 +175,14 @@ const Checkout = () => {
     }
   }, [qrCardVerified, dataByCardVerifided, errorByCardVerifided]);
 
+  //Handle scan more than
+  const resetScanStates = () => {
+    setHasScanned(false);
+    isQrCardSet.current = false;
+    setQrCardVerified(null);
+    setCredentialCard(null);
+  };
+
   const handleLicensePlateScanned = useCallback(
     async ({ data }: { data: string }) => {
       if (data) {
@@ -191,14 +199,35 @@ const Checkout = () => {
     []
   );
 
-  const handleLicensePlateScanned2 = useCallback(
+  // const handleBarCodeScannedQR = useCallback(
+  //   async ({ data }: { data: string }) => {
+  //     if (data && !hasScanned) {
+  //       setHasScanned(true);
+  //       try {
+  //         setIsCameraActive(false);
+
+  //         // console.log("toi bi loop");
+
+  //         router.navigate({
+  //           pathname: "/check-out/CheckOutNormal",
+  //           params: {
+  //             qrString: data,
+  //           },
+  //         });
+  //       } catch (error) {
+  //         console.error("Error handling QR Code:", error);
+  //       }
+  //     }
+  //   },
+  //   [hasScanned, router]
+  // );
+
+  const handleBarCodeScannedQR = useCallback(
     async ({ data }: { data: string }) => {
-      if (data && !hasScanned) {
-        setHasScanned(true);
+      if (data) {
         try {
           setIsCameraActive(false);
-
-          // console.log("toi bi loop");
+          resetScanStates();
 
           router.navigate({
             pathname: "/check-out/CheckOutNormal",
@@ -211,46 +240,76 @@ const Checkout = () => {
         }
       }
     },
-    [hasScanned, router]
+    [router]
   );
 
+  // const handleBarCodeScannedCCCD = useCallback(
+  //   ({ data }: { data: string }) => {
+  //     setChangeCCCD(data);
+
+  //     if (data.includes("-") && !hasScanned) {
+  //       setHasScanned(true);
+  //       Alert.alert("Lỗi", "Định dạng thẻ không hợp lệ. Vui lòng thử lại.");
+  //       return;
+  //     }
+  //     if (data && data.includes("|")) {
+  //       try {
+  //         // Lấy phần tử đầu tiên trước dấu |
+  //         setHasScanned(false);
+  //         setIsCameraCCCDActive(false); // Tắt camera sau khi quét thành công
+  //         const credentialId = data.split("|")[0];
+
+  //         return router.navigate({
+  //           pathname: "/check-out/CheckOutCard",
+  //           params: {
+  //             cccd: credentialId,
+  //           },
+  //         });
+  //       } catch (error) {
+  //         console.error("Error processing CCCD:", error);
+  //         Alert.alert("Lỗi", "Định dạng CCCD không hợp lệ. Vui lòng thử lại.");
+  //       }
+  //     }
+  //     if (data && data.includes("\n")) {
+  //       try {
+  //         // Lấy phần tử đầu tiên trước dấu |
+  //         setHasScanned(false);
+  //         setIsCameraCCCDActive(false); // Tắt camera sau khi quét thành công
+  //         const credentialId = data.split("\n")[0];
+
+  //         return router.navigate({
+  //           pathname: "/check-out/CheckOutCard",
+  //           params: {
+  //             cccd: credentialId,
+  //           },
+  //         });
+  //       } catch (error) {
+  //         console.error("Error processing CCCD:", error);
+  //         Alert.alert("Lỗi", "Định dạng CCCD không hợp lệ. Vui lòng thử lại.");
+  //       }
+  //     }
+  //   },
+  //   [hasScanned, router, changeCCCD]
+  // );
   const handleBarCodeScannedCCCD = useCallback(
     ({ data }: { data: string }) => {
       setChangeCCCD(data);
 
-      if (data.includes("-") && !hasScanned) {
-        setHasScanned(true);
+      if (data.includes("-")) {
         Alert.alert("Lỗi", "Định dạng thẻ không hợp lệ. Vui lòng thử lại.");
         return;
       }
-      if (data && data.includes("|")) {
-        try {
-          // Lấy phần tử đầu tiên trước dấu |
-          setHasScanned(false);
-          setIsCameraCCCDActive(false); // Tắt camera sau khi quét thành công
-          const credentialId = data.split("|")[0];
-        
 
-          return router.navigate({
-            pathname: "/check-out/CheckOutCard",
-            params: {
-              cccd: credentialId,
-            },
-          });
-        } catch (error) {
-          console.error("Error processing CCCD:", error);
-          Alert.alert("Lỗi", "Định dạng CCCD không hợp lệ. Vui lòng thử lại.");
-        }
-      }
-      if (data && data.includes("\n")) {
+      if (data && (data.includes("|") || data.includes("\n"))) {
         try {
-          // Lấy phần tử đầu tiên trước dấu |
-          setHasScanned(false);
-          setIsCameraCCCDActive(false); // Tắt camera sau khi quét thành công
-          const credentialId = data.split("\n")[0];
-         
+          setIsCameraCCCDActive(false);
+          resetScanStates();
 
-          return router.navigate({
+          const credentialId = data.includes("|")
+            ? data.split("|")[0]
+            : data.split("\n")[0];
+
+          router.navigate({
             pathname: "/check-out/CheckOutCard",
             params: {
               cccd: credentialId,
@@ -262,9 +321,8 @@ const Checkout = () => {
         }
       }
     },
-    [hasScanned, router, changeCCCD]
+    [router]
   );
-
   const handleBarCodeScannedCCCDWithVehicle = useCallback(
     ({ data }: { data: string }) => {
       setChangeCCCD(data);
@@ -279,7 +337,6 @@ const Checkout = () => {
           setHasScanned(false);
           setIsCameraCCCDActive(false); // Tắt camera sau khi quét thành công
           const credentialId = data.split("|")[0];
-         
 
           return router.navigate({
             pathname: "/check-out/CheckOutCCCD-Vehicle",
@@ -298,7 +355,6 @@ const Checkout = () => {
           setHasScanned(false);
           setIsCameraCCCDActive(false); // Tắt camera sau khi quét thành công
           const credentialId = data.split("\n")[0];
-          
 
           return router.navigate({
             pathname: "/check-out/CheckOutCCCD-Vehicle",
@@ -327,24 +383,29 @@ const Checkout = () => {
       !errorByCredentialCard
     ) {
       console.log(isLoadingByCredentialCard);
-      console.log("Dữ liệu phiên khách:", dataByCredentialCard);
+      // console.log("Dữ liệu phiên khách:", dataByCredentialCard);
       router.push("/check-out/CheckOutCard");
       setVisitorSessionData(dataByCredentialCard);
       setModalVisible(false);
     } else if (errorByCredentialCard) {
-      console.log("Dữ liệu phiên khách:", dataByCredentialCard);
+      // console.log("Dữ liệu phiên khách:", dataByCredentialCard);
 
       Alert.alert("Lỗi", "Không tìm thấy phiên khách với CCCD đã nhập.");
     }
   };
 
+  // const handlePress = () => {
+  //   setCameraType("QR");
+  //   setIsCameraActive(true);
+  //   isQrCardSet.current = false;
+  //   setQrCardVerified(null);
+  // };
+
   const handlePress = () => {
     setCameraType("QR");
     setIsCameraActive(true);
-    isQrCardSet.current = false;
-    setQrCardVerified(null);
+    resetScanStates();
   };
-
   return (
     <SafeAreaProvider className="flex-1 bg-backgroundApp">
       <View className="flex-1 bg-white">
@@ -390,7 +451,7 @@ const Checkout = () => {
                   return (
                     <CameraView
                       className="flex-1 w-full h-full"
-                      onBarcodeScanned={handleLicensePlateScanned2}
+                      onBarcodeScanned={handleBarCodeScannedQR}
                     />
                   );
                 // case "CCCD":
@@ -523,9 +584,19 @@ const Checkout = () => {
               </Text>
             </View>
 
-            <TouchableOpacity
+            {/* <TouchableOpacity
               className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
               onPress={() => setIsCameraCCCDActive(false)}
+            >
+              <Text className="text-white">Thoát Camera</Text>
+            </TouchableOpacity> */}
+
+            <TouchableOpacity
+              className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
+              onPress={() => {
+                setIsCameraActive(false);
+                resetScanStates();
+              }}
             >
               <Text className="text-white">Thoát Camera</Text>
             </TouchableOpacity>

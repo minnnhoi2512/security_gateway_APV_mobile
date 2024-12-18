@@ -7,6 +7,7 @@ import {
   Alert,
   Image,
   Pressable,
+  ActivityIndicator,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Camera, useCameraPermissions } from "expo-camera";
@@ -130,8 +131,7 @@ const CreateVisitor = () => {
           setIsProcessing(false);
         } catch (error: any) {
           // console.error("API Error:", JSON.stringify(error, null, 2));
-          let errorMessage =
-            "Không xử lý được thẻ căn cước. Vui lòng thử lại.";
+          let errorMessage = "Không xử lý được thẻ căn cước. Vui lòng thử lại.";
 
           // if (error.data) {
           //   errorMessage = error.data;
@@ -332,17 +332,15 @@ const CreateVisitor = () => {
     }
 
     try {
-     
-
       const response = await createVisitor(formData).unwrap();
-      // Alert.alert("Thành công", "Tạo khách vãng lai thành công", [
-      //   {
-      //     text: "OK",
-      //     onPress: () => {
-      //       router.push("/(tabs)");
-      //     },r
-      //   },
-      // ]);
+      Alert.alert("Thành công", "Tạo khách vãng lai thành công", [
+        {
+          text: "OK",
+          onPress: () => {
+            router.push("/(tabs)");
+          },
+        },
+      ]);
     } catch (error: any) {
       console.log("Tạo chi tiết lỗi của khách truy cập:", error?.data?.errors);
 
@@ -370,6 +368,16 @@ const CreateVisitor = () => {
       router.back();
     }
   };
+
+  const capitalizeWords = (str: string | undefined): string => {
+    if (!str) return "";
+    return str
+      .toLowerCase()
+      .split(" ")
+      .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
   // console.log("Create visitor data: ", visitor);
   if (!showForm) {
     return (
@@ -384,38 +392,154 @@ const CreateVisitor = () => {
 
         <View className="flex-1 justify-center items-center">
           {!initialPhoto ? (
-            <View>
+            <View className="flex-row space-x-4 p-4 mb-16">
               <TouchableOpacity
                 onPress={takeInitialPhoto}
-                className="bg-buttonGreen p-6 rounded-lg shadow-lg"
+                className="flex-1 bg-white rounded-2xl p-6 shadow-lg border border-gray-100"
               >
-                <MaterialIcons name="camera-alt" size={48} color="white" />
-                <Text className="text-white text-center mt-2 font-bold">
-                  Chụp ảnh CCCD
-                </Text>
+                <View className="items-center">
+                  <View className="bg-blue-500 p-4 rounded-full mb-4">
+                    <MaterialIcons name="credit-card" size={32} color="white" />
+                  </View>
+                  <Text className="text-lg font-bold text-gray-800 mb-2">
+                    CCCD
+                  </Text>
+                  <Text className="text-sm text-gray-500 text-center mb-4">
+                    Chụp ảnh căn cước công dân
+                  </Text>
+                  <View className="flex-row items-center bg-blue-50 px-4 py-2 rounded-full">
+                    <MaterialIcons
+                      name="camera-alt"
+                      size={20}
+                      color="#2563eb"
+                    />
+                    <Text className="ml-2 text-blue-600 font-medium">
+                      Chụp ảnh
+                    </Text>
+                  </View>
+                </View>
               </TouchableOpacity>
+
               <TouchableOpacity
                 onPress={takeInitialPhotoGPLX}
-                className="bg-buttonGreen p-6 rounded-lg shadow-lg"
+                className="flex-1 bg-white rounded-2xl p-6 shadow-lg border border-gray-100"
               >
-                <MaterialIcons name="camera-alt" size={48} color="white" />
-                <Text className="text-white text-center mt-2 font-bold">
-                  Chụp ảnh GPLX
-                </Text>
+                <View className="items-center">
+                  <View className="bg-orange-500 p-4 rounded-full mb-4">
+                    <MaterialIcons
+                      name="directions-car"
+                      size={32}
+                      color="white"
+                    />
+                  </View>
+                  <Text className="text-lg font-bold text-gray-800 mb-2">
+                    GPLX
+                  </Text>
+                  <Text className="text-sm text-gray-500 text-center mb-4">
+                    Chụp ảnh giấy phép lái xe
+                  </Text>
+                  <View className="flex-row items-center bg-orange-50 px-4 py-2 rounded-full">
+                    <MaterialIcons
+                      name="camera-alt"
+                      size={20}
+                      color="#f97316"
+                    />
+                    <Text className="ml-2 text-orange-600 font-medium">
+                      Chụp ảnh
+                    </Text>
+                  </View>
+                </View>
               </TouchableOpacity>
             </View>
           ) : (
+            // <View className="w-full items-center">
+            //   <Image
+            //     source={{ uri: initialPhoto }}
+            //     style={{ width: "100%", height: 300 }}
+            //     className="rounded-lg mb-4"
+            //   />
+            //   <View className="flex-row space-x-4">
+            //     <TouchableOpacity
+            //       onPress={handleConfirmInitialPhoto}
+            //       disabled={isProcessing}
+            //       className="bg-buttonGreen p-3 rounded-lg flex-1"
+            //     >
+            //       <Text className="text-white text-center">
+            //         {isProcessing ? "Đang xử lý..." : "Xác nhận"}
+            //       </Text>
+            //     </TouchableOpacity>
+            //   </View>
+            // </View>
             <View className="w-full items-center">
-              <Image
-                source={{ uri: initialPhoto }}
-                style={{ width: "100%", height: 300 }}
-                className="rounded-lg mb-4"
-              />
-              <View className="flex-row space-x-4">
+              {initialPhoto && (
+                <Image
+                  source={{ uri: initialPhoto }}
+                  style={{ width: "100%", height: 300 }}
+                  className="rounded-lg mb-4"
+                />
+              )}
+
+              {isProcessing ? (
+                <View className="w-full bg-white p-4 rounded-lg mb-4">
+                  <ActivityIndicator size="small" color="#34495e" />
+                  <Text className="text-center text-backgroundApp mt-2">
+                    Đang xử lý...
+                  </Text>
+                </View>
+              ) : visitor.credentialsCard && visitor.visitorName ? (
+                <View className="w-full bg-white p-4 rounded-lg mb-4">
+                  <View className="mb-2">
+                    <Text className="text-sm text-gray-500 mb-1">
+                      Họ và tên:
+                    </Text>
+                    <Text className="text-base font-medium">
+                      {capitalizeWords(visitor.visitorName)}
+                    </Text>
+                  </View>
+                  <View>
+                    <Text className="text-sm text-gray-500 mb-1">
+                      {visitor.credentialCardTypeId === 1
+                        ? "Số CCCD:"
+                        : "Số GPLX:"}
+                    </Text>
+                    <Text className="text-base font-medium">
+                      {visitor.credentialsCard}
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
+
+              <View className="flex-row space-x-4 w-full">
+                <TouchableOpacity
+                  onPress={() => {
+                    setInitialPhoto(null);
+                    setVisitor((prev) => ({
+                      ...prev,
+                      credentialsCard: "",
+                      visitorName: "",
+                      visitorCredentialFrontImageFromRequest: null,
+                      visitorCredentialBlurImageFromRequest: null,
+                    }));
+                  }}
+                  className="bg-gray-500 p-3 rounded-lg flex-1"
+                >
+                  <Text className="text-white text-center">Hủy</Text>
+                </TouchableOpacity>
+
                 <TouchableOpacity
                   onPress={handleConfirmInitialPhoto}
-                  disabled={isProcessing}
-                  className="bg-buttonGreen p-3 rounded-lg flex-1"
+                  disabled={
+                    isProcessing ||
+                    !visitor.credentialsCard ||
+                    !visitor.visitorName
+                  }
+                  className={`bg-buttonGreen p-3 rounded-lg flex-1 ${
+                    isProcessing ||
+                    !visitor.credentialsCard ||
+                    !visitor.visitorName
+                      ? "opacity-50"
+                      : ""
+                  }`}
                 >
                   <Text className="text-white text-center">
                     {isProcessing ? "Đang xử lý..." : "Xác nhận"}
@@ -455,13 +579,23 @@ const CreateVisitor = () => {
               </Text>
             </View>
           </View>
-          <View className="mb-4">
+          {/* <View className="mb-4">
             <Text className="text-sm font-semibold text-white mb-2">
               Tên khách hàng
             </Text>
             <View className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
               <Text className="text-backgroundApp">
                 {visitor?.visitorName || ""}
+              </Text>
+            </View>
+          </View> */}
+          <View className="mb-4">
+            <Text className="text-sm font-semibold text-white mb-2">
+              Tên khách hàng
+            </Text>
+            <View className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+              <Text className="text-backgroundApp">
+                {capitalizeWords(visitor?.visitorName) || ""}
               </Text>
             </View>
           </View>

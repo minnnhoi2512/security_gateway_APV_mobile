@@ -228,14 +228,14 @@ const VisitDetail = () => {
                 <FontAwesome5 name="user-check" size={20} color="#2980b9" />
                 <Text className="text-xs text-gray-500 mt-1">Đã vào</Text>
                 <Text className="text-lg font-bold text-blue-600">
-                  {visitInfo.visitorCheckkInCount}
+                  {visitInfo.visitorSessionCheckedInCount}
                 </Text>
               </View>
               <View className="items-center bg-red-50 rounded-xl px-4 py-2 flex-1 mx-1">
                 <FontAwesome5 name="user-times" size={20} color="#e74c3c" />
                 <Text className="text-xs text-gray-500 mt-1">Đã ra</Text>
                 <Text className="text-lg font-bold text-red-600">
-                  {visitInfo.visitorCheckOutedCount}
+                  {visitInfo.visitorSessionCheckedOutCount}
                 </Text>
               </View>
             </View>

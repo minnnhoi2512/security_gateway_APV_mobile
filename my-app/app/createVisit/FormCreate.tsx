@@ -61,30 +61,37 @@ const FormCreate = () => {
   }, []);
 
   const getCurrentTimeString = () => {
-    const hours = currentTime.getHours().toString().padStart(2, '0');
-    const minutes = currentTime.getMinutes().toString().padStart(2, '0');
+    const hours = currentTime.getHours().toString().padStart(2, "0");
+    const minutes = currentTime.getMinutes().toString().padStart(2, "0");
     return `${hours}:${minutes}`;
   };
-  
+
   useEffect(() => {
-    const hours = currentTime.getHours().toString().padStart(2, '0');
-    const minutes = currentTime.getMinutes().toString().padStart(2, '0');
-    const currentTimeString = `${hours}:${minutes}:00`;  
-  
- 
-    setVisitData(prevState => ({
+    const hours = currentTime.getHours().toString().padStart(2, "0");
+    const minutes = currentTime.getMinutes().toString().padStart(2, "0");
+    const currentTimeString = `${hours}:${minutes}:00`;
+
+    setVisitData((prevState) => ({
       ...prevState,
-      visitDetail: [{
-        ...prevState.visitDetail[0],
-        expectedStartHour: currentTimeString
-      }]
+      visitDetail: [
+        {
+          ...prevState.visitDetail[0],
+          expectedStartHour: currentTimeString,
+        },
+      ],
     }));
   }, [currentTime]);
   const [visitData, setVisitData] = useState({
     visitName: "",
     visitQuantity: 1,
-    expectedStartTime: new Date().toISOString().split("T")[0],
-    expectedEndTime: new Date().toISOString().split("T")[0],
+    // expectedStartTime: new Date().toISOString().split("T")[0],
+    // expectedEndTime: new Date().toISOString().split("T")[0],
+    expectedStartTime: new Date(new Date().getTime() + 7 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
+    expectedEndTime: new Date(new Date().getTime() + 7 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
     createById: 0,
     description: "",
     responsiblePersonId: 0,
@@ -201,7 +208,11 @@ const FormCreate = () => {
 
       // Kiểm tra thời gian kết thúc phải lớn hơn thời gian bắt đầu
       if (endTime <= startTime) {
-        alert("Thời gian kết thúc phải lớn hơn thời gian bắt đầu.");
+        Alert.alert(
+          "Lỗi",
+          "Thời gian kết thúc phải lớn hơn thời gian bắt đầu."
+        );
+        // alert("Thời gian kết thúc phải lớn hơn thời gian bắt đầu.");
         setShowEndPicker(false);
         return;
       }
@@ -209,9 +220,11 @@ const FormCreate = () => {
       // Kiểm tra thời gian kết thúc phải cách thời gian bắt đầu ít nhất 30 phút
       const diffMinutes = (endTime - startTime) / (1000 * 60); // Convert to minutes
       if (diffMinutes < 30) {
-        alert(
+        Alert.alert(
+          "Lỗi",
           "Thời gian kết thúc phải cách thời gian bắt đầu ít nhất 30 phút."
         );
+
         setShowEndPicker(false);
         return;
       }
@@ -355,7 +368,7 @@ const FormCreate = () => {
     });
   };
 
-  console.log("Crea5 da: ", visitData);
+  // console.log("Crea5 da: ", visitData);
 
   return (
     <ScrollView className="flex-1 bg-gradient-to-br from-blue-50 to-white">
@@ -440,7 +453,7 @@ const FormCreate = () => {
               </View>
               <View className="bg-gray-100 border border-gray-200 rounded-lg px-4 py-3 flex-row items-center">
                 <Calendar size={20} color="#4A5568" className="mr-2" />
-                <Text  className="text-gray-800">{getCurrentTimeString()}</Text>
+                <Text className="text-gray-800">{getCurrentTimeString()}</Text>
               </View>
               {/* {showStartPicker && (
                 <DateTimePicker

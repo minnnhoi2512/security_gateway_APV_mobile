@@ -30,7 +30,14 @@ import { useToast } from "@/components/Toast/ToastContext";
 import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { fetchWithTimeout } from "@/hooks/util";
-import { setCredentialCard, setIsVehicle, setQRCardVerification, setType, setValidCheckIn, ValidCheckInState } from "@/redux/slices/checkIn.slice";
+import {
+  setCredentialCard,
+  setIsVehicle,
+  setQRCardVerification,
+  setType,
+  setValidCheckIn,
+  ValidCheckInState,
+} from "@/redux/slices/checkIn.slice";
 interface ScanData {
   id: string;
   nationalId?: string;
@@ -77,14 +84,17 @@ const scanQr = () => {
   const [isCameraActive, setIsCameraActive] = useState(true);
   const [hasScanned, setHasScanned] = useState(false);
   const [isCameraInitialized, setIsCameraInitialized] = useState(false);
-  const checkInDataSlice = useSelector((state: RootState) => state.validCheckIn) as ValidCheckInState;
-  const [checkInData, setCheckInData] = useState<ValidCheckInState>(checkInDataSlice);
+  const checkInDataSlice = useSelector(
+    (state: RootState) => state.validCheckIn
+  ) as ValidCheckInState;
+  const [checkInData, setCheckInData] =
+    useState<ValidCheckInState>(checkInDataSlice);
   // console.log("checkInData", checkInData);
   useEffect(() => {
     return () => {
       // Cleanup surface resources
-      if (Platform.OS === 'android') {
-        BackHandler.removeEventListener('hardwareBackPress', () => true);
+      if (Platform.OS === "android") {
+        BackHandler.removeEventListener("hardwareBackPress", () => true);
       }
     };
   }, []);
@@ -390,20 +400,20 @@ const scanQr = () => {
     React.useCallback(() => {
       resetState();
       // redirected.current = false;
-      return () => { };
+      return () => {};
     }, [])
   );
 
   useEffect(() => {
     if (scannedData) {
       console.log("scannedData", scannedData);
-      
+
       if (isCredentialCard(scannedData)) {
         const parsedData = parseQRData(scannedData);
         console.log(scannedData);
 
         if (parsedData) {
-          console.log("setCredentialCardId 1", parsedData.id)
+          console.log("setCredentialCardId 1", parsedData.id);
           setCredentialCardId(parsedData.id);
         } else {
           Alert.alert("Lỗi", "Mã QR không hợp lệ");
@@ -477,7 +487,6 @@ const scanQr = () => {
     //   checkInData.QrCardVerification && checkInData.Images.length > 0;
     // if (qrLock.current) return; // Prevent multiple simultaneous operations
     if (cardVerification) {
-
       // setCheckInData((prevData) => ({
       //   ...prevData,
       //   type: "QRCardVerified",
@@ -485,20 +494,19 @@ const scanQr = () => {
       //   QrCardVerification: cardVerification,
       // }));
       // dispatch(setValidCheckIn(checkInData))
-      dispatch(setQRCardVerification(cardVerification))
-      dispatch(setType("QRCardVerified"))
-      dispatch(setIsVehicle(false))
+      dispatch(setQRCardVerification(cardVerification));
+      dispatch(setType("QRCardVerified"));
+      dispatch(setIsVehicle(false));
       router.push({
         pathname: "/check-in/ListVisit",
         // params: { VerifiedId: cardVerification, type: "QRCardVerified", isVehicle: "false" },
       });
       resetState();
-      console.log("QrCardVerified 1", cardVerification)
-      console.log("QrCardVerified", checkInData)
+      console.log("QrCardVerified 1", cardVerification);
+      console.log("QrCardVerified", checkInData);
       qrLock.current = true; // Set the lock
       // qrLock.current = false;
       // setIsCameraActive(false);
-
 
       // if (
       //   qrCardData &&
@@ -542,7 +550,6 @@ const scanQr = () => {
       //   }
       // }
     } else if (credentialCardId && isCameraActive) {
-
       // if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
       // redirected.current = true;
       // setCheckInData((prevData) => ({
@@ -552,17 +559,21 @@ const scanQr = () => {
       //   CredentialCard: credentialCardId,
       // }));
       // dispatch(setValidCheckIn(checkInData))
-      dispatch(setCredentialCard(credentialCardId))
-      dispatch(setType("CredentialCard"))
-      dispatch(setIsVehicle(false))
+      dispatch(setCredentialCard(credentialCardId));
+      dispatch(setType("CredentialCard"));
+      dispatch(setIsVehicle(false));
 
       router.push({
         pathname: "/check-in/ListVisit",
-        params: { VerifiedId: credentialCardId, type: "CredentialCard", isVehicle: "false" },
+        params: {
+          VerifiedId: credentialCardId,
+          type: "CredentialCard",
+          isVehicle: "false",
+        },
       });
       resetState();
-      console.log("CredentialCard", credentialCardId)
-      console.log("CredentialCard 11", checkInData)
+      console.log("CredentialCard", credentialCardId);
+      console.log("CredentialCard 11", checkInData);
       qrLock.current = true;
       // setIsCameraActive(false);
       // } else if (
@@ -607,12 +618,16 @@ const scanQr = () => {
         //   QrCardVerification: cardVerification,
         // }));
         // dispatch(setValidCheckIn(checkInData))
-        dispatch(setQRCardVerification(cardVerification))
-        dispatch(setType("QRCardVerified"))
-        dispatch(setIsVehicle(true))
+        dispatch(setQRCardVerification(cardVerification));
+        dispatch(setType("QRCardVerified"));
+        dispatch(setIsVehicle(true));
         router.push({
           pathname: "/check-in/ListVisit",
-          params: { VerifiedId: cardVerification, type: "QRCardVerified", isVehicle: "true" },
+          params: {
+            VerifiedId: cardVerification,
+            type: "QRCardVerified",
+            isVehicle: "true",
+          },
         });
         // router.push({
         //   pathname: "/check-in/CheckLicensePlateCard",
@@ -645,9 +660,9 @@ const scanQr = () => {
         //   CredentialCard: credentialCardId,
         // }));
         // dispatch(setValidCheckIn(checkInData))
-        dispatch(setCredentialCard(credentialCardId))
-        dispatch(setType("CredentialCard"))
-        dispatch(setIsVehicle(true))
+        dispatch(setCredentialCard(credentialCardId));
+        dispatch(setType("CredentialCard"));
+        dispatch(setIsVehicle(true));
 
         router.push({
           pathname: "/check-in/ListVisit",
@@ -737,8 +752,8 @@ const scanQr = () => {
           {activeCamera === "QR"
             ? "Quét mã QR"
             : activeCamera === "LICENSE"
-              ? "Quét mã QR với xe"
-              : "Quét CCCD"}
+            ? "Quét mã QR với xe"
+            : "Quét CCCD"}
         </Text>
       </View>
 
@@ -751,8 +766,9 @@ const scanQr = () => {
 
       <View className="absolute bottom-20 flex-row justify-center space-x-4 w-full px-4">
         <TouchableOpacity
-          className={`flex-1 py-3 px-4 rounded-lg ${activeCamera === "QR" ? "bg-blue-500" : "bg-gray-500"
-            }`}
+          className={`flex-1 py-3 px-4 rounded-lg ${
+            activeCamera === "QR" ? "bg-blue-500" : "bg-gray-500"
+          }`}
           onPress={() => {
             setActiveCamera("QR");
             setScanType("normal");
@@ -765,8 +781,9 @@ const scanQr = () => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          className={`flex-1 py-3 px-4 rounded-lg ${activeCamera === "LICENSE" ? "bg-blue-500" : "bg-gray-500"
-            }`}
+          className={`flex-1 py-3 px-4 rounded-lg ${
+            activeCamera === "LICENSE" ? "bg-blue-500" : "bg-gray-500"
+          }`}
           onPress={() => {
             setActiveCamera("LICENSE");
             setScanType("license");
@@ -795,8 +812,8 @@ const scanQr = () => {
           {activeCamera === "QR"
             ? "Đưa mã QR vào khung hình để quét"
             : activeCamera === "LICENSE"
-              ? "Đưa mã QR vào khung hình để quét"
-              : ""}
+            ? "Đưa mã QR vào khung hình để quét"
+            : ""}
         </Text>
       </View>
     </View>

@@ -1,8 +1,16 @@
 // UpdateVisitStatusModal.tsx
 import { useUpdateVisitStatusMutation } from "@/redux/services/visit.service";
 import { Visit2 } from "@/redux/Types/visit.type";
-import { Modal, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 interface UpdateVisitStatusModalProps {
   visit: Visit2;
@@ -16,18 +24,67 @@ export const UpdateVisitStatusModal: React.FC<UpdateVisitStatusModalProps> = ({
   onClose,
 }) => {
   const [updateVisitStatus, { isLoading }] = useUpdateVisitStatusMutation();
+  const router = useRouter();
+  // const handleUpdateStatus = async (newStatus: "Active" | "Violation") => {
+  //   try {
+  //     await updateVisitStatus({
+  //       visitId: visit.visitId,
+  //       newStatus: newStatus,
+  //     }).unwrap();
+  //     onClose();
+  //   } catch (error) {
+  //     console.error("Cập nhật trạng thái chuyến thăm thất bại!:", error);
+  //   }
+  // };
 
-  const handleUpdateStatus = async () => {
+  // const handleUpdateStatus = async (newStatus: "Active" | "Violation") => {
+  //   try {
+  //     await updateVisitStatus({
+  //       visitId: visit.visitId,
+  //       newStatus: newStatus,
+  //     }).unwrap();
+  //     onClose();
+
+ 
+  //     if (newStatus === "Violation") {
+  //       router.push("/(tabs)");
+  //     }
+  //   } catch (error) {
+  //     console.error("Cập nhật trạng thái chuyến thăm thất bại!:", error);
+  //   }
+  // };
+
+
+  const handleUpdateStatus = async (newStatus: "Active" | "Violation") => {
     try {
       await updateVisitStatus({
         visitId: visit.visitId,
-        newStatus: "Active",
-      }).unwrap(); // Using unwrap() to handle the Promise
+        newStatus: newStatus,
+      }).unwrap();
+      
       onClose();
+      if (newStatus === "Violation") {
+        router.push("/(tabs)");
+      }
     } catch (error) {
-      console.error("Error updating visit status:", error);
+ 
+      onClose();
+ 
+      Alert.alert(
+        "Lỗi",
+        "Cập nhật trạng thái chuyến thăm thất bại. Vui lòng thử lại sau.",
+        [
+          {
+            text: "Đồng ý",
+            // onPress: () => console.log("Alert closed")
+          }
+        ]
+      );
+
+      console.error("Cập nhật trạng thái chuyến thăm thất bại:", error);
     }
   };
+
 
   return (
     <Modal
@@ -43,7 +100,7 @@ export const UpdateVisitStatusModal: React.FC<UpdateVisitStatusModalProps> = ({
             <Text className="text-lg font-bold text-gray-800">
               Cập nhật trạng thái lịch hẹn
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={onClose}
               className="p-1 rounded-full hover:bg-gray-100"
             >
@@ -53,24 +110,29 @@ export const UpdateVisitStatusModal: React.FC<UpdateVisitStatusModalProps> = ({
           <Text className="text-base text-gray-700 mb-4">
             Bạn có chắc muốn cập nhật trạng thái của lịch hẹn này?
           </Text>
-          <View className="flex-row justify-end space-x-4">
-            <TouchableOpacity 
-              onPress={onClose}
-              className="bg-gray-100 px-6 py-2.5 rounded-lg border border-gray-200"
-              disabled={isLoading}
-            >
-              <Text className="text-gray-700 font-medium">Từ chối</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              onPress={handleUpdateStatus}
-              className="bg-blue-600 px-6 py-2.5 rounded-lg shadow-sm"
-              disabled={isLoading}
-            >
-              <Text className="text-white font-medium">
-                {isLoading ? "Đang cập nhật..." : "Cập nhật"}
-              </Text>
-            </TouchableOpacity>
-          </View>
+
+          {isLoading ? (
+            <View className="h-20 items-center justify-center">
+              <ActivityIndicator color="#10b981" size="large" />
+            </View>
+          ) : (
+            <View className="flex-row justify-end space-x-4">
+              <TouchableOpacity
+                onPress={() => handleUpdateStatus("Violation")}
+                className="bg-[#e67e22] px-6 py-2.5 rounded-lg border border-gray-200 flex-row items-center justify-center min-w-[90px]"
+                disabled={isLoading}
+              >
+                <Text className="text-white font-medium">Báo cáo</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleUpdateStatus("Active")}
+                className="bg-buttonGreen px-6 py-2.5 rounded-lg shadow-sm flex-row items-center justify-center min-w-[90px]"
+                disabled={isLoading}
+              >
+                <Text className="text-white font-medium">Cập nhật</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </View>
     </Modal>
