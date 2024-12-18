@@ -29,7 +29,7 @@ import { useShoeDetectMutation } from "@/redux/services/qrcode.service";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ImageViewer from "react-native-image-zoom-viewer";
-import { formatDateTime } from "@/hooks/util";
+import { formatDateTime, getCurrentFormattedTime } from "@/hooks/util";
 
 interface CheckoutResponse {
   checkinTime: string;
@@ -220,7 +220,7 @@ const CheckOutCCCD_Vehicle = () => {
           );
         })();
       }
-    }, 3000);
+    }, 5000);
   };
 
   useEffect(() => {
@@ -394,7 +394,7 @@ const CheckOutCCCD_Vehicle = () => {
         );
         setCapturedImage(vehicleValidImageUrl);
         setLicensePlateNumber(result.licensePlate || "Không nhận dạng được");
-        Alert.alert("Thành công", "Đã xử lý ảnh thành công!");
+        // Alert.alert("Thành công", "Đã xử lý ảnh thành công!");
         Alert.alert(
           "Kết quả nhận dạng",
           `Biển số xe: ${result.licensePlate || "Không nhận dạng được"}`,
@@ -669,7 +669,13 @@ const CheckOutCCCD_Vehicle = () => {
                           value={formatDate(checkInData.checkinTime)}
                         />
                       </View>
-                      <View className="w-1/2 pl-2">
+                      <View className="w-1/2 pr-2">
+                        <InfoRow
+                          label="Thời gian ra công ty"
+                          value={getCurrentFormattedTime()}
+                        />
+                      </View>
+                      <View className="w-1/2 pl-2 mt-4">
                         {checkInData.gateIn && (
                           <InfoRow
                             label="Cổng vào"
@@ -705,12 +711,7 @@ const CheckOutCCCD_Vehicle = () => {
                           }
                         />
                       </View>
-                      <View className="w-1/2 pl-2 mt-4">
-                        <InfoRow
-                          label="Trạng thái chuyến thăm"
-                          value={checkInData.visitDetail.visit.visitStatus}
-                        />
-                      </View>
+                     
                     </View>
                   </Section>
                   <SectionDropDown

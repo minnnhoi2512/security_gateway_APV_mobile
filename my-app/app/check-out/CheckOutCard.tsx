@@ -27,7 +27,7 @@ import { uploadToFirebase } from "@/firebase-config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import ImageViewer from "react-native-image-zoom-viewer";
-import { formatDateTime } from "@/hooks/util";
+import { formatDateTime, getCurrentFormattedTime } from "@/hooks/util";
 
 const fetchCaptureImage = async (
   url: string,
@@ -176,7 +176,7 @@ const CheckOutCard = () => {
           Alert.alert("Khách này sử dụng phương tiện", "Vui lòng thử lại.");
         })();
       }
-    }, 3000);
+    }, 5000);
   };
   const [shoeDetectMutation] = useShoeDetectMutation();
   useEffect(() => {
@@ -561,7 +561,13 @@ const CheckOutCard = () => {
                           value={formatDate(checkInData.checkinTime)}
                         />
                       </View>
-                      <View className="w-1/2 pl-2">
+                      <View className="w-1/2 pr-2">
+                        <InfoRow
+                          label="Thời gian ra công ty"
+                          value={getCurrentFormattedTime()}
+                        />
+                      </View>
+                      <View className="w-1/2 pl-2 mt-4">
                         {checkInData.gateIn && (
                           <InfoRow
                             label="Cổng vào"
@@ -597,12 +603,7 @@ const CheckOutCard = () => {
                           }
                         />
                       </View>
-                      <View className="w-1/2 pl-2 mt-4">
-                        <InfoRow
-                          label="Trạng thái chuyến thăm"
-                          value={checkInData.visitDetail.visit.visitStatus}
-                        />
-                      </View>
+                     
                     </View>
                   </Section>
                   <SectionDropDown

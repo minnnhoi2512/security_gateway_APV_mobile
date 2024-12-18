@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface UpdateVisitStatusModalProps {
   visit: Visit2;
@@ -25,51 +27,29 @@ export const UpdateVisitStatusModal: React.FC<UpdateVisitStatusModalProps> = ({
 }) => {
   const [updateVisitStatus, { isLoading }] = useUpdateVisitStatusMutation();
   const router = useRouter();
-  // const handleUpdateStatus = async (newStatus: "Active" | "Violation") => {
-  //   try {
-  //     await updateVisitStatus({
-  //       visitId: visit.visitId,
-  //       newStatus: newStatus,
-  //     }).unwrap();
-  //     onClose();
-  //   } catch (error) {
-  //     console.error("Cập nhật trạng thái chuyến thăm thất bại!:", error);
-  //   }
-  // };
+  const [role, setRole] = useState<string | null>(null);
+  useEffect(() => {
+    const fetchRole = async () => {
+      const storedRole = await AsyncStorage.getItem("userRole");
+      setRole(storedRole);
+    };
+    fetchRole();
+  }, []);
 
-  // const handleUpdateStatus = async (newStatus: "Active" | "Violation") => {
-  //   try {
-  //     await updateVisitStatus({
-  //       visitId: visit.visitId,
-  //       newStatus: newStatus,
-  //     }).unwrap();
-  //     onClose();
-
- 
-  //     if (newStatus === "Violation") {
-  //       router.push("/(tabs)");
-  //     }
-  //   } catch (error) {
-  //     console.error("Cập nhật trạng thái chuyến thăm thất bại!:", error);
-  //   }
-  // };
-
-
-  const handleUpdateStatus = async (newStatus: "Active" | "Violation") => {
+  const handleUpdateStatus = async (newStatus: "Active" | "Violation" | "ViolationResolved") => {
     try {
       await updateVisitStatus({
         visitId: visit.visitId,
         newStatus: newStatus,
       }).unwrap();
-      
+
       onClose();
       if (newStatus === "Violation") {
         router.push("/(tabs)");
       }
     } catch (error) {
- 
       onClose();
- 
+
       Alert.alert(
         "Lỗi",
         "Cập nhật trạng thái chuyến thăm thất bại. Vui lòng thử lại sau.",
@@ -77,14 +57,13 @@ export const UpdateVisitStatusModal: React.FC<UpdateVisitStatusModalProps> = ({
           {
             text: "Đồng ý",
             // onPress: () => console.log("Alert closed")
-          }
+          },
         ]
       );
 
       console.error("Cập nhật trạng thái chuyến thăm thất bại:", error);
     }
   };
-
 
   return (
     <Modal
@@ -116,22 +95,35 @@ export const UpdateVisitStatusModal: React.FC<UpdateVisitStatusModalProps> = ({
               <ActivityIndicator color="#10b981" size="large" />
             </View>
           ) : (
-            <View className="flex-row justify-end space-x-4">
-              <TouchableOpacity
-                onPress={() => handleUpdateStatus("Violation")}
-                className="bg-[#e67e22] px-6 py-2.5 rounded-lg border border-gray-200 flex-row items-center justify-center min-w-[90px]"
-                disabled={isLoading}
-              >
-                <Text className="text-white font-medium">Báo cáo</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleUpdateStatus("Active")}
-                className="bg-buttonGreen px-6 py-2.5 rounded-lg shadow-sm flex-row items-center justify-center min-w-[90px]"
-                disabled={isLoading}
-              >
-                <Text className="text-white font-medium">Cập nhật</Text>
-              </TouchableOpacity>
-            </View>
+            <>
+              {role === "Staff" && (
+                <View className="flex-row justify-end space-x-4">
+                  <TouchableOpacity
+                    onPress={() => handleUpdateStatus("Violation")}
+                    className="bg-[#e67e22] px-6 py-2.5 rounded-lg border border-gray-200 flex-row items-center justify-center min-w-[90px]"
+                    disabled={isLoading}
+                  >
+                    <Text className="text-white font-medium">Báo cáo</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleUpdateStatus("Active")}
+                    className="bg-buttonGreen px-6 py-2.5 rounded-lg shadow-sm flex-row items-center justify-center min-w-[90px]"
+                    disabled={isLoading}
+                  >
+                    <Text className="text-white font-medium">Cập nhật</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              {role === "Security" && (
+                <TouchableOpacity
+                  onPress={() => handleUpdateStatus("ViolationResolved")}
+                  className="bg-buttonGreen px-6 py-2.5 rounded-lg shadow-sm flex-row items-center justify-center min-w-[90px]"
+                  disabled={isLoading}
+                >
+                  <Text className="text-white font-medium">Xác nhận xử lý</Text>
+                </TouchableOpacity>
+              )}
+            </>
           )}
         </View>
       </View>

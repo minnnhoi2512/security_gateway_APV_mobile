@@ -390,7 +390,7 @@ const scanQr = () => {
     return data.includes("\n");
   };
   const resetState = () => {
-    console.log("Resetting state...");
+    // console.log("Resetting state...");
     setScannedData("");
     setCredentialCardId(null);
     setCardVerification(null);

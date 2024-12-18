@@ -45,7 +45,7 @@ const Checkin: React.FC = () => {
     refetch: refetchVSS,
   } = useGetVisitorSessionDayQuery({ pageSize: 10, pageNumber: 1 });
 
-  console.log("VISITOR SS NE CU: ", visitorSession);
+  // console.log("VISITOR SS NE CU: ", visitorSession);
   
 
   // const { error } = useLocalSearchParams<{

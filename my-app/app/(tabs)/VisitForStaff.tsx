@@ -20,13 +20,15 @@ import { useRouter } from "expo-router";
 const visitForStaff = () => {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
+  const [status, setStatus] = useState("Active"); // State to manage the current status
+
   const {
     data: visits,
     isLoading,
     isError,
     refetch,
   } = useGetAllVisitsByCurrentDateQuery({
-    pageSize: 10,
+    pageSize: -1,
     pageNumber: 1,
   });
   const redirectToAddVisitPageHandler = () => {
@@ -63,7 +65,9 @@ const visitForStaff = () => {
       <VisitItem visit={item} />
     </View>
   );
-
+  const filteredVisits = visits?.filter(
+    (visit: any) => visit.visitStatus === status
+  );
   return (
     <SafeAreaProvider>
       <View className="flex-1 bg-gray-50">
@@ -75,7 +79,7 @@ const visitForStaff = () => {
               <View className="px-6 mt-8">
                 <View className="flex-row justify-between items-center mb-6 gap-5">
                   <Text className="text-2xl font-bold text-colorTitleHeader mb-3">
-                    Lịch hẹn Hôm nay
+                    Lịch hẹn hôm nay
                   </Text>
                   <View className="bg-emerald-100 px-4 py-2 rounded-full flex-row items-center space-x-1 mb-2">
                     <FontAwesome5
@@ -84,14 +88,58 @@ const visitForStaff = () => {
                       color="#059669"
                     />
                     <Text className="text-emerald-700 font-semibold">
-                      {visits?.length || 0} lịch hẹn
+                      {filteredVisits?.length || 0} lịch hẹn
                     </Text>
                   </View>
+                </View>
+                <View className="px-6 mb-4 flex-row justify-between">
+                  <TouchableOpacity
+                    onPress={() => setStatus("Active")}
+                    className={`px-4 py-2 rounded-full ${
+                      status === "Active" ? "bg-blue-500" : "bg-gray-200"
+                    }`}
+                  >
+                    <Text
+                      className={`font-semibold ${
+                        status === "Active" ? "text-white" : "text-gray-700"
+                      }`}
+                    >
+                      Hoạt động
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setStatus("ActiveTemporary")}
+                    className={`px-4 py-2 rounded-full ${
+                      status === "ActiveTemporary" ? "bg-yellow-500" : "bg-gray-200"
+                    }`}
+                  >
+                    <Text
+                      className={`font-semibold ${
+                        status === "ActiveTemporary" ? "text-white" : "text-gray-700"
+                      }`}
+                    >
+                      Tạm thời
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setStatus("Violation")}
+                    className={`px-4 py-2 rounded-full ${
+                      status === "Violation" ? "bg-red-500" : "bg-gray-200"
+                    }`}
+                  >
+                    <Text
+                      className={`font-semibold ${
+                        status === "Violation" ? "text-white" : "text-gray-700"
+                      }`}
+                    >
+                      Vi phạm
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             </>
           }
-          data={visits}
+          data={filteredVisits}
           renderItem={renderVisitItem}
           keyExtractor={(visit) => visit.visitId.toString()}
           refreshControl={
