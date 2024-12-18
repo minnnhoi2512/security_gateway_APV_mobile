@@ -89,7 +89,7 @@ const CheckInOverall = () => {
     "pending" | "success" | "error"
   >("pending");
 
-  const [checkIn, { isLoading: isCheckingIn }] = useCheckInMutation();
+  const [checkIn, { isLoading: isCheckingIn, data: respone}] = useCheckInMutation();
   const router = useRouter();
   const { showToast } = useToast();
   const [resultData, setResultData] = useState<ResultData | null>(null);
@@ -242,7 +242,6 @@ const CheckInOverall = () => {
 
         setResultData(response);
         setCheckInStatus("success");
-        dispatch(resetValidCheckIn());
         setCheckInMessage("Bạn vừa check in thành công!");
         showToast("Bạn vừa check in thành công!", "success");
       } catch (error: any) {
@@ -278,6 +277,7 @@ const CheckInOverall = () => {
     router.push({
       pathname: "/(tabs)/checkin",
     });
+    dispatch(resetValidCheckIn());
   };
 
   const ImageSliderForBodyShoe: React.FC<ImageSliderProps> = ({
@@ -688,11 +688,12 @@ const CheckInOverall = () => {
                   label="Tên khách"
                   value={resultData?.visitor.visitorName}
                 />
-                {/* {resultData?.visitor.visitorCredentialFrontImage && (
+                 {/* <ImageSlider response={respone} checkInData={checkInDataSlice} /> */}
+                {resultData?.visitor.visitorCredentialImage && (
               <ImageSection
-                visitorImage={resultData?.visitor.visitorCredentialFrontImage}
+                visitorImage={resultData?.visitor.visitorCredentialImage}
               />
-            )} */}
+            )}
               </Section>
             </View>
 
@@ -735,7 +736,7 @@ const CheckInOverall = () => {
                   value={resultData?.visitor.phoneNumber}
                 />
                 <InfoRow
-                  label="CMND/CCCD"
+                  label="CCCD/GPLX"
                   value={resultData?.visitor.credentialsCard}
                 />
 

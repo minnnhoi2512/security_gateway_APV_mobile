@@ -235,107 +235,107 @@ const scanQr = () => {
     }
   };
 
-  useEffect(() => {
-    const handleQrDataAndCapture = async () => {
-      if (
-        // !qrCardData?.cardVerification ||
-        !cameraGate ||
-        !Array.isArray(cameraGate)
-      ) {
-        console.log("Missing required data:", {
-          // cardVerification: qrCardData?.cardVerification,
-          cameraGate: !!cameraGate,
-          isArray: Array.isArray(cameraGate),
-        });
-        return;
-      }
+  // useEffect(() => {
+  //   const handleQrDataAndCapture = async () => {
+  //     if (
+  //       // !qrCardData?.cardVerification ||
+  //       !cameraGate ||
+  //       !Array.isArray(cameraGate)
+  //     ) {
+  //       console.log("Missing required data:", {
+  //         // cardVerification: qrCardData?.cardVerification,
+  //         cameraGate: !!cameraGate,
+  //         isArray: Array.isArray(cameraGate),
+  //       });
+  //       return;
+  //     }
 
-      try {
-        const bodyCamera = cameraGate.find(
-          (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Body"
-        );
+  //     try {
+  //       const bodyCamera = cameraGate.find(
+  //         (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Body"
+  //       );
 
-        const shoeCamera = cameraGate.find(
-          (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Shoe"
-        );
+  //       const shoeCamera = cameraGate.find(
+  //         (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Shoe"
+  //       );
 
-        const images: CapturedImage[] = [];
+  //       const images: CapturedImage[] = [];
 
-        if (bodyCamera?.cameraURL) {
-          const bodyImageUrl = `${bodyCamera.cameraURL}capture-image`;
-          // console.log("Attempting to capture body image from:", bodyImageUrl);
-          const bodyImageData = await fetchWithTimeout(
-            fetchCaptureImage(bodyImageUrl, "CheckIn_Body"),
-            10000
-          );
+  //       if (bodyCamera?.cameraURL) {
+  //         const bodyImageUrl = `${bodyCamera.cameraURL}capture-image`;
+  //         // console.log("Attempting to capture body image from:", bodyImageUrl);
+  //         const bodyImageData = await fetchWithTimeout(
+  //           fetchCaptureImage(bodyImageUrl, "CheckIn_Body"),
+  //           10000
+  //         );
 
-          if (bodyImageData.ImageFile) {
-            images.push({
-              ImageType: "CheckIn_Body",
-              ImageURL: "",
-              Image: bodyImageData.ImageFile,
-            });
-            // console.log("Body image captured successfully");
-          }
-        }
+  //         if (bodyImageData.ImageFile) {
+  //           images.push({
+  //             ImageType: "CheckIn_Body",
+  //             ImageURL: "",
+  //             Image: bodyImageData.ImageFile,
+  //           });
+  //           // console.log("Body image captured successfully");
+  //         }
+  //       }
 
-        if (shoeCamera?.cameraURL) {
-          const shoeImageUrl = `${shoeCamera.cameraURL}capture-image`;
-          // console.log("Attempting to capture shoe image from:", shoeImageUrl);
+  //       if (shoeCamera?.cameraURL) {
+  //         const shoeImageUrl = `${shoeCamera.cameraURL}capture-image`;
+  //         // console.log("Attempting to capture shoe image from:", shoeImageUrl);
 
-          const shoeImageData = await fetchWithTimeout(
-            fetchCaptureImage(shoeImageUrl, "CheckIn_Shoe"),
-            10000
-          );
+  //         const shoeImageData = await fetchWithTimeout(
+  //           fetchCaptureImage(shoeImageUrl, "CheckIn_Shoe"),
+  //           10000
+  //         );
 
-          if (shoeImageData.ImageFile) {
-            images.push({
-              ImageType: "CheckIn_Shoe",
-              ImageURL: "",
-              Image: shoeImageData.ImageFile,
-            });
-          }
-        }
+  //         if (shoeImageData.ImageFile) {
+  //           images.push({
+  //             ImageType: "CheckIn_Shoe",
+  //             ImageURL: "",
+  //             Image: shoeImageData.ImageFile,
+  //           });
+  //         }
+  //       }
 
-        if (images.length > 0) {
-          // console.log("Setting state with captured images:", images.length);
+  //       if (images.length > 0) {
+  //         // console.log("Setting state with captured images:", images.length);
 
-          // setCheckInData((prevData) => ({
-          //   ...prevData,
-          //   // QrCardVerification: qrCardData.cardVerification,
-          //   Images: images,
-          // }));
+  //         // setCheckInData((prevData) => ({
+  //         //   ...prevData,
+  //         //   // QrCardVerification: qrCardData.cardVerification,
+  //         //   Images: images,
+  //         // }));
 
-          const shoeImage = images.find(
-            (img) => img.ImageType === "CheckIn_Shoe"
-          );
-          if (shoeImage?.Image) {
-            setValidCheckInData((prevData) => ({
-              ...prevData,
-              // QRCardVerification: qrCardData.cardVerification,
-              ImageBody: shoeImage.Image,
-            }));
-            // console.log("ValidCheckInData updated with shoe image");
-          }
-        } else {
-          console.error("No images were captured successfully");
-          Alert.alert("Warning", "Không thể chụp ảnh. Vui lòng thử lại.");
-        }
-      } catch (error) {
-        console.error("Error in capture process:", error);
-        router.navigate("/(tabs)/checkin");
-        Alert.alert(
-          "Lỗi",
-          "Lỗi khi chụp ảnh. Vui lòng kiểm tra cấu hình camera và thử lại."
-        );
-        return;
-      }
-    };
+  //         const shoeImage = images.find(
+  //           (img) => img.ImageType === "CheckIn_Shoe"
+  //         );
+  //         if (shoeImage?.Image) {
+  //           setValidCheckInData((prevData) => ({
+  //             ...prevData,
+  //             // QRCardVerification: qrCardData.cardVerification,
+  //             ImageBody: shoeImage.Image,
+  //           }));
+  //           // console.log("ValidCheckInData updated with shoe image");
+  //         }
+  //       } else {
+  //         console.error("No images were captured successfully");
+  //         Alert.alert("Warning", "Không thể chụp ảnh. Vui lòng thử lại.");
+  //       }
+  //     } catch (error) {
+  //       console.error("Error in capture process:", error);
+  //       router.navigate("/(tabs)/checkin");
+  //       Alert.alert(
+  //         "Lỗi",
+  //         "Lỗi khi chụp ảnh. Vui lòng kiểm tra cấu hình camera và thử lại."
+  //       );
+  //       return;
+  //     }
+  //   };
 
-    handleQrDataAndCapture().catch((error) => {
-      // console.error("Error in handleQrDataAndCapture:", error);
-    });
-  }, [cameraGate]);
+  //   handleQrDataAndCapture().catch((error) => {
+  //     // console.error("Error in handleQrDataAndCapture:", error);
+  //   });
+  // }, [cameraGate]);
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -572,8 +572,8 @@ const scanQr = () => {
         },
       });
       resetState();
-      console.log("CredentialCard", credentialCardId);
-      console.log("CredentialCard 11", checkInData);
+      // console.log("CredentialCard", credentialCardId)
+      // console.log("CredentialCard 11", checkInData)
       qrLock.current = true;
       // setIsCameraActive(false);
       // } else if (

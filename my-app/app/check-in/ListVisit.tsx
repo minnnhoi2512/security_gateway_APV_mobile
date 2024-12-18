@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Pressable,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -13,8 +14,9 @@ import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { isApiError } from "@/redux/Types/ApiError";
 import { useDispatch, useSelector } from "react-redux";
-import { setValidCheckIn, setVisitDetailId, ValidCheckInState } from "@/redux/slices/checkIn.slice";
+import { resetValidCheckIn, setValidCheckIn, setVisitDetailId, ValidCheckInState } from "@/redux/slices/checkIn.slice";
 import { RootState } from "@/redux/store/store";
+import { useToast } from "@/components/Toast/ToastContext";
 
 interface Visit {
   visitDetailId: number;
@@ -51,7 +53,11 @@ const ListVisit: React.FC = () => {
   // }>();
   const dispatch = useDispatch();
   const checkInDataSlice = useSelector<any>((state) => state.validCheckIn) as ValidCheckInState;
+  const { showToast } = useToast();
+
   // console.log("checkInDataSlice", checkInDataSlice);
+  const visitNotFoundShown = useRef(false);
+
   const [checkInData, setCheckInData] = useState<ValidCheckInState>(checkInDataSlice);
 
   const router = useRouter();
@@ -92,7 +98,7 @@ const ListVisit: React.FC = () => {
     const [hours, minutes] = expectedStartHour.split(":").map(Number);
     const expectedTime = new Date();
     expectedTime.setHours(hours, minutes, 0);
-    return now >= expectedTime;
+    return now <= expectedTime;
   };
 
   const handlePress = (visitDetailId: number) => {
@@ -148,13 +154,74 @@ const ListVisit: React.FC = () => {
     }
   }, [visitOfUser, refetch]);
   const handleBackPress = () => {
-    router.push({
-      pathname: "/(tabs)/checkin",
-    });
+    router.back();
   };
 
+  const handleVisitNotFound = () => {
+    visitNotFoundShown.current = true;
+
+    Alert.alert(
+      "Lỗi quét mã",
+      isApiError(isError) ? isError.data.message :
+        "Lỗi trong quá trình quét mã. Vui lòng thử lại hoặc quét lại mã.",
+      [
+        {
+          text: "Quét lại",
+          onPress: () => {
+            router.back();
+            // resetState();
+            visitNotFoundShown.current = false;
+          },
+        },
+        {
+           text: "Ok",
+          onPress: () => {
+            router.navigate({
+              pathname: "/(tabs)",
+            });
+            // resetState();
+            visitNotFoundShown.current = false;
+          },
+        },
+      ]
+    );
+  };
+  useEffect(() => {
+    console.log(isError)
+    if ((checkInDataSlice.CredentialCard !== null || checkInDataSlice.QrCardVerification !== null) && isError) {
+      dispatch(resetValidCheckIn());
+      handleVisitNotFound();
+    }
+  }, []);
+  // useEffect(() => {
+  //   if (isError && !visitNotFoundShown.current) {
+  //     handleVisitNotFound();
+  //     visitNotFoundShown.current = true;
+  //     // visitNotFoundShown.current = false;
+  //     // router.navigate({
+  //     //   pathname: "/(tabs)/checkin",
+  //     //   params: {
+  //     //     error: isApiError(isError) ? isError.data.message : "Không tìm thấy dữ liệu cho ID này.",
+  //     //   },
+  //     // });
+  //   }
+  //   // else if (
+  //   //   !isLoadingVisit &&
+  //   //   !isFetchingVisit &&
+  //   //   !visitNotFoundShown.current
+  //   // ) {
+  //   //   visitNotFoundShown.current = true;
+  //   //   showToast("Không tìm thấy thông tin chuyến thăm", "error");
+  //   // }
+  //   // if (isError !== undefined && isError !== null) {
+  //   //   console.log(isError);
+  //   //   if (isApiError(isError) && isError.status === 400 && (isError.data.code === "Error.Visit" || isError.data.code === "Error.NotfoundVisitor")) {
+  //   //     handleVisitNotFound();
+  //   //   }
+  //   // }
+  // }, []);
   const renderVisit = ({ item }: { item: Visit }) => {
-    const canStart = isTimeToStart(item.expectedStartHour);
+    const canStart = isTimeToStart(item.expectedEndHour);
 
     return (
       <TouchableOpacity
@@ -173,9 +240,9 @@ const ListVisit: React.FC = () => {
           {!canStart && (
             <View className="bg-yellow-100 dark:bg-yellow-900 rounded-full px-3 py-1 self-start">
               <Text className="text-sm text-yellow-800 dark:text-yellow-200">
-                Chưa đến giờ bắt đầu
+                Giờ vào đã kết thúc
               </Text>
-            </View>
+            </View> 
           )}
         </View>
 
@@ -183,7 +250,7 @@ const ListVisit: React.FC = () => {
           <View className="flex-row items-center">
             <MaterialIcons
               name="person"
-              size={20}
+              size={20} 
               className="text-gray-500 dark:text-gray-400"
             />
             <Text className="text-gray-700 dark:text-gray-300 ml-2">
@@ -222,12 +289,7 @@ const ListVisit: React.FC = () => {
                 <Text className="text-sm text-gray-500 dark:text-gray-400">
                   Bắt đầu
                 </Text>
-                <Text
-                  className={`font-medium ${canStart
-                    ? "text-gray-700 dark:text-gray-300"
-                    : "text-yellow-600 dark:text-yellow-400"
-                    }`}
-                >
+                <Text className="text-gray-700 dark:text-gray-300 font-medium">
                   {item.expectedStartHour}
                 </Text>
               </View>
@@ -235,7 +297,12 @@ const ListVisit: React.FC = () => {
                 <Text className="text-sm text-gray-500 dark:text-gray-400">
                   Kết thúc
                 </Text>
-                <Text className="text-gray-700 dark:text-gray-300 font-medium">
+                <Text
+                  className={`font-medium ${canStart
+                    ? "text-gray-700 dark:text-gray-300"
+                    : "text-yellow-600 dark:text-yellow-400"
+                    }`}
+                >
                   {item.expectedEndHour}
                 </Text>
               </View>
