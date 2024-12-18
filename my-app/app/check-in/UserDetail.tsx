@@ -32,6 +32,7 @@ import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
 import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
 import { setGateInId, setImages, setQRCardVerification, setSecurityInId, ValidCheckInState } from "@/redux/slices/checkIn.slice";
+import { fetchWithTimeout } from "@/hooks/util";
 
 interface ImageData {
   ImageType: "Shoe";

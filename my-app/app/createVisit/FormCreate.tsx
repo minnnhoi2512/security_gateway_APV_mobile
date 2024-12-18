@@ -410,18 +410,18 @@ const FormCreate = () => {
                 </Text>
               </View>
               <TouchableOpacity
-                onPress={() => setShowStartPicker(true)}
+                // onPress={() => setShowStartPicker(true)}
                 className="bg-gray-100 border border-gray-200 rounded-lg px-4 py-3 flex-row items-center"
               >
                 <Calendar size={20} color="#4A5568" className="mr-2" />
                 <Text className="text-gray-800">
-                  {/* {visitData.visitDetail[0].expectedStartHour} */}
+                  {visitData.visitDetail[0].expectedStartHour}
                   {formatTimeDisplay(
                     visitData.visitDetail[0].expectedStartHour
                   )}
                 </Text>
               </TouchableOpacity>
-              {showStartPicker && (
+              {/* {showStartPicker && (
                 <DateTimePicker
                   value={
                     new Date(
@@ -435,7 +435,7 @@ const FormCreate = () => {
                     handleTimeChange(event, selectedDate, true)
                   }
                 />
-              )}
+              )} */}
             </View>
 
             <View className="mb-6">

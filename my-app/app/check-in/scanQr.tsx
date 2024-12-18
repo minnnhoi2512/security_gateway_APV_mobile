@@ -29,11 +29,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useToast } from "@/components/Toast/ToastContext";
 import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-<<<<<<< HEAD
 import { fetchWithTimeout } from "@/hooks/util";
-=======
 import { setCredentialCard, setIsVehicle, setQRCardVerification, setType, setValidCheckIn, ValidCheckInState } from "@/redux/slices/checkIn.slice";
->>>>>>> checkin
 interface ScanData {
   id: string;
   nationalId?: string;

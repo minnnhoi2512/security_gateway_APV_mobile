@@ -37,6 +37,7 @@ import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.servi
 import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
 import { setVehicleSession, ValidCheckInState } from "@/redux/slices/checkIn.slice";
+import { fetchWithTimeout } from "@/hooks/util";
 
 interface ImageData {
   ImageType: string;
