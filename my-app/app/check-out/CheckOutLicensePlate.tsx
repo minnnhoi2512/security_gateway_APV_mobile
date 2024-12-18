@@ -661,7 +661,7 @@ const CheckOutLicensePlate = () => {
                     title="Trạng thái"
                   >
                     <View className="flex flex-row flex-wrap">
-                      <View className="w-1/2 pr-2">
+                      <View className="w-1/2 pl-2 pr-2">
                         <InfoRow
                           label="Thời gian vào công ty"
                           value={formatDate(checkInData.checkinTime)}
