@@ -161,14 +161,13 @@ const ValidCheckInScreen = () => {
         };
         
         // Gọi API
-        console.log("validCheckInData", validCheckInData);
         const result = await validCheckIn(validCheckInData);
         // console.log("API Response:", result);
-
+        
         // Kiểm tra lỗi từ server
         if (result?.error) {
           const error = result.error as FetchBaseQueryError;
-
+          
           if (
             error.data &&
             typeof error.data === "object" &&
@@ -187,6 +186,7 @@ const ValidCheckInScreen = () => {
             Alert.alert("Lỗi", "Đã xảy ra lỗi không xác định từ API.");
           }
         } else {
+          console.log("validCheckInData", validCheckInData);
           // Alert.alert("Thành công", "Xác nhận ra thành công");
         }
       } catch (error: any) {
@@ -207,7 +207,7 @@ const ValidCheckInScreen = () => {
     };
 
     validateCheckIn();
-  }, [params.dataValid]);
+  }, []);
 
   const handleNext = () => {
     console.log(checkInDataSlice);
@@ -585,7 +585,7 @@ const ValidCheckInScreen = () => {
         });
         tempLabels.push('Ảnh CCCD');
       }
-
+      console.log("checkInData",checkInData);
       checkInData?.Images?.forEach((img) => {
         if (img.Image) {
           tempImages.push({
@@ -893,7 +893,7 @@ const ValidCheckInScreen = () => {
                   value={response?.visitor.visitorName}
                 />
                 <View className="mt-3">
-                  <Text className="text-sm">Hìnhn ảnh</Text>
+                  <Text className="text-sm">Hình ảnh</Text>
                 </View>
                 <View className="flex-row justify-around mt-4">
                   <ImageSlider response={response} checkInData={checkInDataSlice} />
@@ -940,7 +940,7 @@ const ValidCheckInScreen = () => {
                   value={response?.visitor.phoneNumber}
                 />
                 <InfoRow
-                  label="CMND/CCCD"
+                  label="CCCD/GPLX"
                   value={response?.visitor.credentialsCard}
                 />
 

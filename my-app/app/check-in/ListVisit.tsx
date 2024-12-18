@@ -98,7 +98,7 @@ const ListVisit: React.FC = () => {
     const [hours, minutes] = expectedStartHour.split(":").map(Number);
     const expectedTime = new Date();
     expectedTime.setHours(hours, minutes, 0);
-    return now >= expectedTime;
+    return now <= expectedTime;
   };
 
   const handlePress = (visitDetailId: number) => {
@@ -161,9 +161,9 @@ const ListVisit: React.FC = () => {
     visitNotFoundShown.current = true;
 
     Alert.alert(
-      "Không tìm thấy dữ liệu",
+      "Lỗi quét mã",
       isApiError(isError) ? isError.data.message :
-      "Lỗi trong quá trình quét mã. Vui lòng thử lại hoặc quét lại mã.",
+        "Lỗi trong quá trình quét mã. Vui lòng thử lại hoặc quét lại mã.",
       [
         {
           text: "Quét lại",
@@ -174,7 +174,7 @@ const ListVisit: React.FC = () => {
           },
         },
         {
-          text: "Ok",
+           text: "Ok",
           onPress: () => {
             router.navigate({
               pathname: "/(tabs)",
@@ -187,12 +187,12 @@ const ListVisit: React.FC = () => {
     );
   };
   useEffect(() => {
-    console.log(isError )
-    if (checkInDataSlice.CredentialCard !== null && checkInDataSlice.QrCardVerification !== null && isError) {
+    console.log(isError)
+    if ((checkInDataSlice.CredentialCard !== null || checkInDataSlice.QrCardVerification !== null) && isError) {
       dispatch(resetValidCheckIn());
       handleVisitNotFound();
     }
-  }, [isError]);
+  }, []);
   // useEffect(() => {
   //   if (isError && !visitNotFoundShown.current) {
   //     handleVisitNotFound();
@@ -221,7 +221,7 @@ const ListVisit: React.FC = () => {
   //   // }
   // }, []);
   const renderVisit = ({ item }: { item: Visit }) => {
-    const canStart = isTimeToStart(item.expectedStartHour);
+    const canStart = isTimeToStart(item.expectedEndHour);
 
     return (
       <TouchableOpacity
@@ -240,9 +240,9 @@ const ListVisit: React.FC = () => {
           {!canStart && (
             <View className="bg-yellow-100 dark:bg-yellow-900 rounded-full px-3 py-1 self-start">
               <Text className="text-sm text-yellow-800 dark:text-yellow-200">
-                Chưa đến giờ bắt đầu
+                Giờ vào đã kết thúc
               </Text>
-            </View>
+            </View> 
           )}
         </View>
 
@@ -250,7 +250,7 @@ const ListVisit: React.FC = () => {
           <View className="flex-row items-center">
             <MaterialIcons
               name="person"
-              size={20}
+              size={20} 
               className="text-gray-500 dark:text-gray-400"
             />
             <Text className="text-gray-700 dark:text-gray-300 ml-2">
@@ -289,12 +289,7 @@ const ListVisit: React.FC = () => {
                 <Text className="text-sm text-gray-500 dark:text-gray-400">
                   Bắt đầu
                 </Text>
-                <Text
-                  className={`font-medium ${canStart
-                    ? "text-gray-700 dark:text-gray-300"
-                    : "text-yellow-600 dark:text-yellow-400"
-                    }`}
-                >
+                <Text className="text-gray-700 dark:text-gray-300 font-medium">
                   {item.expectedStartHour}
                 </Text>
               </View>
@@ -302,7 +297,12 @@ const ListVisit: React.FC = () => {
                 <Text className="text-sm text-gray-500 dark:text-gray-400">
                   Kết thúc
                 </Text>
-                <Text className="text-gray-700 dark:text-gray-300 font-medium">
+                <Text
+                  className={`font-medium ${canStart
+                    ? "text-gray-700 dark:text-gray-300"
+                    : "text-yellow-600 dark:text-yellow-400"
+                    }`}
+                >
                   {item.expectedEndHour}
                 </Text>
               </View>

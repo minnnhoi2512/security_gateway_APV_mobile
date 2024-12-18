@@ -222,107 +222,107 @@ const CheckLicensePlate = () => {
       return { ImageType: imageType, ImageFile: null };
     }
   };
-  const handleQrDataAndCapture = async () => {
-    if (!Array.isArray(cameraGate)) {
-      console.log("Missing required data:", {
-        isArray: Array.isArray(cameraGate),
-      });
-      return;
-    }
+  // const handleQrDataAndCapture = async () => {
+  //   if (!Array.isArray(cameraGate)) {
+  //     console.log("Missing required data:", {
+  //       isArray: Array.isArray(cameraGate),
+  //     });
+  //     return;
+  //   }
 
-    try {
-      // Tìm camera trực tiếp từ mảng cameraGate
-      const bodyCamera = cameraGate.find(
-        (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Body"
-      );
+  //   try {
+  //     // Tìm camera trực tiếp từ mảng cameraGate
+  //     const bodyCamera = cameraGate.find(
+  //       (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Body"
+  //     );
 
-      const shoeCamera = cameraGate.find(
-        (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Shoe"
-      );
+  //     const shoeCamera = cameraGate.find(
+  //       (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Shoe"
+  //     );
 
-      console.log("Found cameras:", {
-        bodyCamera: bodyCamera?.cameraURL,
-        shoeCamera: shoeCamera?.cameraURL,
-      });
+  //     console.log("Found cameras:", {
+  //       bodyCamera: bodyCamera?.cameraURL,
+  //       shoeCamera: shoeCamera?.cameraURL,
+  //     });
 
-      const images: CapturedImage[] = [];
+  //     const images: CapturedImage[] = [];
 
-      // Chụp ảnh body
-      if (bodyCamera?.cameraURL) {
-        const bodyImageUrl = `${bodyCamera.cameraURL}capture-image`;
-        // console.log("Attempting to capture body image from:", bodyImageUrl);
+  //     // Chụp ảnh body
+  //     if (bodyCamera?.cameraURL) {
+  //       const bodyImageUrl = `${bodyCamera.cameraURL}capture-image`;
+  //       // console.log("Attempting to capture body image from:", bodyImageUrl);
 
-        const bodyImageData = await fetchWithTimeout(
-          fetchCaptureImage(bodyImageUrl, "CheckIn_Body"),
-          10000
-        );
+  //       const bodyImageData = await fetchWithTimeout(
+  //         fetchCaptureImage(bodyImageUrl, "CheckIn_Body"),
+  //         10000
+  //       );
 
-        if (bodyImageData.ImageFile) {
-          images.push({
-            ImageType: "CheckIn_Body",
+  //       if (bodyImageData.ImageFile) {
+  //         images.push({
+  //           ImageType: "CheckIn_Body",
 
-            Image: bodyImageData.ImageFile,
-          });
-          // console.log("Body image captured successfully");
-        }
-      }
+  //           Image: bodyImageData.ImageFile,
+  //         });
+  //         // console.log("Body image captured successfully");
+  //       }
+  //     }
 
-      // Chụp ảnh giày
-      if (shoeCamera?.cameraURL) {
-        const shoeImageUrl = `${shoeCamera.cameraURL}capture-image`;
-        console.log("Attempting to capture shoe image from:", shoeImageUrl);
+  //     // Chụp ảnh giày
+  //     if (shoeCamera?.cameraURL) {
+  //       const shoeImageUrl = `${shoeCamera.cameraURL}capture-image`;
+  //       console.log("Attempting to capture shoe image from:", shoeImageUrl);
 
-        const shoeImageData = await fetchWithTimeout(
-          fetchCaptureImage(shoeImageUrl, "CheckIn_Shoe"),
-          10000
-        );
+  //       const shoeImageData = await fetchWithTimeout(
+  //         fetchCaptureImage(shoeImageUrl, "CheckIn_Shoe"),
+  //         10000
+  //       );
 
-        if (shoeImageData.ImageFile) {
-          images.push({
-            ImageType: "CheckIn_Shoe",
-            Image: shoeImageData.ImageFile,
-          });
-          console.log("Shoe image captured successfully");
-        }
-      }
+  //       if (shoeImageData.ImageFile) {
+  //         images.push({
+  //           ImageType: "CheckIn_Shoe",
+  //           Image: shoeImageData.ImageFile,
+  //         });
+  //         console.log("Shoe image captured successfully");
+  //       }
+  //     }
 
-      if (images.length > 0) {
-        console.log("Setting state with captured images:", images.length);
+  //     if (images.length > 0) {
+  //       console.log("Setting state with captured images:", images.length);
 
-        // Cập nhật checkInData
-        // setCheckInData((prevData) => ({
-        //   ...prevData,
-        //   QrCardVerification: qrCardData?.cardVerification || "",
-        //   Images: images,
-        // }));
+  //       // Cập nhật checkInData
+  //       // setCheckInData((prevData) => ({
+  //       //   ...prevData,
+  //       //   QrCardVerification: qrCardData?.cardVerification || "",
+  //       //   Images: images,
+  //       // }));
 
-        // Cập nhật validCheckInData
-        const shoeImage = images.find(
-          (img) => img.ImageType === "CheckIn_Shoe"
-        );
-        if (shoeImage?.Image) {
-          // setValidCheckInData((prevData) => ({
-          //   ...prevData,
-          //   QRCardVerification: qrCardData?.cardVerification || "",
-          //   ImageShoe: shoeImage.Image,
-          // }));
-          console.log("ValidCheckInData updated with shoe image");
-        }
-        return images;
-      } else {
-        console.error("No images were captured successfully");
-        Alert.alert("Warning", "Không thể chụp ảnh. Vui lòng thử lại.");
-      }
-    } catch (error) {
-      console.error("Error in capture process:", error);
-      router.navigate("/(tabs)/checkin");
-      Alert.alert(
-        "Lỗi",
-        "Lỗi khi chụp ảnh. Vui lòng kiểm tra cấu hình camera và thử lại."
-      );
-      return;
-    }
-  };
+  //       // Cập nhật validCheckInData
+  //       const shoeImage = images.find(
+  //         (img) => img.ImageType === "CheckIn_Shoe"
+  //       );
+  //       if (shoeImage?.Image) {
+  //         // setValidCheckInData((prevData) => ({
+  //         //   ...prevData,
+  //         //   QRCardVerification: qrCardData?.cardVerification || "",
+  //         //   ImageShoe: shoeImage.Image,
+  //         // }));
+  //         console.log("ValidCheckInData updated with shoe image");
+  //       }
+  //       return images;
+  //     } else {
+  //       console.error("No images were captured successfully");
+  //       Alert.alert("Warning", "Không thể chụp ảnh. Vui lòng thử lại.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error in capture process:", error);
+  //     router.navigate("/(tabs)/checkin");
+  //     Alert.alert(
+  //       "Lỗi",
+  //       "Lỗi khi chụp ảnh. Vui lòng kiểm tra cấu hình camera và thử lại."
+  //     );
+  //     return;
+  //   }
+  // };
   // const directData = async () => {
   //   if (qrCardData) {
   //     setIsProcessing(true);
@@ -575,8 +575,8 @@ const CheckLicensePlate = () => {
           console.log("Scanned QR Code Data:", data);
           setIsCameraActive(false);
           setHasScannedQR(true);
-          const captureImage: CapturedImage[] | undefined =
-            await handleQrDataAndCapture();
+          // const captureImage: CapturedImage[] | undefined =
+          //   await handleQrDataAndCapture();
           // await validateAndNavigate({
           //   ...checkInData,
           //   Images: captureImage || [],
