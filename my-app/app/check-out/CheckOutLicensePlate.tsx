@@ -1054,7 +1054,30 @@ const CheckOutLicensePlate = () => {
                             </Text>
                             <View className="flex-row flex-wrap">
                               {checkInData.vehicleSession.images
-                                .filter((image: any) => image.imageType !== "")
+                                .filter((image: any) => image.imageType !== "CheckIn_vehicle")
+                                .map((image: any, index: number) => (
+                                  <TouchableOpacity
+                                    key={index}
+                                    className="w-1/2 p-1"
+                                    // onPress={() =>
+                                    //   handleImagePress([image.imageURL])
+                                    // }
+                                    onPress={(e) => {
+                                      e.stopPropagation();
+                                      handleImagePress([image.imageURL]);
+                                    }}
+                                  >
+                                    <Image
+                                      source={{ uri: image.imageURL }}
+                                      className="w-full h-48 rounded-lg"
+                                      resizeMode="contain"
+                                    />
+                                  </TouchableOpacity>
+                                ))}
+                            </View>
+                            <View className="flex-row flex-wrap">
+                              {checkInData.vehicleSession.images
+                                .filter((image: any) => image.imageType !== "CheckOut_vehicle")
                                 .map((image: any, index: number) => (
                                   <TouchableOpacity
                                     key={index}
