@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Pressable,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -13,8 +14,9 @@ import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { isApiError } from "@/redux/Types/ApiError";
 import { useDispatch, useSelector } from "react-redux";
-import { setValidCheckIn, setVisitDetailId, ValidCheckInState } from "@/redux/slices/checkIn.slice";
+import { resetValidCheckIn, setValidCheckIn, setVisitDetailId, ValidCheckInState } from "@/redux/slices/checkIn.slice";
 import { RootState } from "@/redux/store/store";
+import { useToast } from "@/components/Toast/ToastContext";
 
 interface Visit {
   visitDetailId: number;
@@ -51,7 +53,11 @@ const ListVisit: React.FC = () => {
   // }>();
   const dispatch = useDispatch();
   const checkInDataSlice = useSelector<any>((state) => state.validCheckIn) as ValidCheckInState;
+  const { showToast } = useToast();
+
   // console.log("checkInDataSlice", checkInDataSlice);
+  const visitNotFoundShown = useRef(false);
+
   const [checkInData, setCheckInData] = useState<ValidCheckInState>(checkInDataSlice);
 
   const router = useRouter();
@@ -148,11 +154,72 @@ const ListVisit: React.FC = () => {
     }
   }, [visitOfUser, refetch]);
   const handleBackPress = () => {
-    router.push({
-      pathname: "/(tabs)/checkin",
-    });
+    router.back();
   };
 
+  const handleVisitNotFound = () => {
+    visitNotFoundShown.current = true;
+
+    Alert.alert(
+      "Không tìm thấy dữ liệu",
+      isApiError(isError) ? isError.data.message :
+      "Lỗi trong quá trình quét mã. Vui lòng thử lại hoặc quét lại mã.",
+      [
+        {
+          text: "Quét lại",
+          onPress: () => {
+            router.back();
+            // resetState();
+            visitNotFoundShown.current = false;
+          },
+        },
+        {
+          text: "Ok",
+          onPress: () => {
+            router.navigate({
+              pathname: "/(tabs)",
+            });
+            // resetState();
+            visitNotFoundShown.current = false;
+          },
+        },
+      ]
+    );
+  };
+  useEffect(() => {
+    console.log(isError )
+    if (checkInDataSlice.CredentialCard !== null && checkInDataSlice.QrCardVerification !== null && isError) {
+      dispatch(resetValidCheckIn());
+      handleVisitNotFound();
+    }
+  }, [isError]);
+  // useEffect(() => {
+  //   if (isError && !visitNotFoundShown.current) {
+  //     handleVisitNotFound();
+  //     visitNotFoundShown.current = true;
+  //     // visitNotFoundShown.current = false;
+  //     // router.navigate({
+  //     //   pathname: "/(tabs)/checkin",
+  //     //   params: {
+  //     //     error: isApiError(isError) ? isError.data.message : "Không tìm thấy dữ liệu cho ID này.",
+  //     //   },
+  //     // });
+  //   }
+  //   // else if (
+  //   //   !isLoadingVisit &&
+  //   //   !isFetchingVisit &&
+  //   //   !visitNotFoundShown.current
+  //   // ) {
+  //   //   visitNotFoundShown.current = true;
+  //   //   showToast("Không tìm thấy thông tin chuyến thăm", "error");
+  //   // }
+  //   // if (isError !== undefined && isError !== null) {
+  //   //   console.log(isError);
+  //   //   if (isApiError(isError) && isError.status === 400 && (isError.data.code === "Error.Visit" || isError.data.code === "Error.NotfoundVisitor")) {
+  //   //     handleVisitNotFound();
+  //   //   }
+  //   // }
+  // }, []);
   const renderVisit = ({ item }: { item: Visit }) => {
     const canStart = isTimeToStart(item.expectedStartHour);
 

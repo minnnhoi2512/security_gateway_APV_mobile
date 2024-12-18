@@ -9,9 +9,10 @@ import {
   Modal,
   FlatList,
   Dimensions,
+  Alert,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCameraPermissions } from "expo-camera";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Header from "@/components/UI/Header";
@@ -21,6 +22,7 @@ import VisitItem from "../home/VisitItem";
 import { useGetAllVisitsByCurrentDateQuery } from "@/redux/services/visit.service";
 
 const Checkin: React.FC = () => {
+
   const [permission, requestPermission] = useCameraPermissions();
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
@@ -35,7 +37,22 @@ const Checkin: React.FC = () => {
       refetchOnMountOrArgChange: true,
     }
   );
-
+  // const { error } = useLocalSearchParams<{
+  //   error: string;
+  // }>();
+  // if (error) {
+  //   Alert.alert("Lỗi trong quá trình quét mã", error,
+  //     [
+  //       {
+  //         text: "Tạo mới",
+  //         onPress: () => {
+  //           router.push({
+  //             pathname: "/(tabs)",
+  //           });
+  //         }
+  //       }
+  //     ]);
+  // }
   const handleScanPress = async () => {
     if (permission?.granted) {
       router.push("/check-in/scanQr");

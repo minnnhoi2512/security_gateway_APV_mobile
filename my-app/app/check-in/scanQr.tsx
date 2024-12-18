@@ -561,8 +561,8 @@ const scanQr = () => {
         params: { VerifiedId: credentialCardId, type: "CredentialCard", isVehicle: "false" },
       });
       resetState();
-      console.log("CredentialCard", credentialCardId)
-      console.log("CredentialCard 11", checkInData)
+      // console.log("CredentialCard", credentialCardId)
+      // console.log("CredentialCard 11", checkInData)
       qrLock.current = true;
       // setIsCameraActive(false);
       // } else if (
