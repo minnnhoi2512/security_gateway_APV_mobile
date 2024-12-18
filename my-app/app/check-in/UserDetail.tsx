@@ -31,7 +31,13 @@ import { RootState } from "@/redux/store/store";
 import { useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
 import { useGetDataByCardVerificationQuery } from "@/redux/services/qrcode.service";
 import { useGetCameraByGateIdQuery } from "@/redux/services/gate.service";
-import { setGateInId, setImages, setQRCardVerification, setSecurityInId, ValidCheckInState } from "@/redux/slices/checkIn.slice";
+import {
+  setGateInId,
+  setImages,
+  setQRCardVerification,
+  setSecurityInId,
+  ValidCheckInState,
+} from "@/redux/slices/checkIn.slice";
 import { fetchWithTimeout } from "@/hooks/util";
 
 interface ImageData {
@@ -48,7 +54,9 @@ interface CapturedImage {
 
 const UserDetail = () => {
   const dispatch = useDispatch();
-  const checkInDataSlice = useSelector<any>((state) => state.validCheckIn) as ValidCheckInState;
+  const checkInDataSlice = useSelector<any>(
+    (state) => state.validCheckIn
+  ) as ValidCheckInState;
   const { visitId } = useLocalSearchParams<{ visitId: string }>();
   const { data } = useLocalSearchParams<{ data: string }>();
   // const { visitDetailId } = useLocalSearchParams<{
@@ -77,8 +85,8 @@ const UserDetail = () => {
   useEffect(() => {
     return () => {
       // Cleanup surface resources
-      if (Platform.OS === 'android') {
-        BackHandler.removeEventListener('hardwareBackPress', () => true);
+      if (Platform.OS === "android") {
+        BackHandler.removeEventListener("hardwareBackPress", () => true);
       }
     };
   }, []);
@@ -251,9 +259,6 @@ const UserDetail = () => {
     }
   };
 
-
-
-
   // useEffect(() => {
   //   if (isErrorQr && !hasShownError) {
   //     setHasShownError(true);
@@ -277,11 +282,7 @@ const UserDetail = () => {
 
   useEffect(() => {
     const handleQrDataAndCapture = async () => {
-      if (
-
-        !cameraGate ||
-        !Array.isArray(cameraGate)
-      ) {
+      if (!cameraGate || !Array.isArray(cameraGate)) {
         console.log("Missing required data:", {
           // cardVerification: qrCardData.cardVerification,
           cameraGate: !!cameraGate,
@@ -490,7 +491,6 @@ const UserDetail = () => {
           <Text className="text-white mt-4">Đang xử lý mã QR Code...</Text>
         </View>
       ) : (
-
         <GestureHandlerRootView className="flex-1 ">
           <View className="w-full aspect-[2/4] relative mb-4">
             {isCameraActive && (
@@ -500,7 +500,7 @@ const UserDetail = () => {
               />
             )}
             <Overlay />
-            {(isProcessing) && (
+            {isProcessing && (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#ffffff" />
                 <Text className="text-xl" style={styles.loadingText}>
@@ -508,10 +508,19 @@ const UserDetail = () => {
                 </Text>
               </View>
             )}
-            <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
+            {/* <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
               <Text className="text-green-700 text-sm font-semibold">
                 Camera Checkin
               </Text>
+            </View> */}
+            <View className="absolute top-64 w-full flex items-center">
+              <View className="bg-white px-6 py-2 rounded-md shadow-lg">
+                <Text className="text-green-700 text-sm font-semibold">
+                  <Text className="text-green-700 text-sm font-semibold">
+                    Camera Checkin
+                  </Text>
+                </Text>
+              </View>
             </View>
             <TouchableOpacity
               className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-2 rounded-md shadow-lg"

@@ -51,7 +51,6 @@ export interface VisitorSession {
   images: SessionImage[];
 }
 
-
 interface VisitorSessionResponse {
   items: VisitorSession[];
   totalCount: number;
@@ -84,6 +83,15 @@ export const visitorSessionApi = createApi({
         params: { pageNumber, pageSize },
       }),
     }),
+
+    getVisitorSessionDay: builder.query({
+      query: () => {
+        const currentDate = new Date(new Date().getTime() + 7 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0];
+        return `VisitorSession/Date?pageNumber=1&pageSize=10&date=${currentDate}`;
+      },
+    }),
   }),
   // endpoints: (builder) => ({
   //   getVisitorSessions: builder.query<VisitorSessionResponse, { pageNumber: number; pageSize: number }>({
@@ -95,4 +103,4 @@ export const visitorSessionApi = createApi({
   // }),
 });
 
-export const { useGetVisitorSessionsQuery } = visitorSessionApi;
+export const { useGetVisitorSessionsQuery, useGetVisitorSessionDayQuery } = visitorSessionApi;

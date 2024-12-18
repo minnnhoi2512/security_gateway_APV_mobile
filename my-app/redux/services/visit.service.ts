@@ -21,14 +21,15 @@ export const visitApi = createApi({
   endpoints: (builder) => ({
     getAllVisitsByCurrentDate: builder.query({
       query: () => {
-        const currentDate = new Date().toISOString().split('T')[0];
+        const currentDate = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().split('T')[0];
         return `Visit/Day?pageSize=-1&pageNumber=1&date=${currentDate}`;
       },
       providesTags: ['Visit']
     }),
     getVisitsByCurrentDate: builder.query({
       query: ({ pageSize, pageNumber }) => {
-        const currentDate = new Date().toISOString().split('T')[0];
+        // const currentDate = new Date().toISOString().split('T')[0];
+        const currentDate = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().split('T')[0];
         return {
           url: `Visit/Day`,
           params: {

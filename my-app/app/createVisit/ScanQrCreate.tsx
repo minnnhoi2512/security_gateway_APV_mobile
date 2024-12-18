@@ -114,7 +114,7 @@ export default function ScanQrCreate() {
     if (scannedData.includes("|")) {
       const parsedData = parseQRData(scannedData);
       setCredentialCardId(parsedData.id);
-    }else if (scannedData.includes("\n")) {
+    } else if (scannedData.includes("\n")) {
       const parsedData = parseQRLicensePlateData(scannedData);
       setCredentialCardId(parsedData ? parsedData.id : null);
     }
@@ -236,11 +236,19 @@ export default function ScanQrCreate() {
       )}
 
       <Overlay />
-
+      {/* 
       <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
         <Text className="text-green-700 text-sm font-semibold">
           Camera Tạo mới
         </Text>
+      </View> */}
+
+      <View className="absolute top-64 w-full flex items-center">
+        <View className="bg-white px-6 py-2 rounded-md shadow-lg">
+          <Text className="text-green-700 text-sm font-semibold">
+            Camera Tạo mới
+          </Text>
+        </View>
       </View>
 
       <TouchableOpacity

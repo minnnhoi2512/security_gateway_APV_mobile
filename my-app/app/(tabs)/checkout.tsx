@@ -474,7 +474,7 @@ const Checkout = () => {
             })()}
             <Overlay />
 
-            <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
+            {/* <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
               <Text className="text-green-700 text-sm font-semibold">
                 {activeCamera === "QR"
                   ? "Quét mã QR"
@@ -482,6 +482,17 @@ const Checkout = () => {
                   ? "Quét mã QR với xe"
                   : "Quét CCCD"}
               </Text>
+            </View> */}
+            <View className="absolute top-64 w-full flex items-center">
+              <View className="bg-white px-6 py-2 rounded-md shadow-lg">
+                <Text className="text-green-700 text-sm font-semibold">
+                  {activeCamera === "QR"
+                    ? "Checkin - Quét mã QR"
+                    : activeCamera === "LICENSE"
+                    ? "Checkin - Quét mã QR với xe"
+                    : "Quét CCCD"}
+                </Text>
+              </View>
             </View>
 
             <TouchableOpacity
@@ -584,14 +595,14 @@ const Checkout = () => {
               </Text>
             </View>
 
-            {/* <TouchableOpacity
+            <TouchableOpacity
               className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
               onPress={() => setIsCameraCCCDActive(false)}
             >
               <Text className="text-white">Thoát Camera</Text>
-            </TouchableOpacity> */}
+            </TouchableOpacity>
 
-            <TouchableOpacity
+            {/* <TouchableOpacity
               className="absolute top-14 right-4 bg-black bg-opacity-50 px-3 py-3 rounded"
               onPress={() => {
                 setIsCameraActive(false);
@@ -599,7 +610,7 @@ const Checkout = () => {
               }}
             >
               <Text className="text-white">Thoát Camera</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             <View className="absolute bottom-20 flex-row justify-center space-x-4 w-full px-4">
               <TouchableOpacity
