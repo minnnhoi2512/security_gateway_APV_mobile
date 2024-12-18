@@ -39,7 +39,7 @@ const FormCreate = () => {
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [searchPhoneNumber, setSearchPhoneNumber] = useState("");
   const { showToast } = useToast();
-
+  const [currentTime, setCurrentTime] = useState(new Date());
   const getCurrentTime = () => {
     const now = new Date();
     const hours = String(now.getHours()).padStart(2, "0");
@@ -52,6 +52,34 @@ const FormCreate = () => {
     return time.slice(0, 5);
   };
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const getCurrentTimeString = () => {
+    const hours = currentTime.getHours().toString().padStart(2, '0');
+    const minutes = currentTime.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+  
+  useEffect(() => {
+    const hours = currentTime.getHours().toString().padStart(2, '0');
+    const minutes = currentTime.getMinutes().toString().padStart(2, '0');
+    const currentTimeString = `${hours}:${minutes}:00`;  
+  
+ 
+    setVisitData(prevState => ({
+      ...prevState,
+      visitDetail: [{
+        ...prevState.visitDetail[0],
+        expectedStartHour: currentTimeString
+      }]
+    }));
+  }, [currentTime]);
   const [visitData, setVisitData] = useState({
     visitName: "",
     visitQuantity: 1,
@@ -155,42 +183,43 @@ const FormCreate = () => {
     const timeString = currentDate
       .toLocaleTimeString("en-US", { hour12: false })
       .slice(0, 8);
-  
+
     if (isStartTime) {
       // Kiểm tra thời gian bắt đầu phải lớn hơn thời gian hiện tại
-      if (currentDate < now) {
-        alert("Thời gian bắt đầu phải lớn hơn thời gian hiện tại.");
-        setShowStartPicker(false);
-        return;
-      }
-  
+      // if (currentDate < now) {
+      //   alert("Thời gian bắt đầu phải lớn hơn thời gian hiện tại.");
+      //   setShowStartPicker(false);
+      //   return;
+      // }
+
       setShowStartPicker(false);
       handleDetailChange("expectedStartHour", timeString);
     } else {
       const startHour = visitData.visitDetail[0].expectedStartHour;
       const startTime = new Date(`2000-01-01T${startHour}`).getTime(); // Convert to timestamp
       const endTime = new Date(`2000-01-01T${timeString}`).getTime(); // Convert to timestamp
-  
+
       // Kiểm tra thời gian kết thúc phải lớn hơn thời gian bắt đầu
       if (endTime <= startTime) {
         alert("Thời gian kết thúc phải lớn hơn thời gian bắt đầu.");
         setShowEndPicker(false);
         return;
       }
-  
+
       // Kiểm tra thời gian kết thúc phải cách thời gian bắt đầu ít nhất 30 phút
       const diffMinutes = (endTime - startTime) / (1000 * 60); // Convert to minutes
       if (diffMinutes < 30) {
-        alert("Thời gian kết thúc phải cách thời gian bắt đầu ít nhất 30 phút.");
+        alert(
+          "Thời gian kết thúc phải cách thời gian bắt đầu ít nhất 30 phút."
+        );
         setShowEndPicker(false);
         return;
       }
-  
+
       setShowEndPicker(false);
       handleDetailChange("expectedEndHour", timeString);
     }
   };
-  
 
   // const handleSubmit = async () => {
   //   try {
@@ -226,25 +255,25 @@ const FormCreate = () => {
       const startTime = new Date(`2000-01-01T${startHour}`).getTime();
       const endTime = new Date(`2000-01-01T${endHour}`).getTime();
       const now = new Date().getTime();
-  
+
       // Kiểm tra thời gian bắt đầu phải lớn hơn thời gian hiện tại
-      if (startTime < now) {
-        Alert.alert(
-          "Lỗi",
-          "Thời gian bắt đầu phải lớn hơn thời gian hiện tại."
-        );
-        return;
-      }
-  
+      // if (startTime < now) {
+      //   Alert.alert(
+      //     "Lỗi",
+      //     "Thời gian bắt đầu phải lớn hơn thời gian hiện tại."
+      //   );
+      //   return;
+      // }
+
       // Kiểm tra thời gian kết thúc phải lớn hơn thời gian bắt đầu
-      if (endTime <= startTime) {
-        Alert.alert(
-          "Lỗi",
-          "Thời gian kết thúc phải lớn hơn thời gian bắt đầu."
-        );
-        return;
-      }
-  
+      // if (endTime <= startTime) {
+      //   Alert.alert(
+      //     "Lỗi",
+      //     "Thời gian kết thúc phải lớn hơn thời gian bắt đầu."
+      //   );
+      //   return;
+      // }
+
       // Kiểm tra thời gian kết thúc phải cách thời gian bắt đầu ít nhất 30 phút
       const diffMinutes = (endTime - startTime) / (1000 * 60); // Convert to minutes
       if (diffMinutes < 30) {
@@ -254,7 +283,7 @@ const FormCreate = () => {
         );
         return;
       }
-  
+
       // Nếu tất cả điều kiện hợp lệ, tiến hành tạo lịch
       const submitData = {
         ...visitData,
@@ -262,7 +291,7 @@ const FormCreate = () => {
         expectedStartTime: `${visitData.expectedStartTime}T${startHour}`,
         expectedEndTime: `${visitData.expectedEndTime}T${endHour}`,
       };
-  
+
       const result = await createVisit(submitData).unwrap();
       showToast("Bạn vừa tạo lịch ghé thăm thành công!", "success");
       Alert.alert("Thành công", "Tạo lịch ghé thăm thành công!", [
@@ -276,12 +305,12 @@ const FormCreate = () => {
     } catch (error: any) {
       const errorMessage =
         error?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
-  
+
       showToast("Đã có lỗi xảy ra", "error");
       Alert.alert("Đã có lỗi xảy ra", errorMessage);
     }
   };
-  
+
   const clearValidationError = (field: string) => {
     setValidationErrors((prev) => {
       const newErrors = { ...prev };
@@ -409,18 +438,10 @@ const FormCreate = () => {
                   Bắt đầu
                 </Text>
               </View>
-              <TouchableOpacity
-                // onPress={() => setShowStartPicker(true)}
-                className="bg-gray-100 border border-gray-200 rounded-lg px-4 py-3 flex-row items-center"
-              >
+              <View className="bg-gray-100 border border-gray-200 rounded-lg px-4 py-3 flex-row items-center">
                 <Calendar size={20} color="#4A5568" className="mr-2" />
-                <Text className="text-gray-800">
-                  {visitData.visitDetail[0].expectedStartHour}
-                  {formatTimeDisplay(
-                    visitData.visitDetail[0].expectedStartHour
-                  )}
-                </Text>
-              </TouchableOpacity>
+                <Text  className="text-gray-800">{getCurrentTimeString()}</Text>
+              </View>
               {/* {showStartPicker && (
                 <DateTimePicker
                   value={
