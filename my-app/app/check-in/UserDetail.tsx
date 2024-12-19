@@ -51,15 +51,6 @@ const UserDetail = () => {
   const checkInDataSlice = useSelector<any>((state) => state.validCheckIn) as ValidCheckInState;
   const { visitId } = useLocalSearchParams<{ visitId: string }>();
   const { data } = useLocalSearchParams<{ data: string }>();
-  // const { visitDetailId } = useLocalSearchParams<{
-  //   visitDetailId: string;
-  // }>();
-  // const { VerifiedId } = useLocalSearchParams<{
-  //   VerifiedId: string;
-  // }>();
-  // const { verifiedType } = useLocalSearchParams<{
-  //   verifiedType: string;
-  // }>();
   const selectedGateId = useSelector(
     (state: RootState) => state.gate.selectedGateId
   );
@@ -83,28 +74,6 @@ const UserDetail = () => {
     };
   }, []);
 
-  // RTK QUERY
-
-  // const {
-  //   data: visitDetail,
-  //   isLoading,
-  //   isError,
-  // } = useGetVisitDetailByIdQuery(visitId);
-
-  //CHECKIN DATA
-  // const [checkInData, setCheckInData] = useState<CheckInVer02>({
-  //   VisitDetailId: Number(checkInDataSlice.VisitDetailId) || 0,
-  //   SecurityInId: 0,
-  //   GateInId: Number(selectedGateId) || 0,
-  //   QrCardVerification: "",
-  //   Images: [],
-  // });
-  // console.log("checkInData 1",checkInData);
-  // const [validCheckInData, setValidCheckInData] = useState<ValidCheckIn>({
-  //   CredentialCard: null,
-  //   QRCardVerification: "",
-  //   ImageShoe: [],
-  // });
 
   const gateId = Number(selectedGateId) || 0;
   const {
@@ -118,22 +87,10 @@ const UserDetail = () => {
     }
   );
 
-  // const {
-  //   data: qrCardData,
-  //   isLoading: isLoadingQr,
-  //   isError: isErrorQr,
-  // } = useGetDataByCardVerificationQuery(checkInData.QrCardVerification, {
-  //   skip: !checkInData.QrCardVerification,
-  // });
   useEffect(() => {
     if (checkInDataSlice.type === "QRCardVerified") {
-      // setCheckInData((prevData) => ({
-      //   ...prevData,
-      //   QrCardVerification: checkInDataSlice.QrCardVerification || "",
-      // }));
       setIsCameraActive(false);
       setIsProcessing(true);
-      // console.log("checkInDataSlice 1", checkInDataSlice);
     } else {
       setIsCameraActive(true);
     }
@@ -160,33 +117,7 @@ const UserDetail = () => {
     fetchUserId();
   }, []);
 
-  // useEffect(() => {
-  //   if (visitDetail && Array.isArray(visitDetail) && visitDetail.length > 0) {
-  //     const credentialCard = visitDetail[0]?.visitor?.credentialsCard;
-
-  //     setCheckInData((prevData) => ({
-  //       ...prevData,
-  //       CredentialCard: credentialCard,
-  //     }));
-  //     // setValidCheckInData((prevData) => ({
-  //     //   ...prevData,
-  //     //   CredentialCard: credentialCard,
-  //     // }));
-  //   }
-  // }, [visitDetail]);
-
-  // useEffect(() => {
-  //   if (verifiedType === "QRCardVerified") {
-  //     setCheckInData((prevData) => ({
-  //       ...prevData,
-  //       QrCardVerification: VerifiedId || "",
-  //     }));
-  //     setIsCameraActive(false);
-  //   } else {
-  //     setIsCameraActive(true);
-  //   }
-  // }, [verifiedType, VerifiedId]);
-  //PERMISSION
+  
   useEffect(() => {
     if (permission?.granted) {
       setIsPermissionGranted(true);
@@ -254,26 +185,6 @@ const UserDetail = () => {
 
 
 
-  // useEffect(() => {
-  //   if (isErrorQr && !hasShownError) {
-  //     setHasShownError(true);
-  //     Alert.alert(
-  //       "Lỗi",
-  //       "Không tìm thấy dữ liệu QR. Vui lòng thử lại.",
-  //       [
-  //         {
-  //           text: "OK",
-  //           onPress: () => {
-  //             qrLock.current = false;
-  //             setIsProcessing(false);
-  //             setCheckInData(prev => ({...prev, QrCardVerification: ""}));
-  //             router.back();
-  //           }
-  //         }
-  //       ]
-  //     );
-  //   }
-  // }, [isErrorQr]);
 
   useEffect(() => {
     const handleQrDataAndCapture = async () => {
@@ -336,26 +247,10 @@ const UserDetail = () => {
         }
 
         if (images.length > 0) {
-          // Cập nhật checkInData
-          // setCheckInData((prevData) => ({
-          //   ...prevData,
-          //   // QrCardVerification: qrCardData.cardVerification,
-          //   Images: images,
-          // }));
+        
           dispatch(setImages(images));
-          console.log("images", images);
-          // Cập nhật validCheckInData
-          // const shoeImage = images.find(
-          //   (img) => img.ImageType === "CheckIn_Shoe"
-          // );
-          // if (shoeImage?.Image) {
-          //   setValidCheckInData((prevData) => ({
-          //     ...prevData,
-          //     QRCardVerification: qrCardData.cardVerification,
-          //     ImageBody: shoeImage.Image,
-          //   }));
-          //   console.log("ValidCheckInData updated with shoe image");
-          // }
+          // console.log("images", images);
+        
         } else {
           console.error("No images were captured successfully");
           Alert.alert("Warning", "Không thể chụp ảnh. Vui lòng thử lại.");
@@ -376,34 +271,6 @@ const UserDetail = () => {
     });
   }, [cameraGate]);
 
-  // useEffect(() => {
-  //   if (qrCardData) {
-  //     setIsProcessing(true);
-  //     if (qrCardData.cardVerification) {
-  //       setCheckInData((prevData) => ({
-  //         ...prevData,
-  //         QrCardVerification: qrCardData.cardVerification,
-  //       }));
-  //     } else {
-  //       setIsCameraActive(true);
-  //     }
-  //   } else {
-  //     setIsCameraActive(true);
-  //   }
-  // }, [data]);
-
-  // useEffect(() => {
-  //   if (qrCardData) {
-  //     setIsProcessing(true);
-
-  //     if (qrCardData.cardVerification) {
-  //       setCheckInData((prevData) => ({
-  //         ...prevData,
-  //         QrCardVerification: qrCardData.cardVerification,
-  //       }));
-  //     }
-  //   }
-  // }, [qrCardData]);
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (data && !qrLock.current) {

@@ -161,7 +161,7 @@ export default function TabLayout() {
       <Tabs.Screen 
         name="CreateCustomer"
         options={{
-          href: role === "Staff" || role === "Security" ? null : "/(tabs)/CreateCustomer",
+          href: role === "Staff" || role === "Security" ? null : "/(tabs)/createCustomer",
           title: "Tạo mới",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name="create-outline" size={24} color={color} />

@@ -42,15 +42,6 @@ interface Visit {
 }
 
 const ListVisit: React.FC = () => {
-  // const { VerifiedId } = useLocalSearchParams<{
-  //   VerifiedId: string;
-  // }>();
-  // const { type: verifiedType } = useLocalSearchParams<{
-  //   type: string;
-  // }>();
-  // const { isVehicle: isVehicleParam } = useLocalSearchParams<{
-  //   isVehicle: string;
-  // }>();
   const dispatch = useDispatch();
   const checkInDataSlice = useSelector<any>((state) => state.validCheckIn) as ValidCheckInState;
   const { showToast } = useToast();
@@ -193,36 +184,9 @@ const ListVisit: React.FC = () => {
       handleVisitNotFound();
     }
   }, []);
-  // useEffect(() => {
-  //   if (isError && !visitNotFoundShown.current) {
-  //     handleVisitNotFound();
-  //     visitNotFoundShown.current = true;
-  //     // visitNotFoundShown.current = false;
-  //     // router.navigate({
-  //     //   pathname: "/(tabs)/checkin",
-  //     //   params: {
-  //     //     error: isApiError(isError) ? isError.data.message : "Không tìm thấy dữ liệu cho ID này.",
-  //     //   },
-  //     // });
-  //   }
-  //   // else if (
-  //   //   !isLoadingVisit &&
-  //   //   !isFetchingVisit &&
-  //   //   !visitNotFoundShown.current
-  //   // ) {
-  //   //   visitNotFoundShown.current = true;
-  //   //   showToast("Không tìm thấy thông tin chuyến thăm", "error");
-  //   // }
-  //   // if (isError !== undefined && isError !== null) {
-  //   //   console.log(isError);
-  //   //   if (isApiError(isError) && isError.status === 400 && (isError.data.code === "Error.Visit" || isError.data.code === "Error.NotfoundVisitor")) {
-  //   //     handleVisitNotFound();
-  //   //   }
-  //   // }
-  // }, []);
   const renderVisit = ({ item }: { item: Visit }) => {
     const canStart = isTimeToStart(item.expectedEndHour);
-
+   
     return (
       <TouchableOpacity
         onPress={() => handlePress(item.visitDetailId)}

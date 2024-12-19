@@ -130,54 +130,6 @@ const scanQr = () => {
     };
   }, []);
 
-  const { showToast } = useToast();
-  // const {
-  //   data: visitOfUser,
-  //   isLoading: isLoadingVisit,
-  //   error: isError,
-  //   isFetching: isFetchingVisit,
-  // } = useGetVisitByCredentialCardQuery(
-  //   { VerifiedId: credentialCardId || "", verifiedType: "CredentialCard" },
-  //   {
-  //     skip: !credentialCardId,
-  //   }
-  // );
-
-  // const [checkInData, setCheckInData] = useState<CheckInVer02>({
-  //   VisitDetailId: null,
-  //   SecurityInId: 0,
-  //   GateInId: Number(selectedGateId) || 0,
-  //   QrCardVerification: "",
-  //   Images: [],
-  // });
-
-  const [validCheckInData, setValidCheckInData] = useState<ValidCheckIn>({
-    VisitDetailId: null,
-    QRCardVerification: "",
-    ImageShoe: [],
-  });
-
-  // const {
-  //   data: qrCardData,
-  //   isLoading: isLoadingQr,
-  //   isError: isErrorQr,
-  //   isFetching: isFetchingQr,
-  // } = useGetDataByCardVerificationQuery(cardVerification || "", {
-  //   skip: !cardVerification,
-  // });
-
-  const gateId = Number(selectedGateId) || 0;
-  const {
-    data: cameraGate,
-    isLoading,
-    isError: isErrorCamera,
-  } = useGetCameraByGateIdQuery(
-    { gateId },
-    {
-      skip: !gateId,
-    }
-  );
-
   useEffect(() => {
     (async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
@@ -235,108 +187,6 @@ const scanQr = () => {
     }
   };
 
-  // useEffect(() => {
-  //   const handleQrDataAndCapture = async () => {
-  //     if (
-  //       // !qrCardData?.cardVerification ||
-  //       !cameraGate ||
-  //       !Array.isArray(cameraGate)
-  //     ) {
-  //       console.log("Missing required data:", {
-  //         // cardVerification: qrCardData?.cardVerification,
-  //         cameraGate: !!cameraGate,
-  //         isArray: Array.isArray(cameraGate),
-  //       });
-  //       return;
-  //     }
-
-  //     try {
-  //       const bodyCamera = cameraGate.find(
-  //         (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Body"
-  //       );
-
-  //       const shoeCamera = cameraGate.find(
-  //         (camera) => camera?.cameraType?.cameraTypeName === "CheckIn_Shoe"
-  //       );
-
-  //       const images: CapturedImage[] = [];
-
-  //       if (bodyCamera?.cameraURL) {
-  //         const bodyImageUrl = `${bodyCamera.cameraURL}capture-image`;
-  //         // console.log("Attempting to capture body image from:", bodyImageUrl);
-  //         const bodyImageData = await fetchWithTimeout(
-  //           fetchCaptureImage(bodyImageUrl, "CheckIn_Body"),
-  //           10000
-  //         );
-
-  //         if (bodyImageData.ImageFile) {
-  //           images.push({
-  //             ImageType: "CheckIn_Body",
-  //             ImageURL: "",
-  //             Image: bodyImageData.ImageFile,
-  //           });
-  //           // console.log("Body image captured successfully");
-  //         }
-  //       }
-
-  //       if (shoeCamera?.cameraURL) {
-  //         const shoeImageUrl = `${shoeCamera.cameraURL}capture-image`;
-  //         // console.log("Attempting to capture shoe image from:", shoeImageUrl);
-
-  //         const shoeImageData = await fetchWithTimeout(
-  //           fetchCaptureImage(shoeImageUrl, "CheckIn_Shoe"),
-  //           10000
-  //         );
-
-  //         if (shoeImageData.ImageFile) {
-  //           images.push({
-  //             ImageType: "CheckIn_Shoe",
-  //             ImageURL: "",
-  //             Image: shoeImageData.ImageFile,
-  //           });
-  //         }
-  //       }
-
-  //       if (images.length > 0) {
-  //         // console.log("Setting state with captured images:", images.length);
-
-  //         // setCheckInData((prevData) => ({
-  //         //   ...prevData,
-  //         //   // QrCardVerification: qrCardData.cardVerification,
-  //         //   Images: images,
-  //         // }));
-
-  //         const shoeImage = images.find(
-  //           (img) => img.ImageType === "CheckIn_Shoe"
-  //         );
-  //         if (shoeImage?.Image) {
-  //           setValidCheckInData((prevData) => ({
-  //             ...prevData,
-  //             // QRCardVerification: qrCardData.cardVerification,
-  //             ImageBody: shoeImage.Image,
-  //           }));
-  //           // console.log("ValidCheckInData updated with shoe image");
-  //         }
-  //       } else {
-  //         console.error("No images were captured successfully");
-  //         Alert.alert("Warning", "Không thể chụp ảnh. Vui lòng thử lại.");
-  //       }
-  //     } catch (error) {
-  //       console.error("Error in capture process:", error);
-  //       router.navigate("/(tabs)/checkin");
-  //       Alert.alert(
-  //         "Lỗi",
-  //         "Lỗi khi chụp ảnh. Vui lòng kiểm tra cấu hình camera và thử lại."
-  //       );
-  //       return;
-  //     }
-  //   };
-
-  //   handleQrDataAndCapture().catch((error) => {
-  //     // console.error("Error in handleQrDataAndCapture:", error);
-  //   });
-  // }, [cameraGate]);
-
   useEffect(() => {
     const fetchUserId = async () => {
       try {
@@ -354,17 +204,6 @@ const scanQr = () => {
     };
     fetchUserId();
   }, []);
-
-  // useEffect(() => {
-  //   if (qrCardData) {
-  //     if (qrCardData.cardVerification) {
-  //       setCheckInData((prevData) => ({
-  //         ...prevData,
-  //         QrCardVerification: qrCardData.cardVerification,
-  //       }));
-  //     }
-  //   }
-  // }, [qrCardData]);
 
   const parseQRData = (qrData: string): ScanData | null => {
     const parts = qrData.split("|");
@@ -431,10 +270,6 @@ const scanQr = () => {
         }
       } else {
         setCardVerification(scannedData);
-        // setCheckInData((prevData) => ({
-        //   ...prevData,
-        //   QrCardVerification: scannedData,
-        // }));
       }
     }
   }, [scannedData]);
@@ -480,85 +315,18 @@ const scanQr = () => {
 
   useEffect(() => {
     if (scanType !== "normal" || !scannedData) return;
-
-    // if (isLoadingVisit || isFetchingVisit) return;
-
-    // const hasRequiredData =
-    //   checkInData.QrCardVerification && checkInData.Images.length > 0;
-    // if (qrLock.current) return; // Prevent multiple simultaneous operations
     if (cardVerification) {
-      // setCheckInData((prevData) => ({
-      //   ...prevData,
-      //   type: "QRCardVerified",
-      //   isVehicle: false,
-      //   QrCardVerification: cardVerification,
-      // }));
-      // dispatch(setValidCheckIn(checkInData))
       dispatch(setQRCardVerification(cardVerification));
       dispatch(setType("QRCardVerified"));
       dispatch(setIsVehicle(false));
       router.push({
         pathname: "/check-in/ListVisit",
-        // params: { VerifiedId: cardVerification, type: "QRCardVerified", isVehicle: "false" },
       });
       resetState();
       console.log("QrCardVerified 1", cardVerification);
       console.log("QrCardVerified", checkInData);
-      qrLock.current = true; // Set the lock
-      // qrLock.current = false;
-      // setIsCameraActive(false);
-
-      // if (
-      //   qrCardData &&
-      //   !isLoadingQr &&
-      //   !isFetchingQr &&
-      //   !isErrorQr &&
-      //   hasRequiredData
-      // ) {
-      //   // redirected.current = true;
-
-      //   router.push({
-      //     pathname: "/check-in/ValidCheckInScreen",
-      //     params: {
-      //       dataCheckIn: JSON.stringify(checkInData),
-      //       dataValid: JSON.stringify({
-      //         CredentialCard: checkInData.CredentialCard,
-      //         QRCardVerification: checkInData.QrCardVerification,
-      //         ImageShoe:
-      //           checkInData.Images.find(
-      //             (img) => img.ImageType === "CheckIn_Shoe"
-      //           )?.Image || null,
-      //       }),
-      //     },
-      //   });
-
-      //   resetState();
-      //   alertShown.current = false;
-      // } else if (!isLoadingQr && !isFetchingQr && (isErrorQr || !qrCardData)) {
-      //   if (!alertShown.current) {
-      //     // showToast("Mã xác thực không hợp lệ", "error");
-      //     Alert.alert("Lỗi", "Mã xác thực không hợp lệ 1", [
-      //       {
-      //         text: "OK",
-      //         onPress: () => {
-      //           resetState();
-      //           alertShown.current = false;
-      //         },
-      //       },
-      //     ]);
-      //     alertShown.current = true;
-      //   }
-      // }
+      qrLock.current = true; 
     } else if (credentialCardId && isCameraActive) {
-      // if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
-      // redirected.current = true;
-      // setCheckInData((prevData) => ({
-      //   ...prevData,
-      //   type: "CredentialCard",
-      //   isVehicle: false,
-      //   CredentialCard: credentialCardId,
-      // }));
-      // dispatch(setValidCheckIn(checkInData))
       dispatch(setCredentialCard(credentialCardId));
       dispatch(setType("CredentialCard"));
       dispatch(setIsVehicle(false));
@@ -572,52 +340,21 @@ const scanQr = () => {
         },
       });
       resetState();
-      // console.log("CredentialCard", credentialCardId)
-      // console.log("CredentialCard 11", checkInData)
       qrLock.current = true;
-      // setIsCameraActive(false);
-      // } else if (
-      //   !isLoadingVisit &&
-      //   !isFetchingVisit &&
-      //   !visitNotFoundShown.current
-      // ) {
-      //   visitNotFoundShown.current = true;
-      //   showToast("Không tìm thấy thông tin chuyến thăm", "error");
-      //   handleVisitNotFound();
-      // }
     }
   }, [
     scanType,
     scannedData,
-    // visitOfUser,
-    // isLoadingVisit,
-    // isFetchingVisit,
     credentialCardId,
-    // qrCardData,
-    // isLoadingQr,
-    // isFetchingQr,
     cardVerification,
-    // checkInData,
   ]);
 
   useEffect(() => {
     if (scanType !== "license" || !scannedData) return;
 
-    // if (isLoadingVisit || isFetchingVisit) return;
-
     const handleLicenseScan = async () => {
       if (cardVerification) {
-        // if (qrCardData && !isLoadingQr && !isFetchingQr && !isErrorQr) {
-        // redirected.current = true;
         await new Promise((resolve) => setTimeout(resolve, 500));
-        // console.log("Xe cardcard")
-        // setCheckInData((prevData) => ({
-        //   ...prevData,
-        //   type: "QRCardVerified",
-        //   isVehicle: true,
-        //   QrCardVerification: cardVerification,
-        // }));
-        // dispatch(setValidCheckIn(checkInData))
         dispatch(setQRCardVerification(cardVerification));
         dispatch(setType("QRCardVerified"));
         dispatch(setIsVehicle(true));
@@ -629,60 +366,19 @@ const scanQr = () => {
             isVehicle: "true",
           },
         });
-        // router.push({
-        //   pathname: "/check-in/CheckLicensePlateCard",
-        //   params: { card: cardVerification },
-        // });
         resetState();
         qrLock.current = true;
-        // setIsCameraActive(false);
-        // } else if (
-        //   !isLoadingQr &&
-        //   !isFetchingQr &&
-        //   (isErrorQr || !qrCardData)
-        // ) {
-        //   Alert.alert("Lỗi", "Mã xác thực không hợp lệ", [
-        //     {
-        //       text: "OK",
-        //       onPress: resetState,
-        //     },
-        //   ]);
-        // }
       } else if (credentialCardId) {
-        // if (visitOfUser && !isFetchingVisit && !isLoadingVisit && !isError) {
-        //   redirected.current = true;
         await new Promise((resolve) => setTimeout(resolve, 500));
-        // console.log("Xe CCCDCCCD")
-        // setCheckInData((prevData) => ({
-        //   ...prevData,
-        //   type: "CredentialCard",
-        //   isVehicle: true,
-        //   CredentialCard: credentialCardId,
-        // }));
-        // dispatch(setValidCheckIn(checkInData))
         dispatch(setCredentialCard(credentialCardId));
         dispatch(setType("CredentialCard"));
         dispatch(setIsVehicle(true));
 
         router.push({
           pathname: "/check-in/ListVisit",
-          // params: { VerifiedId: credentialCardId, type: "CredentialCard", isVehicle: "true" },
         });
-        // router.push({
-        //   pathname: "/check-in/ListVisitLicensePlate",
-        //   params: { credentialCardId },
-        // });
         resetState();
         qrLock.current = true;
-        // setIsCameraActive(false);
-        // } else if (
-        //   !isLoadingVisit &&
-        //   !isFetchingVisit &&
-        //   !visitNotFoundShown.current
-        // ) {
-        //   visitNotFoundShown.current = true;
-        //   handleVisitNotFound();
-        // }
       }
     };
 
@@ -690,12 +386,6 @@ const scanQr = () => {
   }, [
     scanType,
     scannedData,
-    // visitOfUser,
-    // isLoadingVisit,
-    // isFetchingVisit,
-    // qrCardData,
-    // isLoadingQr,
-    // isFetchingQr,
     cardVerification,
     credentialCardId,
   ]);
@@ -723,9 +413,6 @@ const scanQr = () => {
     router.back();
   };
 
-  const handleGoToScanQr2 = () => {
-    router.replace("/check-in/scanQr2");
-  };
 
   return (
     <View className="flex-1 bg-black justify-center items-center">
