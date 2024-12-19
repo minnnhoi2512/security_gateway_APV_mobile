@@ -20,9 +20,9 @@ import Header from "@/components/UI/Header";
 import { Visit2 } from "@/redux/Types/visit.type";
 import VisitItem from "../home/VisitItem";
 import { useGetAllVisitsByCurrentDateQuery } from "@/redux/services/visit.service";
+import { useGetVisitorSessionDayQuery } from "@/redux/services/visitorSession.service";
 
 const Checkin: React.FC = () => {
-
   const [permission, requestPermission] = useCameraPermissions();
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
@@ -37,6 +37,17 @@ const Checkin: React.FC = () => {
       refetchOnMountOrArgChange: true,
     }
   );
+
+  const {
+    data: visitorSession,
+    isLoading: isLoadingVisitorSS,
+    isError: isErrVisitorSS,
+    refetch: refetchVSS,
+  } = useGetVisitorSessionDayQuery({ pageSize: 10, pageNumber: 1 });
+
+  // console.log("VISITOR SS NE CU: ", visitorSession);
+  
+
   // const { error } = useLocalSearchParams<{
   //   error: string;
   // }>();
