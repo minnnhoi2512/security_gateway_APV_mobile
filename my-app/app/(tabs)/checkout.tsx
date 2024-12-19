@@ -487,9 +487,9 @@ const Checkout = () => {
               <View className="bg-white px-6 py-2 rounded-md shadow-lg">
                 <Text className="text-green-700 text-sm font-semibold">
                   {activeCamera === "QR"
-                    ? "Checkin - Quét mã QR"
+                    ? "Checkout - Quét mã QR"
                     : activeCamera === "LICENSE"
-                    ? "Checkin - Quét mã QR với xe"
+                    ? "Checkout - Quét mã QR với xe"
                     : "Quét CCCD"}
                 </Text>
               </View>
@@ -585,14 +585,25 @@ const Checkout = () => {
             })()}
             <Overlay />
 
-            <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
+            {/* <View className="absolute top-14 left-4 bg-white px-3 py-2 rounded-md shadow-lg">
               <Text className="text-green-700 text-sm font-semibold">
                 {activeCameraCCCD === "CCCD"
-                  ? "Quét CCCD"
+                  ? "Checkout - Quét CCCD"
                   : activeCameraCCCD === "LICENSE"
-                  ? "Quét CCCD với xe"
+                  ? "Checkout - Quét CCCD với xe"
                   : ""}
               </Text>
+            </View> */}
+            <View className="absolute top-64 w-full flex items-center">
+              <View className="bg-white px-6 py-2 rounded-md shadow-lg">
+                <Text className="text-green-700 text-sm font-semibold">
+                {activeCameraCCCD === "CCCD"
+                  ? "Checkout - Quét CCCD"
+                  : activeCameraCCCD === "LICENSE"
+                  ? "Checkout - Quét CCCD với xe"
+                  : ""}
+                </Text>
+              </View>
             </View>
 
             <TouchableOpacity

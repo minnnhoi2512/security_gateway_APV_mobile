@@ -517,7 +517,7 @@ const UserDetail = () => {
               <View className="bg-white px-6 py-2 rounded-md shadow-lg">
                 <Text className="text-green-700 text-sm font-semibold">
                   <Text className="text-green-700 text-sm font-semibold">
-                    Camera Checkin
+                    Camera Checkin - gán thông tin
                   </Text>
                 </Text>
               </View>
