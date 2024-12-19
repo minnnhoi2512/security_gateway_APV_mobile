@@ -75,7 +75,7 @@ interface ImageSectionProps {
 
 interface ValidCheckInData {
   VisitDetailId: string | null;
-  QRCardVerification: string;
+  QRCardVerification: string | null;
   ImageShoe: Array<{ imageFile: string }>;
 }
 

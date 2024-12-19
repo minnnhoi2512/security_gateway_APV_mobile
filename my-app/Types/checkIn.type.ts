@@ -48,7 +48,7 @@ export interface CheckInVerWithLP {
 
 export interface ValidCheckIn {
   VisitDetailId: string | null;
-  QRCardVerification: string;
+  QRCardVerification: string | null;
   ImageShoe: any
 }
 
