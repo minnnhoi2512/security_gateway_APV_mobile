@@ -112,8 +112,8 @@ const CreateVisitor = () => {
           // }));
           const result = await detectIdentityCard(formData).unwrap();
           // console.log("Response from API:", result);
-          const { id, name, birth, imgblur } = result.data;
-          if (!birth.toString().includes("/")) {
+          // const { id, name, birth, imgblur } = result.data;
+          if (!result.birth.toString().includes("/")) {
             setVisitor((prev) => ({
               ...prev,
               visitorName: "",
@@ -129,8 +129,7 @@ const CreateVisitor = () => {
               "Hệ thống không nhận diện được ảnh\nVui lòng chọn đúng loại giấy tờ."
             );
             return;
-          }
-          if (result && result.imgblur) {
+          } else {
             const blurImageUri = await base64ToFile(result.imgblur);
 
             setVisitor((prev) => ({
@@ -141,9 +140,23 @@ const CreateVisitor = () => {
               visitorCredentialFrontImageFromRequest: uri,
               visitorCredentialBlurImageFromRequest: blurImageUri,
             }));
-          } else {
-            throw new Error("Dữ liệu phản hồi không hợp lệ");
           }
+          // console.log("rs: ", result.birth);
+
+          // if (result && result.imgblur) {
+          //   const blurImageUri = await base64ToFile(result.imgblur);
+
+          //   setVisitor((prev) => ({
+          //     ...prev,
+          //     credentialsCard: result.id || "",
+          //     visitorName: result.name || "",
+          //     credentialCardTypeId: 1,
+          //     visitorCredentialFrontImageFromRequest: uri,
+          //     visitorCredentialBlurImageFromRequest: blurImageUri,
+          //   }));
+          // } else {
+          //   throw new Error("Dữ liệu phản hồi không hợp lệ");
+          // }
 
           setIsProcessing(false);
         } catch (error: any) {
@@ -197,24 +210,7 @@ const CreateVisitor = () => {
           // }));
           const result = await detectGPLX(formData).unwrap();
           // console.log("Response from API:", result);
-          const { id, name, birth, imgblur } = result.data;
-          if (!birth.toString().includes("/")) {
-            setVisitor((prev) => ({
-              ...prev,
-              visitorName: "",
-              companyName: "",
-              phoneNumber: "",
-              email: "",
-              credentialsCard: "",
-              imgBlur: null,
-              visitorCredentialFrontImageFromRequest: null,
-              visitorCredentialBackImageFromRequest: null,
-            }));
-            alert(
-              "Hệ thống không nhận diện được ảnh\nVui lòng chọn đúng loại giấy tờ."
-            );
-            return;
-          }
+
           if (result && result.imgblur) {
             const blurImageUri = await base64ToFile(result.imgblur);
 
