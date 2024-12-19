@@ -6,7 +6,7 @@ export interface ValidCheckInState {
   VisitDetailId: number;
   SecurityInId: number;
   GateInId: number;
-  QrCardVerification: string ;
+  QrCardVerification: string | null;
   CredentialCard: string | null;
   Images: Array<Images> | null;
   VehicleSession: VehicleSession | null;
@@ -60,7 +60,7 @@ const validCheckInSlice = createSlice({
       state.VisitDetailId = 0;
       state.SecurityInId = 0;
       state.GateInId = 0;
-      state.QrCardVerification = "";
+      state.QrCardVerification = null;
       state.CredentialCard = null;
       state.Images = null;
       state.VehicleSession = null;

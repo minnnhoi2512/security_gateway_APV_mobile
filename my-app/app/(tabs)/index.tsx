@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
+  TouchableOpacity,
 } from "react-native";
 import Header from "@/components/UI/Header";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -24,6 +25,8 @@ export default function HomeScreen() {
   const { selectedGate } = useLocalSearchParams();
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
+  const [status, setStatus] = useState("Active"); // State to manage the current status
+
   const {
     data: visits,
     isLoading,
@@ -35,9 +38,6 @@ export default function HomeScreen() {
       refetchOnMountOrArgChange: true,
     }
   );
-
-  // console.log("VIsit home: ", visits);
-  
 
   const {
     data: staffList,
@@ -66,7 +66,7 @@ export default function HomeScreen() {
         <FontAwesome5 name="calendar-times" size={24} color="#9CA3AF" />
       </View>
       <Text className="text-gray-400 text-center">
-        Không có lịch hẹn nào cho hôm nay
+        Không có lịch hẹn nào.
       </Text>
     </View>
   );
@@ -77,6 +77,10 @@ export default function HomeScreen() {
     </View>
   );
 
+  const filteredVisits = visits?.filter(
+    (visit: any) => visit.visitStatus === status
+  );
+
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center bg-white">
@@ -84,16 +88,6 @@ export default function HomeScreen() {
       </SafeAreaView>
     );
   }
-
-  // if (isError) {
-  //   return (
-  //     <SafeAreaView className="flex-1 justify-center items-center bg-white">
-  //       <Text className="text-red-500">Error fetching visits!</Text>
-  //     </SafeAreaView>
-  //   );
-  // }
-
-  // console.log("vs: ", visits);
 
   return (
     <SafeAreaProvider>
@@ -124,8 +118,9 @@ export default function HomeScreen() {
               <View className="px-6">
                 <View className="flex-row justify-between items-center mb-6">
                   <Text className="text-xl ml-2 font-bold text-[#d35400]">
-                    Lịch hẹn Hôm nay
+                    Lịch hẹn hôm nay
                   </Text>
+
                   <View className="bg-emerald-100 px-4 py-2 rounded-full flex-row items-center space-x-2">
                     <FontAwesome5
                       name="calendar-check"
@@ -133,14 +128,44 @@ export default function HomeScreen() {
                       color="#059669"
                     />
                     <Text className="text-emerald-700 font-semibold">
-                      {visits?.length || 0} lịch hẹn
+                      {filteredVisits?.length || 0} lịch hẹn
                     </Text>
                   </View>
                 </View>
               </View>
+              <View className="px-6 mb-4 flex-row justify-between">
+                <TouchableOpacity
+                  onPress={() => setStatus("Active")}
+                  className={`px-4 py-2 rounded-full ${
+                    status === "Active" ? "bg-blue-500" : "bg-gray-200"
+                  }`}
+                >
+                  <Text
+                    className={`font-semibold ${
+                      status === "Active" ? "text-white" : "text-gray-700"
+                    }`}
+                  >
+                    Hoạt động
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setStatus("Violation")}
+                  className={`px-4 py-2 rounded-full ${
+                    status === "Violation" ? "bg-red-500" : "bg-gray-200"
+                  }`}
+                >
+                  <Text
+                    className={`font-semibold ${
+                      status === "Violation" ? "text-white" : "text-gray-700"
+                    }`}
+                  >
+                    Vi phạm
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </>
           }
-          data={visits}
+          data={filteredVisits}
           renderItem={renderVisitItem}
           keyExtractor={(visit) => visit.visitId.toString()}
           ListEmptyComponent={renderEmptyState}

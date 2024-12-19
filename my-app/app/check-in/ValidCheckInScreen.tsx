@@ -75,7 +75,7 @@ interface ImageSectionProps {
 
 interface ValidCheckInData {
   VisitDetailId: string | null;
-  QRCardVerification: string;
+  QRCardVerification: string | null;
   ImageShoe: Array<{ imageFile: string }>;
 }
 
@@ -125,9 +125,9 @@ const ValidCheckInScreen = () => {
         // const parsedValidData = {
         //   ImageShoe: checkInDataSlice.Images?.find((img) => img.ImageType === "CheckIn_Shoe")?.Image || null,
         // };
-      
+
         // let imageShoeData: { imageFile: string }[] = [];
-      
+
         // if (typeof parsedValidData.ImageShoe === "string") {
         //   imageShoeData = [{ imageFile: parsedValidData.ImageShoe }];
         // } else if (Array.isArray(parsedValidData.ImageShoe)) {
@@ -159,15 +159,15 @@ const ValidCheckInScreen = () => {
             imageFile: img.Image || '',
           })) || [],
         };
-        
+
         // Gọi API
         const result = await validCheckIn(validCheckInData);
         // console.log("API Response:", result);
-        
+
         // Kiểm tra lỗi từ server
         if (result?.error) {
           const error = result.error as FetchBaseQueryError;
-          
+
           if (
             error.data &&
             typeof error.data === "object" &&
@@ -180,7 +180,7 @@ const ValidCheckInScreen = () => {
                 text: "OK",
               },
             ]);
-            router.navigate("/(tabs)/checkin");
+            router.replace("/(tabs)/checkin");
             return;
           } else {
             Alert.alert("Lỗi", "Đã xảy ra lỗi không xác định từ API.");
@@ -585,7 +585,7 @@ const ValidCheckInScreen = () => {
         });
         tempLabels.push('Ảnh CCCD');
       }
-      console.log("checkInData",checkInData);
+      console.log("checkInData", checkInData);
       checkInData?.Images?.forEach((img) => {
         if (img.Image) {
           tempImages.push({
@@ -857,6 +857,10 @@ const ValidCheckInScreen = () => {
       </View>
     );
   }
+  const handleGoBack = () => {
+    dispatch(resetValidCheckIn());
+    router.replace("/(tabs)/checkin");
+  };
 
   return (
     <View className="flex-1 bg-gray-50">
@@ -871,7 +875,13 @@ const ValidCheckInScreen = () => {
           >
             <View className="absolute inset-0 bg-black/40" />
           </ImageBackground>
-
+          <Pressable
+            onPress={handleGoBack}
+            className="absolute top-6 left-2 flex flex-row items-center space-x-2 px-4 py-2 rounded-lg mt-4 z-10"
+          >
+            <MaterialIcons name="arrow-back" size={24} color="white" />
+            <Text className="text-white font-medium">Quay về</Text>
+          </Pressable>
           <View className="p-4 bottom-[150px]">
             <View className="mb-8">
               <Section title="Thông tin cơ bản">

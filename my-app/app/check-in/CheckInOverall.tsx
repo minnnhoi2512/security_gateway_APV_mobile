@@ -27,7 +27,10 @@ import { uploadToFirebase } from "@/firebase-config";
 import { useToast } from "@/components/Toast/ToastContext";
 import ImageViewer from "react-native-image-zoom-viewer";
 import { IImageInfo } from "react-native-image-zoom-viewer/built/image-viewer.type";
-import { resetValidCheckIn, ValidCheckInState } from "@/redux/slices/checkIn.slice";
+import {
+  resetValidCheckIn,
+  ValidCheckInState,
+} from "@/redux/slices/checkIn.slice";
 
 interface Visitor {
   visitorId: number;
@@ -82,14 +85,17 @@ interface ImageSliderProps {
 
 const CheckInOverall = () => {
   const dispatch = useDispatch();
-  const checkInDataSlice = useSelector<any>((state) => state.validCheckIn) as ValidCheckInState;
+  const checkInDataSlice = useSelector<any>(
+    (state) => state.validCheckIn
+  ) as ValidCheckInState;
 
   // const { dataCheckIn } = useLocalSearchParams();
   const [checkInStatus, setCheckInStatus] = useState<
     "pending" | "success" | "error"
   >("pending");
 
-  const [checkIn, { isLoading: isCheckingIn, data: respone}] = useCheckInMutation();
+  const [checkIn, { isLoading: isCheckingIn, data: respone }] =
+    useCheckInMutation();
   const router = useRouter();
   const { showToast } = useToast();
   const [resultData, setResultData] = useState<ResultData | null>(null);
@@ -176,9 +182,17 @@ const CheckInOverall = () => {
             ? checkInDataSlice.VisitDetailId.toString()
             : ""
         );
-        formData.append("SecurityInId", checkInDataSlice.SecurityInId.toString());
+        formData.append(
+          "SecurityInId",
+          checkInDataSlice.SecurityInId.toString()
+        );
         formData.append("GateInId", checkInDataSlice.GateInId.toString());
-        formData.append("QrCardVerification", checkInDataSlice.QrCardVerification.toString());
+        if (checkInDataSlice.QrCardVerification) {
+          formData.append(
+            "QrCardVerification",
+            checkInDataSlice.QrCardVerification.toString()
+          );
+        }
 
         const shoeImage = checkInDataSlice.Images[1];
         const { downloadUrl: shoeImageUrl } = await uploadToFirebase(
@@ -688,12 +702,12 @@ const CheckInOverall = () => {
                   label="Tên khách"
                   value={resultData?.visitor.visitorName}
                 />
-                 {/* <ImageSlider response={respone} checkInData={checkInDataSlice} /> */}
+                {/* <ImageSlider response={respone} checkInData={checkInDataSlice} /> */}
                 {resultData?.visitor.visitorCredentialImage && (
-              <ImageSection
-                visitorImage={resultData?.visitor.visitorCredentialImage}
-              />
-            )}
+                  <ImageSection
+                    visitorImage={resultData?.visitor.visitorCredentialImage}
+                  />
+                )}
               </Section>
             </View>
 
@@ -783,7 +797,8 @@ const CheckInOverall = () => {
                     {checkInDataSlice.VehicleSession?.LicensePlate && (
                       <View className="mb-4 p-3 bg-gray-100 rounded-lg">
                         <Text className="text-gray-800 text-center text-lg font-semibold">
-                          Biển số: {checkInDataSlice.VehicleSession.LicensePlate}
+                          Biển số:{" "}
+                          {checkInDataSlice.VehicleSession.LicensePlate}
                         </Text>
                       </View>
                     )}

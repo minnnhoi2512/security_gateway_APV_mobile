@@ -53,7 +53,7 @@ const Checkout = () => {
       //   onPress: () => router.push("/check-out/CheckOutCard"),
       // },
       {
-        text: "Quét bằng CCCD",
+        text: "Quét bằng CCCD/GPLX",
         onPress: () => {
           setCameraType("CREDENTIAL_CARD"),
             setIsCameraCCCDActive(true),
@@ -295,8 +295,9 @@ const Checkout = () => {
     ({ data }: { data: string }) => {
       setChangeCCCD(data);
 
-      if (data.includes("-")) {
-        Alert.alert("Lỗi", "Định dạng thẻ không hợp lệ. Vui lòng thử lại.");
+      if (data.includes("-") && !hasScanned) {
+        setHasScanned(true);
+        // Alert.alert("Lỗi", "Định dạng thẻ không hợp lệ. Vui lòng thử lại.");
         return;
       }
 
@@ -328,7 +329,7 @@ const Checkout = () => {
       setChangeCCCD(data);
       if (data.includes("-") && !hasScanned) {
         setHasScanned(true);
-        Alert.alert("Lỗi", "Định dạng thẻ không hợp lệ. Vui lòng thử lại.");
+        // Alert.alert("Lỗi", "Định dạng thẻ không hợp lệ. Vui lòng thử lại.");
         return;
       }
       if (data && data.includes("|")) {
@@ -433,7 +434,7 @@ const Checkout = () => {
         </View>
         <View className="items-center justify-center mb-44">
           <ButtonSingleTextMainColor
-            text="Khách sử dụng CCCD"
+            text="Dùng CCCD/GPLX"
             onPress={handleOptionSelect}
             width={200}
             height={50}
@@ -591,6 +592,9 @@ const Checkout = () => {
                   ? "Checkout - Quét CCCD"
                   : activeCameraCCCD === "LICENSE"
                   ? "Checkout - Quét CCCD với xe"
+                  ? "Quét CCCD/GPLX"
+                  : activeCameraCCCD === "LICENSE"
+                  ? "Quét CCCD/GPLX với xe"
                   : ""}
               </Text>
             </View> */}
@@ -632,7 +636,7 @@ const Checkout = () => {
               >
                 <View className="flex-row justify-center items-center space-x-2">
                   <Ionicons name="qr-code" size={24} color="white" />
-                  <Text className="text-white font-semibold">Quét CCCD</Text>
+                  <Text className="text-white font-semibold">CCCD/GPLX</Text>
                 </View>
               </TouchableOpacity>
 
@@ -649,7 +653,7 @@ const Checkout = () => {
                     color="white"
                   />
                   <Text className="text-white font-semibold">
-                    Quét CCCD với xe
+                    CCCD/GPLX với xe
                   </Text>
                 </View>
               </TouchableOpacity>

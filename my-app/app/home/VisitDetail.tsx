@@ -61,7 +61,7 @@ const VisitDetail = () => {
 
  
 
-  console.log("visit detail: ", visitVsheader);
+  // console.log("visit detail: ", visitVsheader);
   
 
   const handleGoBack = () => {
@@ -190,6 +190,20 @@ const VisitDetail = () => {
                     <Button
                       onPress={handleUpdateStatus}
                       title="Cập nhật trạng thái"
+                    />
+                  )}
+                <UpdateVisitStatusModal
+                  visit={visitInfo}
+                  isVisible={isUpdateModalVisible}
+                  onClose={handleCloseUpdateModal}
+                />
+              </View>
+              <View>
+                {visitInfo.visitStatus === "Violation" &&
+                  role === "Security" && (
+                    <Button
+                      onPress={handleUpdateStatus}
+                      title="Xác nhận xử lý vi phạm"
                     />
                   )}
                 <UpdateVisitStatusModal
