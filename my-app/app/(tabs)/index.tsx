@@ -65,9 +65,7 @@ export default function HomeScreen() {
       <View className="w-16 h-16 bg-gray-100 rounded-full items-center justify-center mb-4">
         <FontAwesome5 name="calendar-times" size={24} color="#9CA3AF" />
       </View>
-      <Text className="text-gray-400 text-center">
-        Không có lịch hẹn nào.
-      </Text>
+      <Text className="text-gray-400 text-center">Không có lịch hẹn nào.</Text>
     </View>
   );
 
@@ -146,6 +144,24 @@ export default function HomeScreen() {
                     }`}
                   >
                     Hoạt động
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setStatus("ActiveTemporary")}
+                  className={`px-4 py-2 rounded-full ${
+                    status === "ActiveTemporary"
+                      ? "bg-yellow-500"
+                      : "bg-gray-200"
+                  }`}
+                >
+                  <Text
+                    className={`font-semibold ${
+                      status === "ActiveTemporary"
+                        ? "text-white"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    Tạm thời
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity

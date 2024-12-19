@@ -385,6 +385,257 @@ const CheckOutCard = () => {
       </View>
     );
   };
+  const [isImageShoeLoaded, setIsImageShoeLoaded] = useState(false);
+  const [isImageBodyLoaded, setIsImageBodyLoaded] = useState(false);
+  const areImagesLoaded = isImageShoeLoaded && isImageBodyLoaded;
+  const SectionDropDownImage = ({
+    children,
+    icon,
+    title,
+    disabled = false,
+  }: {
+    children: React.ReactNode;
+    icon?: React.ReactNode;
+    title: string;
+    disabled?: boolean;
+  }) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+      <View className="bg-white rounded-2xl mb-4 shadow-sm">
+        <TouchableOpacity
+          onPress={() => !disabled && setIsOpen((prev) => !prev)}
+          activeOpacity={disabled ? 1 : 0.7}
+          className={`p-4 flex-row items-center ${
+            disabled ? "opacity-50" : ""
+          }`}
+        >
+          <View className="w-10 h-10 bg-blue-100 rounded-full items-center justify-center mr-3">
+            {icon}
+          </View>
+          <Text className="text-lg font-semibold text-black">{title}</Text>
+          {!areImagesLoaded && (
+            <ActivityIndicator
+              size="small"
+              color="#0000ff"
+              style={{ marginLeft: "auto" }}
+            />
+          )}
+        </TouchableOpacity>
+        {isOpen && !disabled && (
+          <View
+            className="p-4"
+            onStartShouldSetResponder={() => true}
+            onTouchEnd={(e) => e.stopPropagation()}
+          >
+            {children}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const renderVerificationImagesSection = () => (
+    <SectionDropDownImage
+      title="Hình ảnh xác minh"
+      icon={<View className="w-6 h-6 bg-yellow-500 rounded-full" />}
+      disabled={!areImagesLoaded}
+    >
+      <Pressable onPress={(e) => e.stopPropagation()}>
+        <View className="mb-6">
+          <Text className="text-xl font-bold mb-2">Ảnh giày</Text>
+          <View className="flex-row">
+            <View className="flex-1 mr-2">
+              <Text className="text-sm font-medium mb-1">Lúc vào</Text>
+              <TouchableOpacity
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleImagePress([
+                    checkInData.visitorSessionsImages?.find(
+                      (img: ImageType) => img.imageType === "CheckIn_Shoe"
+                    )?.imageURL || "",
+                  ]);
+                }}
+                activeOpacity={0.7}
+                className="bg-gray-100 rounded-lg overflow-hidden"
+              >
+                {checkInData.visitorSessionsImages?.find(
+                  (img: any) => img.imageType === "CheckIn_Shoe"
+                )?.imageURL ? (
+                  <Image
+                    source={{
+                      uri: checkInData.visitorSessionsImages.find(
+                        (img: any) => img.imageType === "CheckIn_Shoe"
+                      )?.imageURL,
+                    }}
+                    className="w-full h-48 rounded-lg"
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <View className="w-full h-48 items-center justify-center bg-gray-200">
+                    <Text className="text-gray-500">Không có ảnh</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <View className="flex-1 ml-2">
+              <Text className="text-sm font-medium mb-1">Lúc ra</Text>
+              <TouchableOpacity
+                // onPress={() =>
+                //   imageShoe && handleImagePress([imageShoe])
+                // }
+                onPress={(e) => {
+                  e.stopPropagation();
+                  imageShoe && handleImagePress([imageShoe]);
+                }}
+                activeOpacity={0.7}
+                className="bg-gray-100 rounded-lg overflow-hidden"
+              >
+                {imageShoe ? (
+                  <Image
+                    source={{ uri: imageShoe }}
+                    className="w-full h-48 rounded-lg"
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <View className="w-full h-48 items-center justify-center bg-gray-200">
+                    <ActivityIndicator size="large" color="#0000ff" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        {/* Body Images */}
+        <View className="mb-6">
+          <Text className="text-xl font-bold mb-2">Ảnh người</Text>
+          <View className="flex-row">
+            <View className="flex-1 mr-2">
+              <Text className="text-sm font-medium mb-1">Lúc vào</Text>
+              <TouchableOpacity
+                // onPress={() =>
+                //   handleImagePress([
+                //     checkInData.visitorSessionsImages?.find(
+                //       (img: any) => img.imageType === "CheckIn_Body"
+                //     )?.imageURL || "",
+                //   ])
+                // }
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleImagePress([
+                    checkInData.visitorSessionsImages?.find(
+                      (img: ImageType) => img.imageType === "CheckIn_Body"
+                    )?.imageURL || "",
+                  ]);
+                }}
+                activeOpacity={0.7}
+                className="bg-gray-100 rounded-lg overflow-hidden"
+              >
+                {checkInData.visitorSessionsImages?.find(
+                  (img: any) => img.imageType === "CheckIn_Body"
+                )?.imageURL ? (
+                  <Image
+                    source={{
+                      uri: checkInData.visitorSessionsImages.find(
+                        (img: any) => img.imageType === "CheckIn_Body"
+                      )?.imageURL,
+                    }}
+                    className="w-full h-48 rounded-lg"
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <View className="w-full h-48 items-center justify-center bg-gray-200">
+                    <Text className="text-gray-500">Không có ảnh</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <View className="flex-1 ml-2">
+              <Text className="text-sm font-medium mb-1">Lúc ra</Text>
+              <TouchableOpacity
+                // onPress={() =>
+                //   imageBody && handleImagePress([imageBody])
+                // }
+                onPress={(e) => {
+                  e.stopPropagation();
+                  imageBody && handleImagePress([imageBody]);
+                }}
+                activeOpacity={0.7}
+                className="bg-gray-100 rounded-lg overflow-hidden"
+              >
+                {imageBody ? (
+                  <Image
+                    source={{ uri: imageBody }}
+                    className="w-full h-48 rounded-lg"
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <View className="w-full h-48 items-center justify-center bg-gray-200">
+                    <ActivityIndicator size="large" color="#0000ff" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        {/* Vehicle Images if they exist */}
+        {checkInData?.vehicleSession?.images &&
+          checkInData.vehicleSession.images.length > 0 && (
+            <View className="mb-6">
+              <Text className="text-xl font-bold mb-2">Ảnh phương tiện</Text>
+              <View className="flex-row flex-wrap">
+                {checkInData.vehicleSession.images
+                  .filter((image: any) => image.imageType !== "")
+                  .map((image: any, index: number) => (
+                    <TouchableOpacity
+                      key={index}
+                      className="w-1/2 p-1"
+                      // onPress={() =>
+                      //   handleImagePress([image.imageURL])
+                      // }
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        handleImagePress([image.imageURL]);
+                      }}
+                    >
+                      <Image
+                        source={{ uri: image.imageURL }}
+                        className="w-full h-48 rounded-lg"
+                        resizeMode="contain"
+                      />
+                    </TouchableOpacity>
+                  ))}
+              </View>
+            </View>
+          )}
+      </Pressable>
+    </SectionDropDownImage>
+  );
+
+  // Update the confirm button
+  const renderConfirmButton = () => (
+    <TouchableOpacity
+      onPress={handleCheckOut}
+      disabled={!areImagesLoaded}
+      className={`p-4 mb-4 bg-white rounded-full flex-row items-center justify-center ${
+        !areImagesLoaded ? "opacity-50" : ""
+      }`}
+    >
+      {!areImagesLoaded ? (
+        <ActivityIndicator
+          size="small"
+          color="#0000ff"
+          style={{ marginRight: 8 }}
+        />
+      ) : null}
+      <Text className="text-lg mr-2">Xác nhận</Text>
+      <EvilIcons name="arrow-right" size={30} color="black" />
+    </TouchableOpacity>
+  );
 
   const handleCheckOut = async () => {
     const storedUserId = await AsyncStorage.getItem("userId");
@@ -500,54 +751,6 @@ const CheckOutCard = () => {
                   </Text>
                 </View>
                 <View className="p-4">
-                  {/* <Section
-                    icon={
-                      <View className="w-6 h-6 bg-purple-500 rounded-full" />
-                    }
-                    title="Trạng thái"
-                  >
-                    <InfoRow
-                      label="Thời gian vào công ty"
-                      value={formatDate(checkInData.checkinTime)}
-                    />
-                    <InfoRow
-                      label="Thời gian ra công ty"
-                      value={formatDateTime(new Date())}
-                    />
-                    {checkInData.gateIn && (
-                      <InfoRow
-                        label="Cổng vào"
-                        value={checkInData.gateIn.gateName}
-                      />
-                    )}
-                    {checkInData.gateIn && (
-                      <InfoRow
-                        label="Khách"
-                        value={checkInData.visitDetail.visitor.visitorName}
-                      />
-                    )}
-                    {checkInData.securityIn && (
-                      <InfoRow
-                        label="Bảo vệ"
-                        value={checkInData.securityIn.fullName}
-                      />
-                    )}
-                    <InfoRow
-                      label="Trạng thái"
-                      value={
-                        checkInData.status === "CheckIn"
-                          ? "Đã vào"
-                          : checkInData.status === "CheckOut"
-                          ? "Đã ra"
-                          : checkInData.status
-                      }
-                    />
-
-                    <InfoRow
-                      label="Trạng thái chuyến thăm"
-                      value={checkInData.visitDetail.visit.visitStatus}
-                    />
-                  </Section> */}
                   <Section
                     icon={
                       <View className="w-6 h-6 bg-purple-500 rounded-full" />
@@ -603,7 +806,6 @@ const CheckOutCard = () => {
                           }
                         />
                       </View>
-                     
                     </View>
                   </Section>
                   <SectionDropDown
@@ -634,225 +836,35 @@ const CheckOutCard = () => {
                     }
                     title="Thời gian hiệu lực"
                   >
-                    <InfoRow
-                      label="Ngày phát hành thẻ"
-                      value={formatDate(checkInData.visitCard.issueDate)}
-                    />
-                    <InfoRow
-                      label="Giờ bắt đầu"
-                      value={checkInData.visitDetail.expectedStartHour}
-                    />
-                    <InfoRow
-                      label="Giờ kết thúc"
-                      value={checkInData.visitDetail.expectedEndHour}
-                    />
+                    <View className="flex flex-row flex-wrap">
+                      <View className="w-1/2 pr-2">
+                        <InfoRow
+                          label="Ngày phát hành"
+                          value={formatDate(checkInData.visitCard.issueDate)}
+                        />
+                      </View>
+                      <View className="w-1/2 pl-2">
+                        {/* <InfoRow
+                                           label="Ngày hết hạn"
+                                           value={formatDate(checkInData.visitCard.expiryDate)}
+                                         /> */}
+                      </View>
+                      <View className="w-1/2 pr-2 mt-4">
+                        <InfoRow
+                          label="Giờ bắt đầu"
+                          value={checkInData.visitDetail.expectedStartHour}
+                        />
+                      </View>
+                      <View className="w-1/2 pl-2 mt-4">
+                        <InfoRow
+                          label="Giờ kết thúc"
+                          value={checkInData.visitDetail.expectedEndHour}
+                        />
+                      </View>
+                    </View>
                   </SectionDropDown>
 
-                  <SectionDropDown
-                    title="Hình ảnh xác minh"
-                    icon={
-                      <View className="w-6 h-6 bg-yellow-500 rounded-full" />
-                    }
-                  >
-                    <Pressable onPress={(e) => e.stopPropagation()}>
-                      <View className="mb-6">
-                        <Text className="text-xl font-bold mb-2">Ảnh giày</Text>
-                        <View className="flex-row">
-                          <View className="flex-1 mr-2">
-                            <Text className="text-sm font-medium mb-1">
-                              Lúc vào
-                            </Text>
-                            <TouchableOpacity
-                              onPress={(e) => {
-                                e.stopPropagation();
-                                handleImagePress([
-                                  checkInData.visitorSessionsImages?.find(
-                                    (img: ImageType) =>
-                                      img.imageType === "CheckIn_Shoe"
-                                  )?.imageURL || "",
-                                ]);
-                              }}
-                              activeOpacity={0.7}
-                              className="bg-gray-100 rounded-lg overflow-hidden"
-                            >
-                              {checkInData.visitorSessionsImages?.find(
-                                (img: any) => img.imageType === "CheckIn_Shoe"
-                              )?.imageURL ? (
-                                <Image
-                                  source={{
-                                    uri: checkInData.visitorSessionsImages.find(
-                                      (img: any) =>
-                                        img.imageType === "CheckIn_Shoe"
-                                    )?.imageURL,
-                                  }}
-                                  className="w-full h-48 rounded-lg"
-                                  resizeMode="contain"
-                                />
-                              ) : (
-                                <View className="w-full h-48 items-center justify-center bg-gray-200">
-                                  <Text className="text-gray-500">
-                                    Không có ảnh
-                                  </Text>
-                                </View>
-                              )}
-                            </TouchableOpacity>
-                          </View>
-
-                          <View className="flex-1 ml-2">
-                            <Text className="text-sm font-medium mb-1">
-                              Lúc ra
-                            </Text>
-                            <TouchableOpacity
-                              // onPress={() =>
-                              //   imageShoe && handleImagePress([imageShoe])
-                              // }
-                              onPress={(e) => {
-                                e.stopPropagation();
-                                imageShoe && handleImagePress([imageShoe]);
-                              }}
-                              activeOpacity={0.7}
-                              className="bg-gray-100 rounded-lg overflow-hidden"
-                            >
-                              {imageShoe ? (
-                                <Image
-                                  source={{ uri: imageShoe }}
-                                  className="w-full h-48 rounded-lg"
-                                  resizeMode="contain"
-                                />
-                              ) : (
-                                <View className="w-full h-48 items-center justify-center bg-gray-200">
-                                  <ActivityIndicator
-                                    size="large"
-                                    color="#0000ff"
-                                  />
-                                </View>
-                              )}
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-                      </View>
-
-                      {/* Body Images */}
-                      <View className="mb-6">
-                        <Text className="text-xl font-bold mb-2">
-                          Ảnh người
-                        </Text>
-                        <View className="flex-row">
-                          <View className="flex-1 mr-2">
-                            <Text className="text-sm font-medium mb-1">
-                              Lúc vào
-                            </Text>
-                            <TouchableOpacity
-                              // onPress={() =>
-                              //   handleImagePress([
-                              //     checkInData.visitorSessionsImages?.find(
-                              //       (img: any) => img.imageType === "CheckIn_Body"
-                              //     )?.imageURL || "",
-                              //   ])
-                              // }
-                              onPress={(e) => {
-                                e.stopPropagation();
-                                handleImagePress([
-                                  checkInData.visitorSessionsImages?.find(
-                                    (img: ImageType) =>
-                                      img.imageType === "CheckIn_Body"
-                                  )?.imageURL || "",
-                                ]);
-                              }}
-                              activeOpacity={0.7}
-                              className="bg-gray-100 rounded-lg overflow-hidden"
-                            >
-                              {checkInData.visitorSessionsImages?.find(
-                                (img: any) => img.imageType === "CheckIn_Body"
-                              )?.imageURL ? (
-                                <Image
-                                  source={{
-                                    uri: checkInData.visitorSessionsImages.find(
-                                      (img: any) =>
-                                        img.imageType === "CheckIn_Body"
-                                    )?.imageURL,
-                                  }}
-                                  className="w-full h-48 rounded-lg"
-                                  resizeMode="contain"
-                                />
-                              ) : (
-                                <View className="w-full h-48 items-center justify-center bg-gray-200">
-                                  <Text className="text-gray-500">
-                                    Không có ảnh
-                                  </Text>
-                                </View>
-                              )}
-                            </TouchableOpacity>
-                          </View>
-
-                          <View className="flex-1 ml-2">
-                            <Text className="text-sm font-medium mb-1">
-                              Lúc ra
-                            </Text>
-                            <TouchableOpacity
-                              // onPress={() =>
-                              //   imageBody && handleImagePress([imageBody])
-                              // }
-                              onPress={(e) => {
-                                e.stopPropagation();
-                                imageBody && handleImagePress([imageBody]);
-                              }}
-                              activeOpacity={0.7}
-                              className="bg-gray-100 rounded-lg overflow-hidden"
-                            >
-                              {imageBody ? (
-                                <Image
-                                  source={{ uri: imageBody }}
-                                  className="w-full h-48 rounded-lg"
-                                  resizeMode="contain"
-                                />
-                              ) : (
-                                <View className="w-full h-48 items-center justify-center bg-gray-200">
-                                  <ActivityIndicator
-                                    size="large"
-                                    color="#0000ff"
-                                  />
-                                </View>
-                              )}
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-                      </View>
-
-                      {/* Vehicle Images if they exist */}
-                      {checkInData?.vehicleSession?.images &&
-                        checkInData.vehicleSession.images.length > 0 && (
-                          <View className="mb-6">
-                            <Text className="text-xl font-bold mb-2">
-                              Ảnh phương tiện
-                            </Text>
-                            <View className="flex-row flex-wrap">
-                              {checkInData.vehicleSession.images
-                                .filter((image: any) => image.imageType !== "")
-                                .map((image: any, index: number) => (
-                                  <TouchableOpacity
-                                    key={index}
-                                    className="w-1/2 p-1"
-                                    // onPress={() =>
-                                    //   handleImagePress([image.imageURL])
-                                    // }
-                                    onPress={(e) => {
-                                      e.stopPropagation();
-                                      handleImagePress([image.imageURL]);
-                                    }}
-                                  >
-                                    <Image
-                                      source={{ uri: image.imageURL }}
-                                      className="w-full h-48 rounded-lg"
-                                      resizeMode="contain"
-                                    />
-                                  </TouchableOpacity>
-                                ))}
-                            </View>
-                          </View>
-                        )}
-                    </Pressable>
-                  </SectionDropDown>
+                  {renderVerificationImagesSection()}
                   <Modal visible={isImageViewerVisible} transparent={true}>
                     <ImageViewer
                       imageUrls={currentImages}
@@ -876,14 +888,14 @@ const CheckOutCard = () => {
                       )}
                     />
                   </Modal>
-
-                  <TouchableOpacity
+                  {renderConfirmButton()}
+                  {/* <TouchableOpacity
                     onPress={handleCheckOut}
                     className="p-4 mb-4 bg-white rounded-full flex-row items-center justify-center"
                   >
                     <Text className="text-lg mr-2">Xác nhận</Text>
                     <EvilIcons name="arrow-right" size={30} color="black" />
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                 </View>
               </View>
             ) : null}

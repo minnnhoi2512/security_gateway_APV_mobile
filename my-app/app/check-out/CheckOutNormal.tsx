@@ -349,7 +349,7 @@ const CheckOutNormal = () => {
         </View>
 
         {/* Vehicle Images if they exist */}
-        {checkInData?.vehicleSession?.images &&
+        {/* {checkInData?.vehicleSession?.images &&
           checkInData.vehicleSession.images.length > 0 && (
             <View className="mb-6">
               <Text className="text-xl font-bold mb-2">Ảnh phương tiện</Text>
@@ -377,7 +377,8 @@ const CheckOutNormal = () => {
                   ))}
               </View>
             </View>
-          )}
+          )} */}
+        
       </Pressable>
     </SectionDropDownImage>
   );
@@ -851,7 +852,6 @@ const CheckOutNormal = () => {
                           }
                         />
                       </View>
-                     
                     </View>
                   </Section>
                   <SectionDropDown
