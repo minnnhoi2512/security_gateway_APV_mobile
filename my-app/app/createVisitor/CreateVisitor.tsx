@@ -112,7 +112,24 @@ const CreateVisitor = () => {
           // }));
           const result = await detectIdentityCard(formData).unwrap();
           // console.log("Response from API:", result);
-
+          const { id, name, birth, imgblur } = result.data;
+          if (!birth.toString().includes("/")) {
+            setVisitor((prev) => ({
+              ...prev,
+              visitorName: "",
+              companyName: "",
+              phoneNumber: "",
+              email: "",
+              credentialsCard: "",
+              imgBlur: null,
+              visitorCredentialFrontImageFromRequest: null,
+              visitorCredentialBackImageFromRequest: null,
+            }));
+            alert(
+              "Hệ thống không nhận diện được ảnh\nVui lòng chọn đúng loại giấy tờ."
+            );
+            return;
+          }
           if (result && result.imgblur) {
             const blurImageUri = await base64ToFile(result.imgblur);
 
@@ -180,7 +197,24 @@ const CreateVisitor = () => {
           // }));
           const result = await detectGPLX(formData).unwrap();
           // console.log("Response from API:", result);
-
+          const { id, name, birth, imgblur } = result.data;
+          if (!birth.toString().includes("/")) {
+            setVisitor((prev) => ({
+              ...prev,
+              visitorName: "",
+              companyName: "",
+              phoneNumber: "",
+              email: "",
+              credentialsCard: "",
+              imgBlur: null,
+              visitorCredentialFrontImageFromRequest: null,
+              visitorCredentialBackImageFromRequest: null,
+            }));
+            alert(
+              "Hệ thống không nhận diện được ảnh\nVui lòng chọn đúng loại giấy tờ."
+            );
+            return;
+          }
           if (result && result.imgblur) {
             const blurImageUri = await base64ToFile(result.imgblur);
 
