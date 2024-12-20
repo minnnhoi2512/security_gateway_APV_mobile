@@ -16,7 +16,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ToastProvider } from "@/components/Toast/ToastContext";
 import { ToastContainer } from "@/components/Toast/ToastContainer";
 import UserConnectionHubType from "@/Types/userConnectionHubType";
-import SetSignalR from '../hooks/signalR';
+import SetSignalR from "../hooks/signalR";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -32,7 +32,7 @@ export default function RootLayout() {
   useEffect(() => {
     const fetchRole = async () => {
       const storedRole = await AsyncStorage.getItem("userRole");
-      setRole(storedRole)
+      setRole(storedRole);
       // console.log("ROLE FROM ASYNC STORAGE: ", storedRole);
     };
     fetchRole();
@@ -77,7 +77,6 @@ export default function RootLayout() {
         router.replace("/login");
       }
     }
-
   }, [isAuthenticated, loaded, role]);
 
   if (!loaded || isAuthenticated === null) {
@@ -131,10 +130,7 @@ export default function RootLayout() {
               name="check-in/UserDetail"
               options={{ headerShown: false }}
             />
-            <Stack.Screen
-              name="chatdetail"
-              options={{ headerShown: false }}
-            />
+            <Stack.Screen name="chatdetail" options={{ headerShown: false }} />
             <Stack.Screen
               name="check-in/ValidCheckInScreen"
               options={{ headerShown: false }}
@@ -189,6 +185,11 @@ export default function RootLayout() {
             />
             <Stack.Screen
               name="Notification"
+              options={{ headerShown: false }}
+            />
+
+            <Stack.Screen
+              name="visitSessionDetail"
               options={{ headerShown: false }}
             />
             {/* <Stack.Screen

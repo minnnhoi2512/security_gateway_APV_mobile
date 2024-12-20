@@ -92,6 +92,18 @@ export const visitorSessionApi = createApi({
         return `VisitorSession/Date?pageNumber=1&pageSize=10&date=${currentDate}`;
       },
     }),
+
+    getVisitorSessionImages: builder.query({
+      query: (visitorSessionId: string) => {
+        return `VisitorSession/Images/${visitorSessionId}`;
+      },
+    }),
+
+    getVisitorSessionImageVehicle: builder.query({
+      query: (visitorSessionId: string) => {
+        return `VisitorSession/VehicleSession/${visitorSessionId}`;
+      },
+    }),
   }),
   // endpoints: (builder) => ({
   //   getVisitorSessions: builder.query<VisitorSessionResponse, { pageNumber: number; pageSize: number }>({
@@ -103,4 +115,9 @@ export const visitorSessionApi = createApi({
   // }),
 });
 
-export const { useGetVisitorSessionsQuery, useGetVisitorSessionDayQuery } = visitorSessionApi;
+export const {
+  useGetVisitorSessionsQuery,
+  useGetVisitorSessionDayQuery,
+  useGetVisitorSessionImagesQuery,
+  useGetVisitorSessionImageVehicleQuery,
+} = visitorSessionApi;
