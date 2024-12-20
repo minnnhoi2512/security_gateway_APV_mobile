@@ -807,7 +807,7 @@ const CheckOutNormal = () => {
                       <View className="w-1/2 pl-2 pr-2">
                         <InfoRow
                           label="Thời gian vào công ty"
-                          value={formatDate(checkInData.checkinTime)}
+                          value={formatDate(checkInData?.checkinTime)}
                         />
                       </View>
                       <View className="w-1/2 pr-2">
@@ -817,18 +817,18 @@ const CheckOutNormal = () => {
                         />
                       </View>
                       <View className="w-1/2 pl-2 mt-4">
-                        {checkInData.gateIn && (
+                        {checkInData?.gateIn && (
                           <InfoRow
                             label="Cổng vào"
-                            value={checkInData.gateIn.gateName}
+                            value={checkInData?.gateIn?.gateName}
                           />
                         )}
                       </View>
                       <View className="w-1/2 pr-2 mt-4">
-                        {checkInData.gateIn && (
+                        {checkInData?.gateIn && (
                           <InfoRow
                             label="Khách"
-                            value={checkInData.visitDetail.visitor.visitorName}
+                            value={checkInData?.visitDetail.visitor.visitorName}
                           />
                         )}
                       </View>
@@ -863,16 +863,16 @@ const CheckOutNormal = () => {
                     <InfoRow
                       label="Loại thẻ"
                       value={
-                        checkInData.visitCard.card.qrCardTypename
+                        checkInData?.visitCard?.card?.qrCardTypename
                           ? "Loại thẻ: " +
-                            checkInData.visitCard.card.qrCardTypename
+                            checkInData?.visitCard?.card?.qrCardTypename
                           : "Theo ngày"
                       }
                     />
 
                     <InfoRow
                       label="Hình ảnh thẻ"
-                      value={checkInData.visitCard.card.cardImage}
+                      value={checkInData?.visitCard?.card?.cardImage}
                       isImage={true}
                     />
                   </SectionDropDown>

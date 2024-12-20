@@ -171,6 +171,7 @@ const CheckOutLicensePlate = () => {
   const [currentImages, setCurrentImages] = useState<ImageViewerImage[]>([]);
   const [isImageViewerVisible, setIsImageViewerVisible] =
     useState<boolean>(false);
+console.log("Checkout xe image: ", checkOutImages);
 
   //Loading Image:
   const [isImageShoeLoaded, setIsImageShoeLoaded] = useState(false);

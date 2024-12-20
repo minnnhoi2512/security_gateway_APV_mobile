@@ -58,7 +58,7 @@ const Header: React.FC<HeaderProps> = ({ name }) => {
   );
 
 
-  console.log("Log GateGate: ", gate);
+  // console.log("Log GateGate: ", gate);
 
   useEffect(() => {
     const fetchUserId = async () => {
