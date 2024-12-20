@@ -142,50 +142,50 @@ const scanQr = () => {
     })();
   }, []);
 
-  const fetchCaptureImage = async (
-    url: string,
-    imageType: string
-  ): Promise<{ ImageType: string; ImageFile: string | null }> => {
-    try {
-      const response = await fetch(url, { method: "GET" });
+  // const fetchCaptureImage = async (
+  //   url: string,
+  //   imageType: string
+  // ): Promise<{ ImageType: string; ImageFile: string | null }> => {
+  //   try {
+  //     const response = await fetch(url, { method: "GET" });
 
-      if (!response.ok) {
-        console.error("HTTP Response Status:", response.status);
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
+  //     if (!response.ok) {
+  //       console.error("HTTP Response Status:", response.status);
+  //       throw new Error(`HTTP error! Status: ${response.status}`);
+  //     }
 
-      const blob = await response.blob();
-      const fileUri = `${FileSystem.cacheDirectory}captured-image-${imageType}.jpg`;
+  //     const blob = await response.blob();
+  //     const fileUri = `${FileSystem.cacheDirectory}captured-image-${imageType}.jpg`;
 
-      const fileSaved = await new Promise<string | null>((resolve, reject) => {
-        const fileReader = new FileReader();
-        fileReader.onloadend = async () => {
-          const base64data = fileReader.result?.toString().split(",")[1];
-          if (base64data) {
-            await FileSystem.writeAsStringAsync(fileUri, base64data, {
-              encoding: FileSystem.EncodingType.Base64,
-            });
-            resolve(fileUri);
-          } else {
-            reject(null);
-          }
-        };
-        fileReader.readAsDataURL(blob);
-      });
+  //     const fileSaved = await new Promise<string | null>((resolve, reject) => {
+  //       const fileReader = new FileReader();
+  //       fileReader.onloadend = async () => {
+  //         const base64data = fileReader.result?.toString().split(",")[1];
+  //         if (base64data) {
+  //           await FileSystem.writeAsStringAsync(fileUri, base64data, {
+  //             encoding: FileSystem.EncodingType.Base64,
+  //           });
+  //           resolve(fileUri);
+  //         } else {
+  //           reject(null);
+  //         }
+  //       };
+  //       fileReader.readAsDataURL(blob);
+  //     });
 
-      return {
-        ImageType: imageType,
-        ImageFile: fileSaved,
-      };
-    } catch (error) {
-      console.error(`Failed to fetch ${imageType} image:`, error);
-      Alert.alert(
-        "Error",
-        `Failed to fetch ${imageType} image. Please try again.`
-      );
-      return { ImageType: imageType, ImageFile: null };
-    }
-  };
+  //     return {
+  //       ImageType: imageType,
+  //       ImageFile: fileSaved,
+  //     };
+  //   } catch (error) {
+  //     console.error(`Failed to fetch ${imageType} image:`, error);
+  //     Alert.alert(
+  //       "Error",
+  //       `Failed to fetch ${imageType} image. Please try again.`
+  //     );
+  //     return { ImageType: imageType, ImageFile: null };
+  //   }
+  // };
 
   useEffect(() => {
     const fetchUserId = async () => {

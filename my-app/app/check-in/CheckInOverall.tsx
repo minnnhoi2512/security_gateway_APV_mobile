@@ -288,10 +288,10 @@ const CheckInOverall = () => {
   };
 
   const handleNext = () => {
-    router.push({
+    dispatch(resetValidCheckIn());
+    router.dismissTo({
       pathname: "/(tabs)/checkin",
     });
-    dispatch(resetValidCheckIn());
   };
 
   const ImageSliderForBodyShoe: React.FC<ImageSliderProps> = ({
