@@ -11,7 +11,10 @@ import {
 } from "react-native";
 import React, { useCallback, useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useGetAllVisitsByCurrentDateByIDQuery, useGetVisitDetailByIdQuery } from "@/redux/services/visit.service";
+import {
+  useGetAllVisitsByCurrentDateByIDQuery,
+  useGetVisitDetailByIdQuery,
+} from "@/redux/services/visit.service";
 import { VisitDetailType } from "@/redux/Types/visit.type";
 import {
   AntDesign,
@@ -21,7 +24,7 @@ import {
   MaterialCommunityIcons,
   MaterialIcons,
 } from "@expo/vector-icons";
- 
+
 import TruncatableTitle from "@/components/UI/Truncatable/TruncatableTitle";
 import { UpdateVisitStatusModal } from "@/components/UI/UpdateVisitStatusModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -43,13 +46,13 @@ const VisitDetail = () => {
     isError,
     refetch,
   } = useGetVisitDetailByIdQuery(visitData.visitId as string);
-    const {
+  const {
     data: visitVsheader,
     isLoading: isLoadingVsh,
     isError: isErrVsh,
     refetch: refetchVsh,
   } = useGetAllVisitsByCurrentDateByIDQuery(visitData.visitId as string);
-  console.log(visitData.visitId)
+  console.log(visitData.visitId);
 
   useEffect(() => {
     const fetchRole = async () => {
@@ -59,10 +62,7 @@ const VisitDetail = () => {
     fetchRole();
   }, []);
 
- 
-
   // console.log("visit detail: ", visitVsheader);
-  
 
   const handleGoBack = () => {
     router.back();
@@ -75,7 +75,7 @@ const VisitDetail = () => {
   const handleCloseUpdateModal = async () => {
     setIsUpdateModalVisible(false);
     await refetch();
-    await refetchVsh();  
+    await refetchVsh();
   };
   const toggleExpansion = (index: number) => {
     setExpandedItem((prev) => (prev === index ? null : index));
@@ -84,7 +84,7 @@ const VisitDetail = () => {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([refetch(), refetchVsh()]);  
+      await Promise.all([refetch(), refetchVsh()]);
     } finally {
       setRefreshing(false);
     }
@@ -189,7 +189,7 @@ const VisitDetail = () => {
                   role === "Staff" && (
                     <Button
                       onPress={handleUpdateStatus}
-                      title="Cập nhật trạng thái"
+                      title="Xác nhận chuyến thăm"
                     />
                   )}
                 <UpdateVisitStatusModal
@@ -279,6 +279,10 @@ const VisitDetail = () => {
                       ? "Hoạt động"
                       : visitInfo.visitStatus === "ActiveTemporary"
                       ? "Tạm thời"
+                      : visitInfo.visitStatus === "Violation"
+                      ? "Vi phạm"
+                      : visitInfo.visitStatus === "ViolationResolved"
+                      ? "Đã xử lí"
                       : "Không hoạt động"}
                   </Text>
                 </View>

@@ -77,17 +77,18 @@ const visitForStaff = () => {
           ListHeaderComponent={
             <>
               <View className="mt-8">
-                <View className="flex-row justify-between items-center mb-6 gap-5">
-                  <Text className="text-2xl font-bold text-colorTitleHeader mb-3">
-                    Chuyến thăm hôm nay
+                <View className="flex-row justify-evenly items-center mb-4">
+                  <Text className="text-3xl font-bold text-[#d35400] flex-shrink">
+                    Chuyến thăm Hôm nay
                   </Text>
-                  <View className="bg-emerald-100 px-4 py-2 rounded-full flex-row items-center space-x-1 mb-2">
+
+                  <View className="bg-emerald-100 px-2 py-1 rounded-full flex-row items-center space-x-1.5 mb-6">
                     <FontAwesome5
                       name="calendar-check"
-                      size={12}
+                      size={16}
                       color="#059669"
                     />
-                    <Text className="text-emerald-700 font-semibold">
+                    <Text className="text-emerald-700 font-semibold text-sm">
                       {filteredVisits?.length || 0} chuyến thăm
                     </Text>
                   </View>

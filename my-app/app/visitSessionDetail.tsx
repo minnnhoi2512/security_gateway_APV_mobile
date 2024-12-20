@@ -1,5 +1,12 @@
-import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
-import React from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Modal,
+} from "react-native";
+import React, { useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
@@ -7,6 +14,7 @@ import {
   useGetVisitorSessionImagesQuery,
   useGetVisitorSessionImageVehicleQuery,
 } from "@/redux/services/visitorSession.service";
+import ImageViewer from "react-native-image-zoom-viewer";
 
 interface VisitorSessionImage {
   visitorSessionsImageId: number;
@@ -25,6 +33,36 @@ interface VisitorImagesProps {
 interface ImageSectionProps {
   images: VisitorSessionImage[];
   title: string;
+}
+
+interface VehicleImage {
+  imageType: "CheckIn_Vehicle" | "LicensePlate_Out";
+  imageURL: string;
+  vehicleSessionImageId: number;
+}
+
+interface VehicleSession {
+  images: VehicleImage[];
+  licensePlate: string;
+  status: string | null;
+  vehicleSessionId: number;
+  visitorSessionId: number;
+}
+
+interface VehicleImagesProps {
+  vehicleSessionImage: VehicleSession[];
+}
+
+interface VehicleImageSectionProps {
+  images: VehicleImage[];
+  title: string;
+  licensePlate?: string;
+}
+
+interface ImageViewerModalProps {
+  visible: boolean;
+  images: { url: string }[];
+  onClose: () => void;
 }
 
 const visitSessionDetail = () => {
@@ -53,10 +91,74 @@ const visitSessionDetail = () => {
   console.log("visitorSSIMAGE: ", visitorSessionImage);
   console.log("visitorSSIMAGE Vehicle: ", visitorSessionImageVe);
 
+  // const renderImageSection: React.FC<ImageSectionProps> = ({
+  //   images,
+  //   title,
+  // }) => {
+  //   if (!images || images.length === 0) return null;
+
+  //   return (
+  //     <View className="mb-4">
+  //       <View className="flex-row items-center mb-2">
+  //         <MaterialCommunityIcons
+  //           name={title.includes("Vào") ? "login" : "logout"}
+  //           size={20}
+  //           color={title.includes("Vào") ? "#22C55E" : "#EF4444"}
+  //         />
+  //         <Text className="text-gray-700 font-medium text-lg ml-2">
+  //           {title}
+  //         </Text>
+  //       </View>
+  //       <View className="flex-row flex-wrap">
+  //         {images.map((img) => (
+  //           <View key={img.visitorSessionsImageId} className="w-1/2 p-1">
+  //             <View className="bg-white rounded-xl overflow-hidden shadow-sm">
+  //               <Image
+  //                 source={{ uri: img.imageURL }}
+  //                 className="w-full h-48"
+  //                 resizeMode="cover"
+  //               />
+  //               <View className="p-2 bg-gray-50">
+  //                 <Text className="text-gray-600 text-sm">
+  //                   {img.imageType.includes("Body")
+  //                     ? "Ảnh toàn thân"
+  //                     : "Ảnh giày"}
+  //                 </Text>
+  //               </View>
+  //             </View>
+  //           </View>
+  //         ))}
+  //       </View>
+  //     </View>
+  //   );
+  // };
+
+  // const VisitorImages: React.FC<VisitorImagesProps> = ({
+  //   visitorSessionImage,
+  // }) => {
+  //   const checkInImages = visitorSessionImage?.filter((img) =>
+  //     img.imageType.startsWith("CheckIn")
+  //   );
+
+  //   const checkOutImages = visitorSessionImage?.filter((img) =>
+  //     img.imageType.startsWith("CheckOut")
+  //   );
+
+  //   return (
+  //     <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+  //       <Text className="text-gray-500 text-sm mb-3">Ảnh ra vào</Text>
+  //       {renderImageSection({ images: checkInImages, title: "Ảnh Vào" })}
+  //       {renderImageSection({ images: checkOutImages, title: "Ảnh Ra" })}
+  //     </View>
+  //   );
+  // };
   const renderImageSection: React.FC<ImageSectionProps> = ({
     images,
     title,
   }) => {
+    const [selectedImageIndex, setSelectedImageIndex] = useState<number>(-1);
+    const imageUrls = images.map((img) => ({ url: img.imageURL }));
+
     if (!images || images.length === 0) return null;
 
     return (
@@ -72,8 +174,12 @@ const visitSessionDetail = () => {
           </Text>
         </View>
         <View className="flex-row flex-wrap">
-          {images.map((img) => (
-            <View key={img.visitorSessionsImageId} className="w-1/2 p-1">
+          {images.map((img, index) => (
+            <TouchableOpacity
+              key={img.visitorSessionsImageId}
+              className="w-1/2 p-1"
+              onPress={() => setSelectedImageIndex(index)}
+            >
               <View className="bg-white rounded-xl overflow-hidden shadow-sm">
                 <Image
                   source={{ uri: img.imageURL }}
@@ -84,16 +190,46 @@ const visitSessionDetail = () => {
                   <Text className="text-gray-600 text-sm">
                     {img.imageType.includes("Body")
                       ? "Ảnh toàn thân"
-                      : "Ảnh giày dép"}
+                      : "Ảnh giày"}
                   </Text>
                 </View>
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
+        <ImageViewerModal
+          visible={selectedImageIndex !== -1}
+          images={imageUrls}
+          onClose={() => setSelectedImageIndex(-1)}
+        />
       </View>
     );
   };
+
+  // const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
+  //   visible,
+  //   images,
+  //   onClose,
+  // }) => {
+  //   return (
+  //     <Modal visible={visible} transparent={true}>
+  //       <ImageViewer
+  //         imageUrls={images}
+  //         enableSwipeDown
+  //         onSwipeDown={onClose}
+  //         onCancel={onClose}
+  //         renderHeader={() => (
+  //           <TouchableOpacity
+  //             onPress={onClose}
+  //             className="absolute top-12 right-4 z-50 bg-black/50 rounded-full p-2"
+  //           >
+  //             <Ionicons name="close" size={24} color="white" />
+  //           </TouchableOpacity>
+  //         )}
+  //       />
+  //     </Modal>
+  //   );
+  // };
 
   const VisitorImages: React.FC<VisitorImagesProps> = ({
     visitorSessionImage,
@@ -114,7 +250,221 @@ const visitSessionDetail = () => {
       </View>
     );
   };
+  const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
+    visible,
+    images,
+    onClose,
+  }) => {
+    return (
+      <Modal visible={visible} transparent={true}>
+        <ImageViewer
+          imageUrls={images}
+          enableSwipeDown
+          onSwipeDown={onClose}
+          onCancel={onClose}
+          renderHeader={() => (
+            <TouchableOpacity
+              onPress={onClose}
+              className="absolute top-12 right-4 z-50 bg-black/50 rounded-full p-2"
+            >
+              <Ionicons name="close" size={24} color="white" />
+            </TouchableOpacity>
+          )}
+        />
+      </Modal>
+    );
+  };
 
+  const renderVehicleImageSection: React.FC<VehicleImageSectionProps> = ({
+    images,
+    title,
+    licensePlate,
+  }) => {
+    const [selectedImageIndex, setSelectedImageIndex] = useState<number>(-1);
+    const imageUrls = images.map((img) => ({ url: img.imageURL }));
+
+    if (!images || images.length === 0) return null;
+
+    return (
+      <View className="mb-4">
+        <View className="flex-row items-center mb-2">
+          <MaterialCommunityIcons
+            name={title.includes("Vào") ? "car-side" : "car"}
+            size={20}
+            color={title.includes("Vào") ? "#22C55E" : "#EF4444"}
+          />
+          <Text className="text-gray-700 font-medium text-lg ml-2">
+            {title}
+          </Text>
+          {licensePlate && (
+            <Text className="text-gray-500 ml-2">({licensePlate})</Text>
+          )}
+        </View>
+        <View className="flex-row justify-between">
+          {images.map((img, index) => (
+            <TouchableOpacity
+              key={img.vehicleSessionImageId}
+              className="flex-1 mx-1"
+              onPress={() => setSelectedImageIndex(index)}
+            >
+              <View className="bg-white rounded-xl overflow-hidden shadow-sm">
+                <Image
+                  source={{ uri: img.imageURL }}
+                  className="w-full h-40"
+                  resizeMode="cover"
+                />
+                <View className="p-2 bg-gray-50">
+                  <Text className="text-gray-600 text-sm text-center">
+                    {img.imageType === "CheckIn_Vehicle"
+                      ? "Ảnh xe vào"
+                      : "Ảnh biển số xe ra"}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <ImageViewerModal
+          visible={selectedImageIndex !== -1}
+          images={imageUrls}
+          onClose={() => setSelectedImageIndex(-1)}
+        />
+      </View>
+    );
+  };
+
+  const VehicleImages: React.FC<VehicleImagesProps> = ({
+    vehicleSessionImage,
+  }) => {
+    if (!vehicleSessionImage || vehicleSessionImage.length === 0) {
+      return (
+        <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+          <View className="flex-row items-center">
+            <MaterialCommunityIcons name="car-off" size={20} color="#6B7280" />
+            <Text className="text-gray-500 ml-2">
+              Khách không có phương tiện đi kèm
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
+    return (
+      <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+        <Text className="text-gray-500 text-sm mb-3">Ảnh phương tiện</Text>
+        {vehicleSessionImage.map((vehicleSession) => {
+          const checkInImages = vehicleSession.images.filter(
+            (img) => img.imageType === "CheckIn_Vehicle"
+          );
+          const checkOutImages = vehicleSession.images.filter(
+            (img) => img.imageType === "LicensePlate_Out"
+          );
+
+          return (
+            <React.Fragment key={vehicleSession.vehicleSessionId}>
+              {renderVehicleImageSection({
+                images: [...checkInImages, ...checkOutImages],
+                title: "Ảnh phương tiện",
+                licensePlate: vehicleSession.licensePlate,
+              })}
+            </React.Fragment>
+          );
+        })}
+      </View>
+    );
+  };
+
+  // const renderVehicleImageSection: React.FC<VehicleImageSectionProps> = ({
+  //   images,
+  //   title,
+  //   licensePlate,
+  // }) => {
+  //   if (!images || images.length === 0) return null;
+
+  //   return (
+  //     <View className="mb-4">
+  //       <View className="flex-row items-center mb-2">
+  //         <MaterialCommunityIcons
+  //           name={title.includes("Vào") ? "car-side" : "car"}
+  //           size={20}
+  //           color={title.includes("Vào") ? "#22C55E" : "#EF4444"}
+  //         />
+  //         <Text className="text-gray-700 font-medium text-lg ml-2">
+  //           {title}
+  //         </Text>
+  //         {licensePlate && (
+  //           <Text className="text-gray-500 ml-2">({licensePlate})</Text>
+  //         )}
+  //       </View>
+  //       <View className="flex-row flex-wrap">
+  //         {images.map((img) => (
+  //           <View key={img.vehicleSessionImageId} className="w-1/2 p-1">
+  //             <View className="bg-white rounded-xl overflow-hidden shadow-sm">
+  //               <Image
+  //                 source={{ uri: img.imageURL }}
+  //                 className="w-full h-48"
+  //                 resizeMode="cover"
+  //               />
+  //               <View className="p-2 bg-gray-50">
+  //                 <Text className="text-gray-600 text-sm">
+  //                   {img.imageType === "CheckIn_Vehicle"
+  //                     ? "Ảnh xe vào"
+  //                     : "Ảnh biển số xe ra"}
+  //                 </Text>
+  //               </View>
+  //             </View>
+  //           </View>
+  //         ))}
+  //       </View>
+  //     </View>
+  //   );
+  // };
+
+  // const VehicleImages: React.FC<VehicleImagesProps> = ({
+  //   vehicleSessionImage,
+  // }) => {
+  //   if (!vehicleSessionImage || vehicleSessionImage.length === 0) {
+  //     return (
+  //       <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+  //         <View className="flex-row items-center">
+  //           <MaterialCommunityIcons name="car-off" size={20} color="#6B7280" />
+  //           <Text className="text-gray-500 ml-2">
+  //             Khách không có phương tiện đi kèm
+  //           </Text>
+  //         </View>
+  //       </View>
+  //     );
+  //   }
+
+  //   return (
+  //     <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+  //       <Text className="text-gray-500 text-sm mb-3">Ảnh phương tiện</Text>
+  //       {vehicleSessionImage.map((vehicleSession) => {
+  //         const checkInImages = vehicleSession.images.filter(
+  //           (img) => img.imageType === "CheckIn_Vehicle"
+  //         );
+  //         const checkOutImages = vehicleSession.images.filter(
+  //           (img) => img.imageType === "LicensePlate_Out"
+  //         );
+
+  //         return (
+  //           <React.Fragment key={vehicleSession.vehicleSessionId}>
+  //             {renderVehicleImageSection({
+  //               images: checkInImages,
+  //               title: "Xe lúc vào",
+  //               licensePlate: vehicleSession.licensePlate,
+  //             })}
+  //             {renderVehicleImageSection({
+  //               images: checkOutImages,
+  //               title: "Xe lúc ra",
+  //               licensePlate: vehicleSession.licensePlate,
+  //             })}
+  //           </React.Fragment>
+  //         );
+  //       })}
+  //     </View>
+  //   );
+  // };
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       {/* Header */}
@@ -252,6 +602,11 @@ const visitSessionDetail = () => {
         {!isLoadingVisitorSS && !isErrVisitorSS && visitorSessionImage && (
           <VisitorImages visitorSessionImage={visitorSessionImage} />
         )}
+        {!isLoadingVisitorSSVe &&
+          !isErrVisitorSSVe &&
+          visitorSessionImageVe && (
+            <VehicleImages vehicleSessionImage={visitorSessionImageVe} />
+          )}
       </ScrollView>
     </SafeAreaView>
   );
