@@ -7,6 +7,7 @@ import {
   FlatList,
   RefreshControl,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import Header from "@/components/UI/Header";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -114,7 +115,7 @@ export default function HomeScreen() {
               </View>
 
               <View className="px-4">
-                {/* <View className="flex-row justify-between items-center mb-6">
+                <View className="flex-row justify-between items-center mb-6">
                   <Text className="text-xl ml-2 font-bold text-[#d35400]">
                     Chuyến thăm hôm nay
                   </Text>
@@ -129,8 +130,8 @@ export default function HomeScreen() {
                       {filteredVisits?.length || 0} chuyến thăm
                     </Text>
                   </View>
-                </View> */}
-                <View className="flex-row justify-evenly items-center mb-4">
+                </View>
+                {/* <View className="flex-row justify-evenly items-center mb-4">
                   <Text className="text-3xl font-bold text-[#d35400] flex-shrink">
                     Chuyến thăm Hôm nay
                   </Text>
@@ -145,9 +146,9 @@ export default function HomeScreen() {
                       {filteredVisits?.length || 0} chuyến thăm
                     </Text>
                   </View>
-                </View>
+                </View> */}
               </View>
-              <View className="gap-2 px-2 mb-4 flex-row justify-between">
+              {/* <View className="gap-2 px-2 mb-4 flex-row justify-between">
                 <TouchableOpacity
                   onPress={() => setStatus("Active")}
                   className={`px-4 py-2 rounded-full ${
@@ -212,7 +213,79 @@ export default function HomeScreen() {
                     Đã xử lí
                   </Text>
                 </TouchableOpacity>
-              </View>
+              </View> */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                className="px-2 mb-4"
+              >
+                <View className="flex-row gap-2">
+                  <TouchableOpacity
+                    onPress={() => setStatus("Active")}
+                    className={`px-4 py-2 rounded-full ${
+                      status === "Active" ? "bg-blue-500" : "bg-gray-200"
+                    }`}
+                  >
+                    <Text
+                      className={`font-semibold ${
+                        status === "Active" ? "text-white" : "text-gray-700"
+                      }`}
+                    >
+                      Hoạt động
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setStatus("ActiveTemporary")}
+                    className={`px-4 py-2 rounded-full ${
+                      status === "ActiveTemporary"
+                        ? "bg-yellow-500"
+                        : "bg-gray-200"
+                    }`}
+                  >
+                    <Text
+                      className={`font-semibold ${
+                        status === "ActiveTemporary"
+                          ? "text-white"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      Tạm thời
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setStatus("Violation")}
+                    className={`px-4 py-2 rounded-full ${
+                      status === "Violation" ? "bg-red-500" : "bg-gray-200"
+                    }`}
+                  >
+                    <Text
+                      className={`font-semibold ${
+                        status === "Violation" ? "text-white" : "text-gray-700"
+                      }`}
+                    >
+                      Vi phạm
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setStatus("ViolationResolved")}
+                    className={`px-4 py-2 rounded-full ${
+                      status === "ViolationResolved"
+                        ? "bg-gray-500"
+                        : "bg-gray-200"
+                    }`}
+                  >
+                    <Text
+                      className={`font-semibold ${
+                        status === "ViolationResolved"
+                          ? "text-white"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      Đã xử lí
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
             </>
           }
           data={filteredVisits}

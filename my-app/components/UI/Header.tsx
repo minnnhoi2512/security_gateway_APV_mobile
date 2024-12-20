@@ -77,11 +77,11 @@ const Header: React.FC<HeaderProps> = ({ name }) => {
   const renderGateBadge = () => {
     if (!selectedGate) return null;
     return (
-      <View className="absolute bottom-6 right-6">
-        <View className="flex-row items-center bg-green-600 px-4 py-2 rounded-full shadow-lg border border-white/30">
+      <View className="absolute bottom-6 right-5">
+        <View className="flex-row items-center bg-green-600 px-2 py-1 rounded-full shadow-lg border border-white/30">
           <MaterialIcons
             name="door-sliding"
-            size={16}
+            size={14}
             color="white"
             className="mr-1"
           />

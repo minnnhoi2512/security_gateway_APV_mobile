@@ -93,7 +93,7 @@ const visitForStaff = () => {
                     </Text>
                   </View>
                 </View>
-                <View className="mr-2 gap-2 mb-4 flex-row">
+                {/* <View className="mr-2 gap-2 mb-4 flex-row">
                   <TouchableOpacity
                     onPress={() => setStatus("Active")}
                     className={`px-4 py-2 rounded-full ${
@@ -158,7 +158,84 @@ const visitForStaff = () => {
                       Đã xử lí
                     </Text>
                   </TouchableOpacity>
-                </View>
+                </View> */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  className="mb-4"
+                >
+                  <View className="mr-2 flex-row gap-2">
+                    <TouchableOpacity
+                      onPress={() => setStatus("Active")}
+                      className={`px-4 py-2 rounded-full ${
+                        status === "Active" ? "bg-blue-500" : "bg-gray-200"
+                      }`}
+                    >
+                      <Text
+                        className={`font-semibold ${
+                          status === "Active" ? "text-white" : "text-gray-700"
+                        }`}
+                      >
+                        Hoạt động
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => setStatus("ActiveTemporary")}
+                      className={`px-4 py-2 rounded-full ${
+                        status === "ActiveTemporary"
+                          ? "bg-yellow-500"
+                          : "bg-gray-200"
+                      }`}
+                    >
+                      <Text
+                        className={`font-semibold ${
+                          status === "ActiveTemporary"
+                            ? "text-white"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        Tạm thời
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => setStatus("Violation")}
+                      className={`px-4 py-2 rounded-full ${
+                        status === "Violation" ? "bg-red-500" : "bg-gray-200"
+                      }`}
+                    >
+                      <Text
+                        className={`font-semibold ${
+                          status === "Violation"
+                            ? "text-white"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        Vi phạm
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => setStatus("ViolationResolved")}
+                      className={`px-4 py-2 rounded-full ${
+                        status === "ViolationResolved"
+                          ? "bg-gray-500"
+                          : "bg-gray-200"
+                      }`}
+                    >
+                      <Text
+                        className={`font-semibold ${
+                          status === "ViolationResolved"
+                            ? "text-white"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        Đã xử lí
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </ScrollView>
               </View>
             </>
           }
