@@ -78,19 +78,19 @@ const visitForStaff = () => {
             <>
               <View className="mt-8">
                 <View className="flex-row justify-evenly items-center mb-4">
-                  <Text className="text-3xl font-bold text-[#d35400] flex-shrink">
+                  <Text className="text-lg font-bold text-[#d35400] flex-shrink">
                     Chuyến thăm Hôm nay
                   </Text>
 
-                  <View className="bg-emerald-100 px-2 py-1 rounded-full flex-row items-center space-x-1.5 mb-6">
+                  <View className="bg-emerald-100 px-2 py-1 rounded-full flex-row items-center space-x-1.5">
+                    <Text className="text-emerald-700 font-semibold text-sm">
+                      {filteredVisits?.length || 0}
+                    </Text>
                     <FontAwesome5
                       name="calendar-check"
                       size={16}
                       color="#059669"
                     />
-                    <Text className="text-emerald-700 font-semibold text-sm">
-                      {filteredVisits?.length || 0} chuyến thăm
-                    </Text>
                   </View>
                 </View>
                 {/* <View className="mr-2 gap-2 mb-4 flex-row">

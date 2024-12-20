@@ -27,6 +27,25 @@ interface SecurityInfo {
   userId: number;
 }
 
+interface Visitor {
+  visitorId: number;
+
+  visitorName: string;
+  companyName: string;
+  phoneNumber: string;
+  credentialsCard: string;
+  status: string;
+}
+
+interface VisitDetail {
+  visitDetailId: number;
+  expectedStartHour: string;
+  expectedEndHour: string;
+  status: boolean;
+  sessionStatus: string;
+  visitor: Visitor;
+}
+
 interface GateInfo {
   gateId: number;
   gateName: string;
@@ -44,7 +63,7 @@ interface VisitorSessionItem {
   securityIn: SecurityInfo | null;
   securityOut: SecurityInfo | null;
   status: string;
-  visitDetail: any | null;
+  visitDetail: VisitDetail;
 }
 
 interface HistoryModalProps {
@@ -94,9 +113,6 @@ const Checkin: React.FC = () => {
   //       }
   //     ]);
   // }
-
- 
-
 
   const handleScanPress = async () => {
     if (permission?.granted) {
@@ -173,7 +189,7 @@ const Checkin: React.FC = () => {
   //   const handlePress = () => {
   //     router.push({
   //       pathname: "/visitSessionDetail",
-  //       params: { 
+  //       params: {
   //         sessionId: item.visitorSessionId,
   //         sessionData: JSON.stringify(item)
   //       }
@@ -261,20 +277,23 @@ const Checkin: React.FC = () => {
   //     </View>
   //   </View>
   // };
-  const SessionItem: React.FC<{ item: VisitorSessionItem,onClose: () => void;  }> = ({ item, onClose }) => {
+  const SessionItem: React.FC<{
+    item: VisitorSessionItem;
+    onClose: () => void;
+  }> = ({ item, onClose }) => {
     const router = useRouter();
-    
+
     const handlePress = () => {
-      onClose(); 
+      onClose();
       router.push({
         pathname: "/visitSessionDetail",
-        params: { 
+        params: {
           sessionId: item.visitorSessionId,
-          sessionData: JSON.stringify(item)
-        }
+          sessionData: JSON.stringify(item),
+        },
       });
     };
-  
+
     return (
       <TouchableOpacity onPress={handlePress}>
         <View className="flex-row mb-4">
@@ -287,8 +306,91 @@ const Checkin: React.FC = () => {
             />
             <View className="w-0.5 h-full bg-gray-200 absolute top-4" />
           </View>
-  
+
           {/* Content card */}
+          {/* <View className="flex-1 bg-white rounded-xl p-4 shadow-sm">
+   
+            <View className="flex-row justify-between items-start mb-3">
+              <View>
+                <View className="flex-row items-center">
+                  {item.status === "CheckIn" ? (
+                    <MaterialCommunityIcons
+                      name="login"
+                      size={16}
+                      color="#22C55E"
+                    />
+                  ) : (
+                    <MaterialCommunityIcons
+                      name="logout"
+                      size={16}
+                      color="#EF4444"
+                    />
+                  )}
+                  <Text className="text-gray-800 font-semibold ml-2">
+                    {item.status === "CheckIn" ? "Đã vào" : "Đã ra"}
+                  </Text>
+                </View>
+              </View>
+              {item.isVehicleSession && (
+                <View className="bg-blue-50 px-3 py-1 rounded-full flex-row items-center">
+                  <MaterialCommunityIcons
+                    name="car"
+                    size={14}
+                    color="#3B82F6"
+                  />
+                  <Text className="text-blue-500 text-xs ml-1">
+                    Có phương tiện
+                  </Text>
+                </View>
+              )}
+            </View>
+
+       
+            <View className="border-t border-gray-100 pt-3">
+              <View className="flex-row justify-between mb-2">
+                <View className="flex-1">
+                  <Text className="text-xs text-gray-500 mb-1">Cổng</Text>
+                  <Text className="text-sm font-medium text-gray-800">
+                    {item.status === "CheckIn"
+                      ? item.gateIn?.gateName
+                      : item.gateOut?.gateName}
+                  </Text>
+                </View>
+                <View className="flex-1">
+                  <Text className="text-xs text-gray-500 mb-1">
+                    Thông tin khách
+                  </Text>
+                  <View className="flex-row items-center">
+                    <MaterialCommunityIcons
+                      name="shield-account"
+                      size={14}
+                      color="#9CA3AF"
+                      style={{ marginRight: 4 }}
+                    />
+                    <Text className="text-sm font-medium text-gray-800">
+                      {item.visitDetail?.visitor?.visitorName}
+                    </Text>
+                  </View>
+                </View>
+                <View className="flex-1">
+                  <Text className="text-xs text-gray-500 mb-1">Bảo vệ</Text>
+                  <View className="flex-row items-center">
+                    <MaterialCommunityIcons
+                      name="shield-account"
+                      size={14}
+                      color="#9CA3AF"
+                      style={{ marginRight: 4 }}
+                    />
+                    <Text className="text-sm font-medium text-gray-800">
+                      {item.status === "CheckIn"
+                        ? item.securityIn?.fullName
+                        : item.securityOut?.fullName}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View> */}
           <View className="flex-1 bg-white rounded-xl p-4 shadow-sm">
             {/* Header with status and time */}
             <View className="flex-row justify-between items-start mb-3">
@@ -314,15 +416,63 @@ const Checkin: React.FC = () => {
               </View>
               {item.isVehicleSession && (
                 <View className="bg-blue-50 px-3 py-1 rounded-full flex-row items-center">
-                  <MaterialCommunityIcons name="car" size={14} color="#3B82F6" />
-                  <Text className="text-blue-500 text-xs ml-1">Có phương tiện</Text>
+                  <MaterialCommunityIcons
+                    name="car"
+                    size={14}
+                    color="#3B82F6"
+                  />
+                  <Text className="text-blue-500 text-xs ml-1">
+                    Có phương tiện
+                  </Text>
                 </View>
               )}
             </View>
-  
+
+            {/* Visitor Information Section */}
+            <View className="mb-3">
+              <Text className="text-xs text-gray-500 mb-2">
+                Thông tin khách
+              </Text>
+              <View className="space-y-2">
+                <View className="flex-row items-center">
+                  <MaterialCommunityIcons
+                    name="account"
+                    size={14}
+                    color="#9CA3AF"
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text className="text-sm font-medium text-gray-800">
+                    {item.visitDetail?.visitor?.visitorName}
+                  </Text>
+                </View>
+                <View className="flex-row items-center">
+                  <MaterialCommunityIcons
+                    name="office-building"
+                    size={14}
+                    color="#9CA3AF"
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text className="text-sm text-gray-600">
+                    {item.visitDetail?.visitor?.companyName}
+                  </Text>
+                </View>
+                <View className="flex-row items-center">
+                  <MaterialCommunityIcons
+                    name="phone"
+                    size={14}
+                    color="#9CA3AF"
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text className="text-sm text-gray-600">
+                    {item.visitDetail?.visitor?.phoneNumber}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
             {/* Gate and Security info */}
             <View className="border-t border-gray-100 pt-3">
-              <View className="flex-row justify-between mb-2">
+              <View className="flex-row justify-between">
                 <View className="flex-1">
                   <Text className="text-xs text-gray-500 mb-1">Cổng</Text>
                   <Text className="text-sm font-medium text-gray-800">
@@ -383,7 +533,12 @@ const Checkin: React.FC = () => {
           {/* Timeline list */}
           <FlatList
             data={visitorSession}
-            renderItem={({ item }) => <SessionItem item={item} onClose={() => setModalVisible2(false)} />}
+            renderItem={({ item }) => (
+              <SessionItem
+                item={item}
+                onClose={() => setModalVisible2(false)}
+              />
+            )}
             keyExtractor={(item) => item.visitorSessionId.toString()}
             contentContainerStyle={{ padding: 16 }}
             showsVerticalScrollIndicator={false}

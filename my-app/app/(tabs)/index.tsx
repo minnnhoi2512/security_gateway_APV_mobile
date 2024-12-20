@@ -121,14 +121,14 @@ export default function HomeScreen() {
                   </Text>
 
                   <View className="bg-emerald-100 px-4 py-2 rounded-full flex-row items-center space-x-2">
+                    <Text className="text-emerald-700 font-semibold">
+                      {filteredVisits?.length || 0}
+                    </Text>
                     <FontAwesome5
                       name="calendar-check"
                       size={18}
                       color="#059669"
                     />
-                    <Text className="text-emerald-700 font-semibold">
-                      {filteredVisits?.length || 0} chuyến thăm
-                    </Text>
                   </View>
                 </View>
                 {/* <View className="flex-row justify-evenly items-center mb-4">

@@ -181,7 +181,7 @@ const Header: React.FC<HeaderProps> = ({ name }) => {
                 </View>
               </View>
               {gate && (
-                <View className="mb-7 flex-row items-center bg-green-600/90 px-2.5 py-1 rounded-full border border-white/20">
+                <View className="mb-7 flex-row items-center bg-green-600/90 px-1 py-1 rounded-full border border-white/20">
                   {/* <MaterialIcons
                     name="door-sliding"
                     size={14}

@@ -40,6 +40,8 @@ const Login: React.FC = () => {
     };
     fetchRole();
   }, []);
+
+  const [showPassword, setShowPassword] = useState(false);
   // const handleLogin = async () => {
   //   try {
   //     const result = await loginUser({ username, password }).unwrap();
@@ -72,19 +74,19 @@ const Login: React.FC = () => {
         const decodedToken = jwtDecode<{ role: string }>(result.jwtToken);
         const role = decodedToken.role;
         await AsyncStorage.setItem("userRole", role);
-        dispatch(setAuth({
-          token: result.jwtToken,
-          userId: result.userId.toString(),
-          role: role,
-        }));
+        dispatch(
+          setAuth({
+            token: result.jwtToken,
+            userId: result.userId.toString(),
+            role: role,
+          })
+        );
 
-        if(role === "Security") {
+        if (role === "Security") {
           router.push("/PickGate");
         } else {
           router.push("/VisitForStaff");
         }
-
-       
       }
     } catch (error) {
       console.error("Login failed with error:", error);
@@ -103,8 +105,10 @@ const Login: React.FC = () => {
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <StyledView className="flex-1 p-6 mt-[70px]">
           <StyledView className="items-center mb-8">
-            <StyledImage 
-              source={{ uri: "https://cdn-icons-png.flaticon.com/512/11135/11135368.png" }}
+            <StyledImage
+              source={{
+                uri: "https://cdn-icons-png.flaticon.com/512/11135/11135368.png",
+              }}
               className="w-24 h-24"
             />
             <StyledText className="text-white text-xl font-bold mt-4">
@@ -121,7 +125,9 @@ const Login: React.FC = () => {
             </StyledText>
 
             <StyledView className="mb-4">
-              <StyledText className="text-gray-700 mb-2">Tên đăng nhập</StyledText>
+              <StyledText className="text-gray-700 mb-2">
+                Tên đăng nhập
+              </StyledText>
               <StyledTextInput
                 className="bg-gray-100 rounded-lg p-3"
                 placeholder="Nhập tên đăng nhập của bạn"
@@ -130,7 +136,7 @@ const Login: React.FC = () => {
               />
             </StyledView>
 
-            <StyledView className="mb-4">
+            {/* <StyledView className="mb-4">
               <StyledText className="text-gray-700 mb-2">Mật khẩu</StyledText>
               <StyledView className="relative">
                 <StyledTextInput
@@ -142,6 +148,28 @@ const Login: React.FC = () => {
                 />
                 <TouchableOpacity className="absolute right-3 top-3">
                   <FontAwesome name="eye" size={20} color="gray" />
+                </TouchableOpacity>
+              </StyledView>
+            </StyledView> */}
+            <StyledView className="mb-4">
+              <StyledText className="text-gray-700 mb-2">Mật khẩu</StyledText>
+              <StyledView className="relative">
+                <StyledTextInput
+                  className="bg-gray-100 rounded-lg p-3 pr-10"
+                  placeholder="Nhập mật khẩu"
+                  secureTextEntry={!showPassword}
+                  value={password}
+                  onChangeText={setPassword}
+                />
+                <TouchableOpacity
+                  className="absolute right-3 top-3"
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <FontAwesome
+                    name={showPassword ? "eye-slash" : "eye"}
+                    size={20}
+                    color="gray"
+                  />
                 </TouchableOpacity>
               </StyledView>
             </StyledView>

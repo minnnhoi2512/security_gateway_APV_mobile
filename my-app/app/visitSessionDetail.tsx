@@ -466,6 +466,149 @@ const visitSessionDetail = () => {
   //   );
   // };
   return (
+    // <SafeAreaView className="flex-1 bg-gray-50">
+    //   {/* Header */}
+    //   <View className="bg-white p-4 flex-row items-center border-b border-gray-100">
+    //     <TouchableOpacity
+    //       onPress={() => router.back()}
+    //       className="w-10 h-10 items-center justify-center rounded-full bg-gray-100"
+    //     >
+    //       <Ionicons name="arrow-back" size={24} color="#374151" />
+    //     </TouchableOpacity>
+    //     <Text className="text-xl font-bold text-gray-800 ml-4">
+    //       Chi tiết phiên ra vào
+    //     </Text>
+    //   </View>
+
+    //   <ScrollView className="flex-1 p-4">
+    //     {/* Status Card */}
+    //     <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+    //       <View className="flex-row justify-between items-center">
+    //         <View>
+    //           <Text className="text-gray-500 text-sm mb-1">Trạng thái</Text>
+    //           <View className="flex-row items-center">
+    //             {sessionData.status === "CheckIn" ? (
+    //               <MaterialCommunityIcons
+    //                 name="login"
+    //                 size={20}
+    //                 color="#22C55E"
+    //               />
+    //             ) : (
+    //               <MaterialCommunityIcons
+    //                 name="logout"
+    //                 size={20}
+    //                 color="#EF4444"
+    //               />
+    //             )}
+    //             <Text className="text-lg font-semibold ml-2">
+    //               {sessionData.status === "CheckIn" ? "Đã vào" : "Đã ra"}
+    //             </Text>
+    //           </View>
+    //         </View>
+    //         {sessionData.isVehicleSession && (
+    //           <View className="bg-blue-50 px-3 py-1 rounded-full">
+    //             <Text className="text-blue-600 text-sm">Có phương tiện</Text>
+    //           </View>
+    //         )}
+    //       </View>
+    //     </View>
+
+    //     {/* Time Info */}
+    //     <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+    //       <Text className="text-gray-500 text-sm mb-3">Thời gian</Text>
+    //       <View className="space-y-3">
+    //         <View className="flex-row justify-between items-center">
+    //           <Text className="text-gray-600">Thời gian vào</Text>
+    //           <Text className="font-medium">
+    //             {new Date(sessionData.checkinTime).toLocaleString()}
+    //           </Text>
+    //         </View>
+    //         {sessionData.checkoutTime && (
+    //           <View className="flex-row justify-between items-center">
+    //             <Text className="text-gray-600">Thời gian ra</Text>
+    //             <Text className="font-medium">
+    //               {new Date(sessionData.checkoutTime).toLocaleString()}
+    //             </Text>
+    //           </View>
+    //         )}
+    //       </View>
+    //     </View>
+
+    //     {/* Gate Info */}
+    //     <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+    //       <Text className="text-gray-500 text-sm mb-3">Thông tin cổng</Text>
+    //       <View className="space-y-3">
+    //         {sessionData.gateIn && (
+    //           <View className="flex-row justify-between items-center">
+    //             <Text className="text-gray-600">Cổng vào</Text>
+    //             <Text className="font-medium">
+    //               {sessionData.gateIn.gateName}
+    //             </Text>
+    //           </View>
+    //         )}
+    //         {sessionData.gateOut && (
+    //           <View className="flex-row justify-between items-center">
+    //             <Text className="text-gray-600">Cổng ra</Text>
+    //             <Text className="font-medium">
+    //               {sessionData.gateOut.gateName}
+    //             </Text>
+    //           </View>
+    //         )}
+    //       </View>
+    //     </View>
+
+    //     {/* Security Info */}
+    //     <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+    //       <Text className="text-gray-500 text-sm mb-3">Thông tin bảo vệ</Text>
+    //       <View className="space-y-3">
+    //         {sessionData.securityIn && (
+    //           <View>
+    //             <Text className="text-gray-600 mb-1">Bảo vệ vào</Text>
+    //             <View className="flex-row items-center">
+    //               <MaterialCommunityIcons
+    //                 name="shield-account"
+    //                 size={20}
+    //                 color="#9CA3AF"
+    //               />
+    //               <Text className="font-medium ml-2">
+    //                 {sessionData.securityIn.fullName}
+    //               </Text>
+    //             </View>
+    //             <Text className="text-gray-500 text-sm ml-7">
+    //               {sessionData.securityIn.phoneNumber}
+    //             </Text>
+    //           </View>
+    //         )}
+    //         {sessionData.securityOut && (
+    //           <View>
+    //             <Text className="text-gray-600 mb-1">Bảo vệ ra</Text>
+    //             <View className="flex-row items-center">
+    //               <MaterialCommunityIcons
+    //                 name="shield-account"
+    //                 size={20}
+    //                 color="#9CA3AF"
+    //               />
+    //               <Text className="font-medium ml-2">
+    //                 {sessionData.securityOut.fullName}
+    //               </Text>
+    //             </View>
+    //             <Text className="text-gray-500 text-sm ml-7">
+    //               {sessionData.securityOut.phoneNumber}
+    //             </Text>
+    //           </View>
+    //         )}
+    //       </View>
+    //     </View>
+    //     {!isLoadingVisitorSS && !isErrVisitorSS && visitorSessionImage && (
+    //       <VisitorImages visitorSessionImage={visitorSessionImage} />
+    //     )}
+    //     {!isLoadingVisitorSSVe &&
+    //       !isErrVisitorSSVe &&
+    //       visitorSessionImageVe && (
+    //         <VehicleImages vehicleSessionImage={visitorSessionImageVe} />
+    //       )}
+    //   </ScrollView>
+    // </SafeAreaView>
     <SafeAreaView className="flex-1 bg-gray-50">
       {/* Header */}
       <View className="bg-white p-4 flex-row items-center border-b border-gray-100">
@@ -483,33 +626,106 @@ const visitSessionDetail = () => {
       <ScrollView className="flex-1 p-4">
         {/* Status Card */}
         <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
-          <View className="flex-row justify-between items-center">
+          <View className="flex-row justify-between items-start">
             <View>
               <Text className="text-gray-500 text-sm mb-1">Trạng thái</Text>
               <View className="flex-row items-center">
-                {sessionData.status === "CheckIn" ? (
-                  <MaterialCommunityIcons
-                    name="login"
-                    size={20}
-                    color="#22C55E"
-                  />
-                ) : (
-                  <MaterialCommunityIcons
-                    name="logout"
-                    size={20}
-                    color="#EF4444"
-                  />
-                )}
+                <MaterialCommunityIcons
+                  name={sessionData.status === "CheckIn" ? "login" : "logout"}
+                  size={20}
+                  color={
+                    sessionData.status === "CheckIn" ? "#22C55E" : "#EF4444"
+                  }
+                />
                 <Text className="text-lg font-semibold ml-2">
                   {sessionData.status === "CheckIn" ? "Đã vào" : "Đã ra"}
                 </Text>
               </View>
             </View>
             {sessionData.isVehicleSession && (
-              <View className="bg-blue-50 px-3 py-1 rounded-full">
-                <Text className="text-blue-600 text-sm">Có phương tiện</Text>
+              <View className="bg-blue-50 px-3 py-1.5 rounded-full flex-row items-center">
+                <MaterialCommunityIcons name="car" size={16} color="#3B82F6" />
+                <Text className="text-blue-600 text-sm ml-1">
+                  Có phương tiện
+                </Text>
               </View>
             )}
+          </View>
+        </View>
+
+        {/* Visitor Info */}
+        <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+          <Text className="text-gray-500 text-sm mb-3">Thông tin khách</Text>
+          <View className="space-y-3">
+            <View>
+              <Text className="text-gray-600 mb-1">Tên khách</Text>
+              <View className="flex-row items-center">
+                <MaterialCommunityIcons
+                  name="account"
+                  size={20}
+                  color="#9CA3AF"
+                />
+                <Text className="font-medium ml-2">
+                  {sessionData.visitDetail?.visitor?.visitorName}
+                </Text>
+              </View>
+            </View>
+
+            <View>
+              <Text className="text-gray-600 mb-1">Công ty</Text>
+              <View className="flex-row items-center">
+                <MaterialCommunityIcons
+                  name="office-building"
+                  size={20}
+                  color="#9CA3AF"
+                />
+                <Text className="font-medium ml-2">
+                  {sessionData.visitDetail?.visitor?.companyName}
+                </Text>
+              </View>
+            </View>
+
+            <View>
+              <Text className="text-gray-600 mb-1">Số điện thoại</Text>
+              <View className="flex-row items-center">
+                <MaterialCommunityIcons
+                  name="phone"
+                  size={20}
+                  color="#9CA3AF"
+                />
+                <Text className="font-medium ml-2">
+                  {sessionData.visitDetail?.visitor?.phoneNumber}
+                </Text>
+              </View>
+            </View>
+
+            <View>
+              <Text className="text-gray-600 mb-1">CMND/CCCD</Text>
+              <View className="flex-row items-center">
+                <MaterialCommunityIcons
+                  name="card-account-details"
+                  size={20}
+                  color="#9CA3AF"
+                />
+                <Text className="font-medium ml-2">
+                  {sessionData.visitDetail?.visitor?.identityNumber}
+                </Text>
+              </View>
+            </View>
+
+            <View>
+              <Text className="text-gray-600 mb-1">Mục đích thăm</Text>
+              <View className="flex-row items-center">
+                <MaterialCommunityIcons
+                  name="clipboard-text"
+                  size={20}
+                  color="#9CA3AF"
+                />
+                <Text className="font-medium ml-2">
+                  {sessionData.visitDetail?.purpose}
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
 
@@ -517,18 +733,32 @@ const visitSessionDetail = () => {
         <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
           <Text className="text-gray-500 text-sm mb-3">Thời gian</Text>
           <View className="space-y-3">
-            <View className="flex-row justify-between items-center">
-              <Text className="text-gray-600">Thời gian vào</Text>
-              <Text className="font-medium">
-                {new Date(sessionData.checkinTime).toLocaleString()}
-              </Text>
+            <View className="flex-row items-center">
+              <MaterialCommunityIcons
+                name="clock-in"
+                size={20}
+                color="#9CA3AF"
+              />
+              <View className="ml-2 flex-1">
+                <Text className="text-gray-600">Thời gian vào</Text>
+                <Text className="font-medium">
+                  {new Date(sessionData.checkinTime).toLocaleString()}
+                </Text>
+              </View>
             </View>
             {sessionData.checkoutTime && (
-              <View className="flex-row justify-between items-center">
-                <Text className="text-gray-600">Thời gian ra</Text>
-                <Text className="font-medium">
-                  {new Date(sessionData.checkoutTime).toLocaleString()}
-                </Text>
+              <View className="flex-row items-center">
+                <MaterialCommunityIcons
+                  name="clock-out"
+                  size={20}
+                  color="#9CA3AF"
+                />
+                <View className="ml-2 flex-1">
+                  <Text className="text-gray-600">Thời gian ra</Text>
+                  <Text className="font-medium">
+                    {new Date(sessionData.checkoutTime).toLocaleString()}
+                  </Text>
+                </View>
               </View>
             )}
           </View>
@@ -539,19 +769,29 @@ const visitSessionDetail = () => {
           <Text className="text-gray-500 text-sm mb-3">Thông tin cổng</Text>
           <View className="space-y-3">
             {sessionData.gateIn && (
-              <View className="flex-row justify-between items-center">
-                <Text className="text-gray-600">Cổng vào</Text>
-                <Text className="font-medium">
-                  {sessionData.gateIn.gateName}
-                </Text>
+              <View className="flex-row items-center">
+                <MaterialCommunityIcons
+                  name="door-open"
+                  size={20}
+                  color="#9CA3AF"
+                />
+                <View className="ml-2 flex-1">
+                  <Text className="text-gray-600">Cổng vào</Text>
+                  <Text className="font-medium">
+                    {sessionData.gateIn.gateName}
+                  </Text>
+                </View>
               </View>
             )}
             {sessionData.gateOut && (
-              <View className="flex-row justify-between items-center">
-                <Text className="text-gray-600">Cổng ra</Text>
-                <Text className="font-medium">
-                  {sessionData.gateOut.gateName}
-                </Text>
+              <View className="flex-row items-center">
+                <MaterialCommunityIcons name="door" size={20} color="#9CA3AF" />
+                <View className="ml-2 flex-1">
+                  <Text className="text-gray-600">Cổng ra</Text>
+                  <Text className="font-medium">
+                    {sessionData.gateOut.gateName}
+                  </Text>
+                </View>
               </View>
             )}
           </View>
@@ -570,13 +810,15 @@ const visitSessionDetail = () => {
                     size={20}
                     color="#9CA3AF"
                   />
-                  <Text className="font-medium ml-2">
-                    {sessionData.securityIn.fullName}
-                  </Text>
+                  <View className="ml-2">
+                    <Text className="font-medium">
+                      {sessionData.securityIn.fullName}
+                    </Text>
+                    <Text className="text-gray-500 text-sm">
+                      {sessionData.securityIn.phoneNumber}
+                    </Text>
+                  </View>
                 </View>
-                <Text className="text-gray-500 text-sm ml-7">
-                  {sessionData.securityIn.phoneNumber}
-                </Text>
               </View>
             )}
             {sessionData.securityOut && (
@@ -588,17 +830,21 @@ const visitSessionDetail = () => {
                     size={20}
                     color="#9CA3AF"
                   />
-                  <Text className="font-medium ml-2">
-                    {sessionData.securityOut.fullName}
-                  </Text>
+                  <View className="ml-2">
+                    <Text className="font-medium">
+                      {sessionData.securityOut.fullName}
+                    </Text>
+                    <Text className="text-gray-500 text-sm">
+                      {sessionData.securityOut.phoneNumber}
+                    </Text>
+                  </View>
                 </View>
-                <Text className="text-gray-500 text-sm ml-7">
-                  {sessionData.securityOut.phoneNumber}
-                </Text>
               </View>
             )}
           </View>
         </View>
+
+        {/* Images components remain the same */}
         {!isLoadingVisitorSS && !isErrVisitorSS && visitorSessionImage && (
           <VisitorImages visitorSessionImage={visitorSessionImage} />
         )}
