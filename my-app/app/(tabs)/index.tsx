@@ -113,10 +113,10 @@ export default function HomeScreen() {
                 </View>
               </View>
 
-              <View className="px-6">
-                <View className="flex-row justify-between items-center mb-6">
+              <View className="px-4">
+                {/* <View className="flex-row justify-between items-center mb-6">
                   <Text className="text-xl ml-2 font-bold text-[#d35400]">
-                    Lịch hẹn hôm nay
+                    Chuyến thăm hôm nay
                   </Text>
 
                   <View className="bg-emerald-100 px-4 py-2 rounded-full flex-row items-center space-x-2">
@@ -126,12 +126,28 @@ export default function HomeScreen() {
                       color="#059669"
                     />
                     <Text className="text-emerald-700 font-semibold">
-                      {filteredVisits?.length || 0} lịch hẹn
+                      {filteredVisits?.length || 0} chuyến thăm
+                    </Text>
+                  </View>
+                </View> */}
+                <View className="flex-row justify-evenly items-center mb-4">
+                  <Text className="text-3xl font-bold text-[#d35400] flex-shrink">
+                    Chuyến thăm Hôm nay
+                  </Text>
+
+                  <View className="bg-emerald-100 px-2 py-1 rounded-full flex-row items-center space-x-1.5 mb-6">
+                    <FontAwesome5
+                      name="calendar-check"
+                      size={16}
+                      color="#059669"
+                    />
+                    <Text className="text-emerald-700 font-semibold text-sm">
+                      {filteredVisits?.length || 0} chuyến thăm
                     </Text>
                   </View>
                 </View>
               </View>
-              <View className="px-6 mb-4 flex-row justify-between">
+              <View className="gap-2 px-2 mb-4 flex-row justify-between">
                 <TouchableOpacity
                   onPress={() => setStatus("Active")}
                   className={`px-4 py-2 rounded-full ${
@@ -176,6 +192,24 @@ export default function HomeScreen() {
                     }`}
                   >
                     Vi phạm
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setStatus("ViolationResolved")}
+                  className={`px-4 py-2 rounded-full ${
+                    status === "ViolationResolved"
+                      ? "bg-gray-500"
+                      : "bg-gray-200"
+                  }`}
+                >
+                  <Text
+                    className={`font-semibold ${
+                      status === "ViolationResolved"
+                        ? "text-white"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    Đã xử lí
                   </Text>
                 </TouchableOpacity>
               </View>

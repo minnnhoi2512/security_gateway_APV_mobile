@@ -48,6 +48,32 @@ const VisitItem: React.FC<VisitCardProps> = ({ visit }) => {
     }
   };
 
+  const getTextColorClass = () => {
+    switch (visit.scheduleTypeName) {
+      case "ProcessWeek":
+        return "text-[#138d75]";
+      case "ProcessMonth":
+        return "text-[#2980b9]";
+      case "ProcessYear":
+        return "text-[#e67e22]";
+      default:
+        return "text-[#1a5276]";
+    }
+  };
+
+  const getText = () => {
+    switch (visit.scheduleTypeName) {
+      case "ProcessWeek":
+        return "Lịch theo tuần";
+      case "ProcessMonth":
+        return "Lịch theo tháng";
+      case "ProcessYear":
+        return "Lịch theo năm";
+      default:
+        return "Lịch hàng ngày";
+    }
+  };
+
   return (
     <TouchableOpacity
       key={visit.visitId}
@@ -98,7 +124,8 @@ const VisitItem: React.FC<VisitCardProps> = ({ visit }) => {
             </Text>
           </View>
           <Text className="text-sm text-[#1a5276] mx-2">•</Text>
-          <Text className="text-sm text-[#1a5276]">
+          <Text className={`text-sm ${getTextColorClass()}`}>{getText()}</Text>
+          {/* <Text className="text-sm text-[#1a5276]">
             {visit.scheduleTypeName === "ProcessWeek"
               ? "Lịch theo tuần"
               : visit.scheduleTypeName === "ProcessMonth"
@@ -106,7 +133,7 @@ const VisitItem: React.FC<VisitCardProps> = ({ visit }) => {
               : visit.scheduleTypeName === "ProcessYear"
               ? "Lịch theo năm"
               : "Lịch hàng ngày"}
-          </Text>
+          </Text> */}
         </View>
 
         <View className="flex-row items-center mt-1">
@@ -157,6 +184,10 @@ const VisitItem: React.FC<VisitCardProps> = ({ visit }) => {
               ? "Hoạt động"
               : visit.visitStatus === "ActiveTemporary"
               ? "Tạm thời"
+              : visit.visitStatus === "Violation"
+              ? "Vi phạm"
+              : visit.visitStatus === "ViolationResolved"
+              ? "Đã xử lí"
               : visit.visitStatus}
           </Text>
         </View>

@@ -21,11 +21,42 @@ import { Visit2 } from "@/redux/Types/visit.type";
 import VisitItem from "../home/VisitItem";
 import { useGetAllVisitsByCurrentDateQuery } from "@/redux/services/visit.service";
 import { useGetVisitorSessionDayQuery } from "@/redux/services/visitorSession.service";
+interface SecurityInfo {
+  fullName: string;
+  phoneNumber: string;
+  userId: number;
+}
 
+interface GateInfo {
+  gateId: number;
+  gateName: string;
+}
+
+interface VisitorSessionItem {
+  visitorSessionId: number;
+  checkinTime: string;
+  checkoutTime: string | null;
+  gateIn: GateInfo | null;
+  gateOut: GateInfo | null;
+  images: any | null;
+  isVehicleSession: boolean;
+  qrCardId: number;
+  securityIn: SecurityInfo | null;
+  securityOut: SecurityInfo | null;
+  status: string;
+  visitDetail: any | null;
+}
+
+interface HistoryModalProps {
+  modalVisible2: boolean;
+  setModalVisible2: (visible: boolean) => void;
+  visitorSession: VisitorSessionItem[];
+}
 const Checkin: React.FC = () => {
   const [permission, requestPermission] = useCameraPermissions();
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalVisible2, setModalVisible2] = useState(false);
   const {
     data: visits,
     isLoading,
@@ -46,7 +77,6 @@ const Checkin: React.FC = () => {
   } = useGetVisitorSessionDayQuery({ pageSize: 10, pageNumber: 1 });
 
   // console.log("VISITOR SS NE CU: ", visitorSession);
-  
 
   // const { error } = useLocalSearchParams<{
   //   error: string;
@@ -64,6 +94,10 @@ const Checkin: React.FC = () => {
   //       }
   //     ]);
   // }
+
+ 
+
+
   const handleScanPress = async () => {
     if (permission?.granted) {
       router.push("/check-in/scanQr");
@@ -135,6 +169,242 @@ const Checkin: React.FC = () => {
     </Modal>
   );
 
+  // const SessionItem: React.FC<{ item: VisitorSessionItem }> = ({ item }) => {
+  //   const handlePress = () => {
+  //     router.push({
+  //       pathname: "/visitSessionDetail",
+  //       params: { 
+  //         sessionId: item.visitorSessionId,
+  //         sessionData: JSON.stringify(item)
+  //       }
+  //     });
+  //   };
+  //   <View className="flex-row mb-4">
+  //     {/* Timeline dot and line */}
+  //     <View className="items-center mr-4 w-6">
+  //       <View
+  //         className={`w-4 h-4 rounded-full border-2 border-white ${
+  //           item.status === "CheckIn" ? "bg-green-500" : "bg-red-500"
+  //         }`}
+  //       />
+  //       <View className="w-0.5 h-full bg-gray-200 absolute top-4" />
+  //     </View>
+
+  //     {/* Content card */}
+  //     <View className="flex-1 bg-white rounded-xl p-4 shadow-sm">
+  //       {/* Header with status and time */}
+  //       <View className="flex-row justify-between items-start mb-3">
+  //         <View>
+  //           <View className="flex-row items-center">
+  //             {item.status === "CheckIn" ? (
+  //               <MaterialCommunityIcons
+  //                 name="login"
+  //                 size={16}
+  //                 color="#22C55E"
+  //               />
+  //             ) : (
+  //               <MaterialCommunityIcons
+  //                 name="logout"
+  //                 size={16}
+  //                 color="#EF4444"
+  //               />
+  //             )}
+  //             <Text className="text-gray-800 font-semibold ml-2">
+  //               {item.status === "CheckIn" ? "Đã vào" : "Đã ra"}
+  //             </Text>
+  //           </View>
+  //           {/* <Text className="text-gray-500 text-xs mt-1">
+  //             {formatDateLocal(
+  //               item.status === "CheckIn"
+  //                 ? item.checkinTime
+  //                 : item.checkoutTime || ""
+  //             )}
+  //           </Text> */}
+  //         </View>
+  //         {item.isVehicleSession && (
+  //           <View className="bg-blue-50 px-3 py-1 rounded-full flex-row items-center">
+  //             <MaterialCommunityIcons name="car" size={14} color="#3B82F6" />
+  //             <Text className="text-blue-500 text-xs ml-1">Có phương tiện</Text>
+  //           </View>
+  //         )}
+  //       </View>
+
+  //       {/* Gate and Security info */}
+  //       <View className="border-t border-gray-100 pt-3">
+  //         <View className="flex-row justify-between mb-2">
+  //           <View className="flex-1">
+  //             <Text className="text-xs text-gray-500 mb-1">Cổng</Text>
+  //             <Text className="text-sm font-medium text-gray-800">
+  //               {item.status === "CheckIn"
+  //                 ? item.gateIn?.gateName
+  //                 : item.gateOut?.gateName}
+  //             </Text>
+  //           </View>
+  //           <View className="flex-1">
+  //             <Text className="text-xs text-gray-500 mb-1">Bảo vệ</Text>
+  //             <View className="flex-row items-center">
+  //               <MaterialCommunityIcons
+  //                 name="shield-account"
+  //                 size={14}
+  //                 color="#9CA3AF"
+  //                 style={{ marginRight: 4 }}
+  //               />
+  //               <Text className="text-sm font-medium text-gray-800">
+  //                 {item.status === "CheckIn"
+  //                   ? item.securityIn?.fullName
+  //                   : item.securityOut?.fullName}
+  //               </Text>
+  //             </View>
+  //           </View>
+  //         </View>
+  //       </View>
+  //     </View>
+  //   </View>
+  // };
+  const SessionItem: React.FC<{ item: VisitorSessionItem,onClose: () => void;  }> = ({ item, onClose }) => {
+    const router = useRouter();
+    
+    const handlePress = () => {
+      onClose(); 
+      router.push({
+        pathname: "/visitSessionDetail",
+        params: { 
+          sessionId: item.visitorSessionId,
+          sessionData: JSON.stringify(item)
+        }
+      });
+    };
+  
+    return (
+      <TouchableOpacity onPress={handlePress}>
+        <View className="flex-row mb-4">
+          {/* Timeline dot and line */}
+          <View className="items-center mr-4 w-6">
+            <View
+              className={`w-4 h-4 rounded-full border-2 border-white ${
+                item.status === "CheckIn" ? "bg-green-500" : "bg-red-500"
+              }`}
+            />
+            <View className="w-0.5 h-full bg-gray-200 absolute top-4" />
+          </View>
+  
+          {/* Content card */}
+          <View className="flex-1 bg-white rounded-xl p-4 shadow-sm">
+            {/* Header with status and time */}
+            <View className="flex-row justify-between items-start mb-3">
+              <View>
+                <View className="flex-row items-center">
+                  {item.status === "CheckIn" ? (
+                    <MaterialCommunityIcons
+                      name="login"
+                      size={16}
+                      color="#22C55E"
+                    />
+                  ) : (
+                    <MaterialCommunityIcons
+                      name="logout"
+                      size={16}
+                      color="#EF4444"
+                    />
+                  )}
+                  <Text className="text-gray-800 font-semibold ml-2">
+                    {item.status === "CheckIn" ? "Đã vào" : "Đã ra"}
+                  </Text>
+                </View>
+              </View>
+              {item.isVehicleSession && (
+                <View className="bg-blue-50 px-3 py-1 rounded-full flex-row items-center">
+                  <MaterialCommunityIcons name="car" size={14} color="#3B82F6" />
+                  <Text className="text-blue-500 text-xs ml-1">Có phương tiện</Text>
+                </View>
+              )}
+            </View>
+  
+            {/* Gate and Security info */}
+            <View className="border-t border-gray-100 pt-3">
+              <View className="flex-row justify-between mb-2">
+                <View className="flex-1">
+                  <Text className="text-xs text-gray-500 mb-1">Cổng</Text>
+                  <Text className="text-sm font-medium text-gray-800">
+                    {item.status === "CheckIn"
+                      ? item.gateIn?.gateName
+                      : item.gateOut?.gateName}
+                  </Text>
+                </View>
+                <View className="flex-1">
+                  <Text className="text-xs text-gray-500 mb-1">Bảo vệ</Text>
+                  <View className="flex-row items-center">
+                    <MaterialCommunityIcons
+                      name="shield-account"
+                      size={14}
+                      color="#9CA3AF"
+                      style={{ marginRight: 4 }}
+                    />
+                    <Text className="text-sm font-medium text-gray-800">
+                      {item.status === "CheckIn"
+                        ? item.securityIn?.fullName
+                        : item.securityOut?.fullName}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+  const VisitorHistoryModal: React.FC<HistoryModalProps> = ({
+    modalVisible2,
+    setModalVisible2,
+    visitorSession,
+  }) => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={modalVisible2}
+      onRequestClose={() => setModalVisible2(false)}
+    >
+      <View className="flex-1 bg-black/50">
+        <View className="flex-1 mt-20 bg-gray-50 rounded-t-3xl">
+          {/* Header */}
+          <View className="flex-row justify-between items-center p-4 border-b border-gray-100 bg-white rounded-t-3xl">
+            <Text className="text-xl font-bold text-gray-800">
+              Lịch sử ra vào
+            </Text>
+            <TouchableOpacity
+              onPress={() => setModalVisible2(false)}
+              className="w-8 h-8 items-center justify-center rounded-full bg-gray-100"
+            >
+              <Ionicons name="close" size={20} color="#374151" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Timeline list */}
+          <FlatList
+            data={visitorSession}
+            renderItem={({ item }) => <SessionItem item={item} onClose={() => setModalVisible2(false)} />}
+            keyExtractor={(item) => item.visitorSessionId.toString()}
+            contentContainerStyle={{ padding: 16 }}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={() => (
+              <View className="flex-1 items-center justify-center p-8">
+                <MaterialCommunityIcons
+                  name="calendar-blank"
+                  size={48}
+                  color="#9CA3AF"
+                />
+                <Text className="text-gray-500 text-center mt-4">
+                  Không có lịch sử ra - vào
+                </Text>
+              </View>
+            )}
+          />
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <SafeAreaProvider>
       <View className="flex-1 bg-gray-50">
@@ -178,7 +448,10 @@ const Checkin: React.FC = () => {
             Truy cập nhanh
           </Text>
           <View className="flex-row justify-between px-2">
-            <TouchableOpacity className="bg-white rounded-2xl p-4 shadow-sm flex-1 mr-4">
+            <TouchableOpacity
+              className="bg-white rounded-2xl p-4 shadow-sm flex-1 mr-4"
+              onPress={() => setModalVisible2(true)}
+            >
               <View className="w-12 h-12 rounded-xl bg-purple-50 items-center justify-center mb-3">
                 <MaterialCommunityIcons
                   name="history"
@@ -209,7 +482,11 @@ const Checkin: React.FC = () => {
               </Text>
             </TouchableOpacity>
           </View>
-
+          <VisitorHistoryModal
+            modalVisible2={modalVisible2}
+            setModalVisible2={setModalVisible2}
+            visitorSession={visitorSession || []}
+          />
           <ScheduleModal />
         </View>
       </View>
