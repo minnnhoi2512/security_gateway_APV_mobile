@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useGetVisitByCredentialCardQuery } from "@/redux/services/visit.service";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -45,7 +45,7 @@ const ListVisit: React.FC = () => {
   const dispatch = useDispatch();
   const checkInDataSlice = useSelector<any>((state) => state.validCheckIn) as ValidCheckInState;
   const { showToast } = useToast();
-
+  const navigation = useNavigation()
   // console.log("checkInDataSlice", checkInDataSlice);
   const visitNotFoundShown = useRef(false);
 
@@ -150,29 +150,55 @@ const ListVisit: React.FC = () => {
 
   const handleVisitNotFound = () => {
     visitNotFoundShown.current = true;
+    console.log(isError);
+    const alertMessage = isApiError(isError) ? isError.data.message : "Lỗi trong quá trình quét mã. Vui lòng thử lại hoặc quét lại mã.";
+    let buttonText = "Ok";
+    let buttonAction = () => {
+      router.dismissTo("/(tabs)");
+      visitNotFoundShown.current = false;
+      dispatch(resetValidCheckIn());
+    };
+
+    if (isApiError(isError)) {
+      if (isError.data.code === "fError.NotFoundVisit") {
+        buttonText = "Tạo mới chuyến thăm";
+        buttonAction = () => {
+          router.dismissTo("/createVisit/ScanQrCreate");
+          visitNotFoundShown.current = false;
+          dispatch(resetValidCheckIn());
+        };
+      } else if (isError.data.code === "Error.CardNotIssue") {
+        buttonText = "Thoát";
+        buttonAction = () => {
+          router.dismissTo("/(tabs)");
+          visitNotFoundShown.current = false;
+          dispatch(resetValidCheckIn());
+        };
+      }else if (isError.data.code === "Error.ValidCheckinSession") {
+        buttonText = "Thoát";
+        buttonAction = () => {
+          router.dismissTo("/(tabs)");
+          visitNotFoundShown.current = false;
+          dispatch(resetValidCheckIn());
+        };
+      }
+    }
 
     Alert.alert(
       "Lỗi quét mã",
-      isApiError(isError) ? isError.data.message :
-        "Lỗi trong quá trình quét mã. Vui lòng thử lại hoặc quét lại mã.",
+      alertMessage,
       [
         {
           text: "Quét lại",
           onPress: () => {
             router.back();
-            // resetState();
             visitNotFoundShown.current = false;
+            dispatch(resetValidCheckIn());
           },
         },
         {
-           text: "Ok",
-          onPress: () => {
-            router.navigate({
-              pathname: "/(tabs)",
-            });
-            // resetState();
-            visitNotFoundShown.current = false;
-          },
+          text: buttonText,
+          onPress: buttonAction,
         },
       ]
     );
@@ -183,10 +209,10 @@ const ListVisit: React.FC = () => {
       dispatch(resetValidCheckIn());
       handleVisitNotFound();
     }
-  }, []);
+  }, [checkInDataSlice.CredentialCard, checkInDataSlice.QrCardVerification, isError]);
   const renderVisit = ({ item }: { item: Visit }) => {
     const canStart = isTimeToStart(item.expectedEndHour);
-   
+
     return (
       <TouchableOpacity
         onPress={() => handlePress(item.visitDetailId)}
@@ -206,7 +232,7 @@ const ListVisit: React.FC = () => {
               <Text className="text-sm text-yellow-800 dark:text-yellow-200">
                 Giờ vào đã kết thúc
               </Text>
-            </View> 
+            </View>
           )}
         </View>
 
@@ -214,7 +240,7 @@ const ListVisit: React.FC = () => {
           <View className="flex-row items-center">
             <MaterialIcons
               name="person"
-              size={20} 
+              size={20}
               className="text-gray-500 dark:text-gray-400"
             />
             <Text className="text-gray-700 dark:text-gray-300 ml-2">

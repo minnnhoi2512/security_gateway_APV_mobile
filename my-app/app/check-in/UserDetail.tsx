@@ -258,7 +258,7 @@ const UserDetail = () => {
         }
       } catch (error) {
         console.error("Error in capture process:", error);
-        router.navigate("/(tabs)/checkin");
+        router.dismissTo("/(tabs)/checkin");
         Alert.alert(
           "Lỗi",
           "Lỗi khi chụp ảnh. Vui lòng kiểm tra cấu hình camera và thử lại."

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
 import React from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,6 +7,25 @@ import {
   useGetVisitorSessionImagesQuery,
   useGetVisitorSessionImageVehicleQuery,
 } from "@/redux/services/visitorSession.service";
+
+interface VisitorSessionImage {
+  visitorSessionsImageId: number;
+  imageType:
+    | "CheckIn_Body"
+    | "CheckIn_Shoe"
+    | "CheckOut_Body"
+    | "CheckOut_Shoe";
+  imageURL: string;
+}
+
+interface VisitorImagesProps {
+  visitorSessionImage: VisitorSessionImage[];
+}
+
+interface ImageSectionProps {
+  images: VisitorSessionImage[];
+  title: string;
+}
 
 const visitSessionDetail = () => {
   const router = useRouter();
@@ -33,6 +52,68 @@ const visitSessionDetail = () => {
 
   console.log("visitorSSIMAGE: ", visitorSessionImage);
   console.log("visitorSSIMAGE Vehicle: ", visitorSessionImageVe);
+
+  const renderImageSection: React.FC<ImageSectionProps> = ({
+    images,
+    title,
+  }) => {
+    if (!images || images.length === 0) return null;
+
+    return (
+      <View className="mb-4">
+        <View className="flex-row items-center mb-2">
+          <MaterialCommunityIcons
+            name={title.includes("Vào") ? "login" : "logout"}
+            size={20}
+            color={title.includes("Vào") ? "#22C55E" : "#EF4444"}
+          />
+          <Text className="text-gray-700 font-medium text-lg ml-2">
+            {title}
+          </Text>
+        </View>
+        <View className="flex-row flex-wrap">
+          {images.map((img) => (
+            <View key={img.visitorSessionsImageId} className="w-1/2 p-1">
+              <View className="bg-white rounded-xl overflow-hidden shadow-sm">
+                <Image
+                  source={{ uri: img.imageURL }}
+                  className="w-full h-48"
+                  resizeMode="cover"
+                />
+                <View className="p-2 bg-gray-50">
+                  <Text className="text-gray-600 text-sm">
+                    {img.imageType.includes("Body")
+                      ? "Ảnh toàn thân"
+                      : "Ảnh giày dép"}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  const VisitorImages: React.FC<VisitorImagesProps> = ({
+    visitorSessionImage,
+  }) => {
+    const checkInImages = visitorSessionImage?.filter((img) =>
+      img.imageType.startsWith("CheckIn")
+    );
+
+    const checkOutImages = visitorSessionImage?.filter((img) =>
+      img.imageType.startsWith("CheckOut")
+    );
+
+    return (
+      <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+        <Text className="text-gray-500 text-sm mb-3">Ảnh ra vào</Text>
+        {renderImageSection({ images: checkInImages, title: "Ảnh Vào" })}
+        {renderImageSection({ images: checkOutImages, title: "Ảnh Ra" })}
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -168,6 +249,9 @@ const visitSessionDetail = () => {
             )}
           </View>
         </View>
+        {!isLoadingVisitorSS && !isErrVisitorSS && visitorSessionImage && (
+          <VisitorImages visitorSessionImage={visitorSessionImage} />
+        )}
       </ScrollView>
     </SafeAreaView>
   );
