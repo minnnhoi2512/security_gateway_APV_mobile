@@ -76,10 +76,10 @@ const visitForStaff = () => {
         <FlatList
           ListHeaderComponent={
             <>
-              <View className="px-6 mt-8">
+              <View className="mt-8">
                 <View className="flex-row justify-between items-center mb-6 gap-5">
                   <Text className="text-2xl font-bold text-colorTitleHeader mb-3">
-                    Lịch hẹn hôm nay
+                    Chuyến thăm hôm nay
                   </Text>
                   <View className="bg-emerald-100 px-4 py-2 rounded-full flex-row items-center space-x-1 mb-2">
                     <FontAwesome5
@@ -88,11 +88,11 @@ const visitForStaff = () => {
                       color="#059669"
                     />
                     <Text className="text-emerald-700 font-semibold">
-                      {filteredVisits?.length || 0} lịch hẹn
+                      {filteredVisits?.length || 0} chuyến thăm
                     </Text>
                   </View>
                 </View>
-                <View className="px-6 mb-4 flex-row justify-between">
+                <View className="mr-2 gap-2 mb-4 flex-row">
                   <TouchableOpacity
                     onPress={() => setStatus("Active")}
                     className={`px-4 py-2 rounded-full ${
@@ -110,12 +110,16 @@ const visitForStaff = () => {
                   <TouchableOpacity
                     onPress={() => setStatus("ActiveTemporary")}
                     className={`px-4 py-2 rounded-full ${
-                      status === "ActiveTemporary" ? "bg-yellow-500" : "bg-gray-200"
+                      status === "ActiveTemporary"
+                        ? "bg-yellow-500"
+                        : "bg-gray-200"
                     }`}
                   >
                     <Text
                       className={`font-semibold ${
-                        status === "ActiveTemporary" ? "text-white" : "text-gray-700"
+                        status === "ActiveTemporary"
+                          ? "text-white"
+                          : "text-gray-700"
                       }`}
                     >
                       Tạm thời
@@ -133,6 +137,24 @@ const visitForStaff = () => {
                       }`}
                     >
                       Vi phạm
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setStatus("ViolationResolved")}
+                    className={`px-4 py-2 rounded-full ${
+                      status === "ViolationResolved"
+                        ? "bg-gray-500"
+                        : "bg-gray-200"
+                    }`}
+                  >
+                    <Text
+                      className={`font-semibold ${
+                        status === "ViolationResolved"
+                          ? "text-white"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      Đã xử lí
                     </Text>
                   </TouchableOpacity>
                 </View>

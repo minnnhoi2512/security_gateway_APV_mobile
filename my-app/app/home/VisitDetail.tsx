@@ -49,7 +49,7 @@ const VisitDetail = () => {
     isError: isErrVsh,
     refetch: refetchVsh,
   } = useGetAllVisitsByCurrentDateByIDQuery(visitData.visitId as string);
-  // console.log(visitData)
+  console.log(visitData.visitId)
 
   useEffect(() => {
     const fetchRole = async () => {
