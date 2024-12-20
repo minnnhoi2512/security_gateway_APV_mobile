@@ -194,7 +194,7 @@ const Checkin: React.FC = () => {
 
             <TouchableOpacity
               className="bg-white rounded-2xl p-4 shadow-sm flex-1"
-              onPress={() => setModalVisible(true)}
+              onPress={() => router.push("/check-in/CameraScanCCCD")}
             >
               <View className="w-12 h-12 rounded-xl bg-orange-50 items-center justify-center mb-3">
                 <MaterialCommunityIcons
@@ -203,9 +203,9 @@ const Checkin: React.FC = () => {
                   color="#EA580C"
                 />
               </View>
-              <Text className="text-gray-800 font-medium">Lịch làm việc</Text>
+              <Text className="text-gray-800 font-medium">Cấp lại thẻ</Text>
               <Text className="text-gray-500 text-xs mt-1">
-                Xem ca làm việc
+                Quét CCCD/GPLX
               </Text>
             </TouchableOpacity>
           </View>

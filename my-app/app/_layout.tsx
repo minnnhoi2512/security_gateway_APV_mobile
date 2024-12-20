@@ -101,6 +101,10 @@ export default function RootLayout() {
               name="check-in/scanQr"
               options={{ animation: "fade", headerShown: false }}
             />
+            <Stack.Screen
+              name="check-in/CameraScanCCCD"
+              options={{ animation: "fade", headerShown: false }}
+            />
 
             <Stack.Screen
               name="home/VisitDetail"

@@ -59,8 +59,8 @@ export const visitApi = createApi({
     }),
     getVisitByCredentialCard: builder.query({
       query: ({ VerifiedId, verifiedType }) => {
-        const currentDate = new Date().toISOString().split('T')[0];
-        return `Visit/Day/VerifiedId/${VerifiedId}?verifiedType=${verifiedType}`;
+        const currentDate = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().split('T')[0];
+        return `Visit/Day/VerifiedId/${VerifiedId}?verifiedType=${verifiedType}&date=${currentDate}`;
       },
     }),
     createVisit: builder.mutation({
