@@ -77,11 +77,11 @@ const Header: React.FC<HeaderProps> = ({ name }) => {
   const renderGateBadge = () => {
     if (!selectedGate) return null;
     return (
-      <View className="absolute bottom-6 right-6">
-        <View className="flex-row items-center bg-green-600 px-4 py-2 rounded-full shadow-lg border border-white/30">
+      <View className="absolute bottom-6 right-5">
+        <View className="flex-row items-center bg-green-600 px-2 py-1 rounded-full shadow-lg border border-white/30">
           <MaterialIcons
             name="door-sliding"
-            size={16}
+            size={14}
             color="white"
             className="mr-1"
           />
@@ -181,7 +181,7 @@ const Header: React.FC<HeaderProps> = ({ name }) => {
                 </View>
               </View>
               {gate && (
-                <View className="mb-7 flex-row items-center bg-green-600/90 px-2.5 py-1 rounded-full border border-white/20">
+                <View className="mb-7 flex-row items-center bg-green-600/90 px-1 py-1 rounded-full border border-white/20">
                   {/* <MaterialIcons
                     name="door-sliding"
                     size={14}

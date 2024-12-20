@@ -154,7 +154,7 @@ const VisitItem: React.FC<VisitCardProps> = ({ visit }) => {
           <View className="flex-row items-center">
             <FontAwesome5 name="sign-out-alt" size={14} color="#F44336" />
             <Text className="text-sm text-gray-600 ml-2">
-              Ra: {visit.visitorCheckOutedCount}
+              Ra: {visit.visitorCheckkOutCount}
             </Text>
           </View>
         </View>
